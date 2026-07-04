@@ -9,7 +9,3 @@ Electronic component obsolescence intelligence platform.
 - [Implementation plan](docs/implementation.md)
 - [ADR-001: Monorepo over polyrepo](docs/architecture-decisions/001-monorepo-over-polyrepo.md)
 - [ADR-002: Supabase over plain Postgres on Railway](docs/architecture-decisions/002-supabase-over-plain-postgres-on-railway.md)
-
-## Repository Status
-
-The repository skeleton has been created from the implementation plan. Source, workflow, migration, script, client, and KiCad plugin files are intentionally empty placeholders until implementation begins.
