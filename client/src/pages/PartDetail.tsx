@@ -1,0 +1,137 @@
+import { Fragment } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, BellPlus } from "lucide-react";
+import { usePart, usePartAlternates } from "../api/hooks/parts";
+import { useAddToWatchlist } from "../api/hooks/watchlist";
+import type { Part } from "../api/types";
+import {
+  Card,
+  ComplianceBadge,
+  DataTable,
+  EmptyState,
+  LifecycleBadge,
+  ScoreRing,
+  useToast,
+  type Column,
+} from "../components/ui";
+import { currencyFormatter } from "../lib/format";
+
+export function PartDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const part = usePart(id);
+  const alternates = usePartAlternates(id);
+  const { addToWatchlist } = useAddToWatchlist();
+  const { showToast } = useToast();
+
+  const columns: Column<Part>[] = [
+    { key: "mpn", header: "MPN", sortable: true },
+    { key: "manufacturer", header: "Manufacturer", sortable: true },
+    { key: "category", header: "Category", sortable: true },
+    {
+      key: "lifecycle_stage",
+      header: "Lifecycle",
+      sortable: true,
+      render: (row) => <LifecycleBadge stage={row.lifecycle_stage} />,
+    },
+    {
+      key: "unit_price",
+      header: "Price",
+      sortable: true,
+      numeric: true,
+      render: (row) => currencyFormatter.format(row.unit_price),
+    },
+    {
+      key: "score",
+      header: "Score",
+      sortable: true,
+      numeric: true,
+      render: (row) => <ScoreRing value={row.score} size="sm" />,
+    },
+  ];
+
+  async function watchPart() {
+    await addToWatchlist();
+    showToast({ title: "Added to watchlist", body: part ? part.mpn : undefined, tone: "success" });
+  }
+
+  if (!part) {
+    return (
+      <EmptyState
+        title="Part not found"
+        body="The mock catalog does not include this part."
+        action={
+          <Link className="button" to="/search">
+            Back to search
+          </Link>
+        }
+      />
+    );
+  }
+
+  return (
+    <div className="stack">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{part.mpn}</h1>
+          <p className="page-subtitle">
+            {part.manufacturer} - {part.description}
+          </p>
+        </div>
+        <div className="inline-stack">
+          <Link className="button" to="/search">
+            <ArrowLeft size={16} />
+            Back
+          </Link>
+          <button type="button" className="button button--primary" onClick={watchPart}>
+            <BellPlus size={16} />
+            Watch
+          </button>
+        </div>
+      </div>
+
+      <section className="detail-grid">
+        <Card title="Lifecycle summary">
+          <div className="part-summary">
+            <ScoreRing value={part.score} size="lg" showLabel />
+            <dl className="property-list">
+              <dt>Manufacturer</dt>
+              <dd>{part.manufacturer}</dd>
+              <dt>Lifecycle</dt>
+              <dd>
+                <LifecycleBadge stage={part.lifecycle_stage} />
+              </dd>
+              <dt>Compliance</dt>
+              <dd>
+                <ComplianceBadge statuses={part.compliance} />
+              </dd>
+              <dt>Country</dt>
+              <dd>{part.country_of_origin}</dd>
+              <dt>Unit price</dt>
+              <dd>{currencyFormatter.format(part.unit_price)}</dd>
+            </dl>
+          </div>
+        </Card>
+        <Card title="Parameters">
+          <dl className="property-list">
+            {Object.entries(part.parameters).map(([key, value]) => (
+              <Fragment key={key}>
+                <dt>{key}</dt>
+                <dd>{String(value)}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        </Card>
+      </section>
+
+      <Card title="Alternates">
+        <DataTable
+          columns={columns}
+          rows={alternates}
+          getRowId={(row) => row.id}
+          onRowClick={(row) => navigate(`/parts/${row.id}`)}
+        />
+      </Card>
+    </div>
+  );
+}
