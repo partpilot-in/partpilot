@@ -56,7 +56,7 @@ export function ProjectDetail() {
     },
     {
       key: "score",
-      header: "Score",
+      header: "PartPilot Score",
       sortable: true,
       numeric: true,
       render: (row) => <ScoreRing value={row.score} size="sm" />,

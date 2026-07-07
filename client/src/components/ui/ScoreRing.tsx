@@ -55,7 +55,7 @@ export function ScoreRing({ value, size = "md", showLabel = false }: ScoreRingPr
         </svg>
         <span className="score-ring__number">{normalized}</span>
       </span>
-      {showLabel && <span className="score-ring__label">Score</span>}
+      {showLabel && <span className="score-ring__label">PartPilot Score</span>}
     </span>
   );
 }
