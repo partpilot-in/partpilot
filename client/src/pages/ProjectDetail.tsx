@@ -142,10 +142,10 @@ export function ProjectDetail() {
       <Modal open={compareOpen} title="Compare with another BOM" onClose={() => setCompareOpen(false)}>
         <div className="stack" style={{ gap: 16 }}>
           <select
+            className="form-control"
             value={compareTarget}
             onChange={(event) => setCompareTarget(event.target.value)}
             aria-label="Select BOM to compare"
-            style={{ minHeight: 36, border: "1px solid var(--border)", borderRadius: 6, padding: "0 10px" }}
           >
             <option value="">Choose a project</option>
             {projects

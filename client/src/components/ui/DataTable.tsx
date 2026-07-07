@@ -57,6 +57,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   const [internalSort, setInternalSort] = useState<{ key: string; direction: "asc" | "desc" } | undefined>();
   const activeSort = sort ?? internalSort;
+  const sortableColumns = columns.filter((column) => column.sortable);
 
   const sortedRows = useMemo(() => {
     if (!activeSort) return rows;
@@ -93,6 +94,54 @@ export function DataTable<T>({
 
   return (
     <div className="data-table-wrap">
+      {(selectable || sortableColumns.length > 0) && (
+        <div className="data-table__mobile-controls" aria-label="Table controls">
+          {selectable && (
+            <label className="data-table__mobile-select-all">
+              <input
+                type="checkbox"
+                aria-label="Select all rows"
+                checked={allVisibleSelected}
+                onChange={toggleAllVisible}
+              />
+              <span>{allVisibleSelected ? "Deselect rows" : "Select rows"}</span>
+            </label>
+          )}
+          {sortableColumns.length > 0 && (
+            <div className="data-table__mobile-sort-list" aria-label="Sort table">
+              {sortableColumns.map((column) => {
+                const key = String(column.key);
+                const isSorted = activeSort?.key === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={[
+                      "data-table__mobile-sort",
+                      isSorted && "data-table__mobile-sort--active",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    aria-pressed={isSorted}
+                    onClick={() => setSort(key)}
+                  >
+                    <span>{column.header}</span>
+                    {isSorted ? (
+                      activeSort.direction === "asc" ? (
+                        <ArrowUp size={14} aria-hidden="true" />
+                      ) : (
+                        <ArrowDown size={14} aria-hidden="true" />
+                      )
+                    ) : (
+                      <ChevronsUpDown size={14} aria-hidden="true" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
       <table className="data-table">
         <thead>
           <tr>
@@ -148,9 +197,13 @@ export function DataTable<T>({
           {loading &&
             Array.from({ length: 5 }).map((_, index) => (
               <tr key={`skeleton-${index}`}>
-                {selectable && <td className="data-table__checkbox"><span className="skeleton-cell" /></td>}
+                {selectable && (
+                  <td className="data-table__checkbox" data-label="Selected">
+                    <span className="skeleton-cell" />
+                  </td>
+                )}
                 {columns.map((column) => (
-                  <td key={String(column.key)}>
+                  <td key={String(column.key)} data-label={column.header}>
                     <span className="skeleton-cell" />
                   </td>
                 ))}
@@ -180,7 +233,11 @@ export function DataTable<T>({
                   }}
                 >
                   {selectable && (
-                    <td className="data-table__checkbox" onClick={(event) => event.stopPropagation()}>
+                    <td
+                      className="data-table__checkbox"
+                      data-label="Selected"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <input
                         type="checkbox"
                         aria-label={`Select row ${id}`}
@@ -195,6 +252,7 @@ export function DataTable<T>({
                       <td
                         key={String(column.key)}
                         className={column.numeric ? "data-table__numeric" : undefined}
+                        data-label={column.header}
                         style={{ textAlign: align }}
                       >
                         {column.render ? column.render(row) : String(getValue(row, String(column.key)) ?? "")}
