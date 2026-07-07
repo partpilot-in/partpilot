@@ -33,7 +33,7 @@ function listFromParam(value: string | null) {
   return value ? value.split(",").filter(Boolean) : [];
 }
 
-export function PartSearch() {
+export function PartProcure() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedIds, setSelectedIds] = useState(new Set<string>());

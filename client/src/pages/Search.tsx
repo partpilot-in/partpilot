@@ -1,1 +1,1 @@
-export { PartSearch as default, PartSearch } from "./PartSearch";
+export { PartProcure as default, PartProcure } from "./PartProcure";

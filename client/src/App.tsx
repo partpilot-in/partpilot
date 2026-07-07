@@ -2,7 +2,7 @@ import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { ClipboardList, LayoutDashboard, Search } from "lucide-react";
 import { TabNav, TopAppBar } from "./components/ui";
 import { Dashboard } from "./pages/Dashboard";
-import { PartSearch } from "./pages/PartSearch";
+import { PartProcure } from "./pages/PartProcure";
 import { PartCompare } from "./pages/PartCompare";
 import { PartDetail } from "./pages/PartDetail";
 import { Projects } from "./pages/Projects";
@@ -46,7 +46,7 @@ export function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/search" element={<PartSearch />} />
+        <Route path="/search" element={<PartProcure />} />
         <Route path="/search/compare" element={<PartCompare />} />
         <Route path="/parts/:id" element={<PartDetail />} />
         <Route path="/projects" element={<Projects />} />
