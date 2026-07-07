@@ -13,8 +13,8 @@ import { Watchlist } from "./pages/Watchlist";
 
 const tabs = [
   { key: "dashboard", label: "Dashboard", to: "/dashboard", icon: <LayoutDashboard size={22} /> },
-  { key: "search", label: "Part Search", to: "/search", icon: <Search size={22} /> },
-  { key: "projects", label: "Projects / BOM", to: "/projects", icon: <ClipboardList size={22} /> },
+  { key: "search", label: "PartProcure", to: "/search", icon: <Search size={22} /> },
+  { key: "projects", label: "Projects", to: "/projects", icon: <ClipboardList size={22} /> },
 ];
 
 function activeTabForPath(pathname: string) {

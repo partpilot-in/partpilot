@@ -98,7 +98,7 @@ export function PartSearch() {
     <div className="stack">
       <section className="page-header">
         <div>
-          <h1 className="page-title">Part Search</h1>
+          <h1 className="page-title">PartProcure</h1>
           <p className="page-subtitle">Search and compare lifecycle, sourcing, and compliance signals.</p>
         </div>
       </section>

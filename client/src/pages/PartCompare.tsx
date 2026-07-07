@@ -24,7 +24,7 @@ export function PartCompare() {
         {parts.length >= 2 ? (
           <PropertyCompareTable parts={parts} />
         ) : (
-          <EmptyState title="Select at least two parts" body="Use Part Search to choose rows for side-by-side comparison." />
+          <EmptyState title="Select at least two parts" body="Use PartProcure to choose rows for side-by-side comparison." />
         )}
       </Card>
     </div>

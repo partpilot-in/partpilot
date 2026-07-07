@@ -35,7 +35,7 @@ export function Projects() {
     <div className="stack">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Projects / BOM</h1>
+          <h1 className="page-title">Projects</h1>
           <p className="page-subtitle">Review uploaded BOMs and compare lifecycle changes across revisions.</p>
         </div>
         <button type="button" className="button button--primary" onClick={() => setUploadOpen(true)}>
