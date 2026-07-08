@@ -6,6 +6,40 @@ Electronic component obsolescence intelligence platform.
 
 ## Components
 
+```mermaid
+graph TD
+    Client["client<br/>(React / Vite)"]
+    Server["partpilot-server<br/>(axum API)"]
+    Engine["partpilot-engine<br/>(domain + ports)"]
+    Worker["partpilot-worker<br/>(ingestion sweep & enrichment)"]
+
+    subgraph Adapters["adapters"]
+        DigiKey["adapter-digikey"]
+        Mouser["adapter-mouser"]
+        Octopart["adapter-octopart"]
+        PCN["adapter-pcn-parser"]
+        Postgres["adapter-postgres"]
+        Notify["adapter-notify"]
+    end
+
+    Supabase[("Supabase\n(Postgres/Auth/Storage)")]
+    External[("External sources\nDigiKey · Mouser · Octopart · PCNs")]
+
+    Client -->|HTTP REST| Server
+    Server -->|calls ports| Engine
+    Worker -->|calls ports| Engine
+    Engine -.->|implemented by| Adapters
+
+    DigiKey --> External
+    Mouser --> External
+    Octopart --> External
+    PCN --> External
+    Postgres --> Supabase
+    Notify --> External
+
+    Client -.->|auth only| Supabase
+```
+
 ### 1. client
 
 The React frontend (Vite). Everything the user actually sees and clicks — Dashboard, Part Search, Projects/BOM tabs, all built from the shared DataTable, ScoreRing, and other reusable UI components.
