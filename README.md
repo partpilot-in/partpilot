@@ -20,10 +20,12 @@ graph TD
         PCN["adapter-pcn-parser"]
         Postgres["adapter-postgres"]
         Notify["adapter-notify"]
+        CommunityPulse["adapter-community-pulse"]
     end
 
     Supabase[("Supabase\n(Postgres/Auth/Storage)")]
     External[("External sources\nDigiKey · Mouser · Octopart · PCNs")]
+    Forums[("Public forums\nReddit · EEVblog · StackExchange\nvendor communities")]
 
     Client -->|HTTP REST| Server
     Server -->|calls ports| Engine
@@ -36,6 +38,7 @@ graph TD
     PCN --> External
     Postgres --> Supabase
     Notify --> External
+    CommunityPulse --> Forums
 
     Client -.->|auth only| Supabase
 ```
@@ -58,6 +61,7 @@ The outward-facing edges of the system — one crate per external integration:
 * adapter-pcn-parser
 * adapter-postgres
 * adapter-notify
+* adapter-community-pulse
 
 Each adapter implements a trait defined in partpilot-engine such as:
 
@@ -65,7 +69,7 @@ Each adapter implements a trait defined in partpilot-engine such as:
 * PartRepository
 * NotificationSender
 
-Adapters translate between external APIs, authentication methods, and response formats and the engine’s clean domain models.
+Adapters translate between external APIs, authentication methods, and response formats and the engine's clean domain models.
 
 This is where all source-specific complexity lives:
 
@@ -76,6 +80,21 @@ This is where all source-specific complexity lives:
 * Vendor-specific data mapping
 
 Keeping these concerns isolated prevents them from leaking into the rest of the system.
+
+**Community Pulse** is the component that collects and summarizes what engineers actually say about a part across public forums — the same idea as Reddit Answers, applied to component reputation. It pulls in mentions, then hands them to the engine for ranking and synthesis into a short, cited summary (common praise, common issues, overall sentiment) shown alongside a part's lifecycle and risk data.
+
+Credible sources this adapter draws from:
+
+* Reddit (r/AskElectronics, r/PrintedCircuitBoard, r/embedded)
+* EEVblog forum
+* Electrical Engineering Stack Exchange
+* ST Community (STMicroelectronics)
+* Renesas Engineering Community
+* Silicon Labs Community
+* TI E2E (Texas Instruments)
+* Microchip Forums
+* NXP Community
+* All About Circuits forums
 
 ### 3. partpilot-engine
 
@@ -90,18 +109,19 @@ Responsibilities include:
 * Lifecycle reconciliation across multiple sources
 * Risk scoring
 * Alternate part matching
+* Ranking and synthesizing forum mentions into Community Pulse summaries
 
 partpilot-engine depends on nothing else in the workspace.
 
 Everything else depends on it.
 
-If Postgres, DigiKey, or any other external dependency changed, this crate would remain largely untouched.
+If Postgres, DigiKey, Reddit, or any other external dependency changed, this crate would remain largely untouched — Community Pulse's ranking/synthesis logic lives here for the same reason reconciliation and risk scoring do: it's judgment the engine owns, while adapter-community-pulse just fetches the raw posts.
 
 ### 4. partpilot-server
 
 The API layer.
 
-An Axum-based binary that wires concrete adapters into the engine’s traits (the composition root) and exposes HTTP endpoints for:
+An Axum-based binary that wires concrete adapters into the engine's traits (the composition root) and exposes HTTP endpoints for:
 
 * Part search
 * Part details
@@ -131,6 +151,7 @@ A separate binary with no HTTP surface that performs scheduled and asynchronous 
 * Recomputing risk scores
 * Sending notifications and alerts
 * Performing on-demand enrichment for previously unseen parts
+* Sweeping forums for fresh mentions and refreshing Community Pulse summaries
 
 It runs as an independent Railway service so that slow, rate-limited, or failure-prone ingestion tasks never block the user-facing API.
 
