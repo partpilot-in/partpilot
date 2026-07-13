@@ -1,0 +1,258 @@
+{
+  "info": {
+    "name": "PartPilot API",
+    "description": "partpilot-server — electronic component obsolescence intelligence platform API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080" },
+    { "key": "access_token", "value": "" },
+    { "key": "api_key", "value": "" },
+    { "key": "part_id", "value": "8e4c1a20-1f3a-4b8e-9e2a-0a1b2c3d4e5f" },
+    { "key": "bom_id", "value": "d4e5f6a7-0000-0000-0000-000000000000" },
+    { "key": "compare_bom_id", "value": "e5f6a7b8-0000-0000-0000-000000000000" }
+  ],
+  "item": [
+    {
+      "name": "Parts",
+      "item": [
+        {
+          "name": "Search parts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/parts/search?q=lm317&limit=25",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "parts", "search"],
+              "query": [
+                { "key": "q", "value": "lm317" },
+                { "key": "category", "value": "", "disabled": true },
+                { "key": "manufacturer", "value": "", "disabled": true },
+                { "key": "lifecycle", "value": "", "disabled": true },
+                { "key": "cursor", "value": "", "disabled": true },
+                { "key": "limit", "value": "25" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get part detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/parts/{{part_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "parts", "{{part_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get part history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/parts/{{part_id}}/history",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "parts", "{{part_id}}", "history"]
+            }
+          }
+        },
+        {
+          "name": "Get part alternates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/parts/{{part_id}}/alternates",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "parts", "{{part_id}}", "alternates"]
+            }
+          }
+        },
+        {
+          "name": "Get part community insights",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/parts/{{part_id}}/insights",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "parts", "{{part_id}}", "insights"]
+            }
+          }
+        },
+        {
+          "name": "Compare parts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/parts/compare?ids={{part_id}},c2b3d4e5-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "parts", "compare"],
+              "query": [
+                { "key": "ids", "value": "{{part_id}},c2b3d4e5-0000-0000-0000-000000000000" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "BOMs",
+      "item": [
+        {
+          "name": "Upload BOM",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" },
+                { "key": "name", "type": "text", "value": "Amp-v3 BOM" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/boms",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "boms"]
+            }
+          }
+        },
+        {
+          "name": "Get BOM report",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/boms/{{bom_id}}?sort=score&order=asc",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "boms", "{{bom_id}}"],
+              "query": [
+                { "key": "sort", "value": "score" },
+                { "key": "order", "value": "asc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Compare BOMs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/boms/{{bom_id}}/compare?with={{compare_bom_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "boms", "{{bom_id}}", "compare"],
+              "query": [
+                { "key": "with", "value": "{{compare_bom_id}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Watchlist",
+      "item": [
+        {
+          "name": "Get watchlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/watchlist",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "watchlist"]
+            }
+          }
+        },
+        {
+          "name": "Add to watchlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"part_id\": \"{{part_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/watchlist",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "watchlist"]
+            }
+          }
+        },
+        {
+          "name": "Remove from watchlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/watchlist/{{part_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "watchlist", "{{part_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "KiCad",
+      "item": [
+        {
+          "name": "Lookup part",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/kicad/lookup?mpn=LM317T&manufacturer=Texas%20Instruments",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "kicad", "lookup"],
+              "query": [
+                { "key": "mpn", "value": "LM317T" },
+                { "key": "manufacturer", "value": "Texas Instruments" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/healthz",
+              "host": ["{{base_url}}"],
+              "path": ["healthz"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
