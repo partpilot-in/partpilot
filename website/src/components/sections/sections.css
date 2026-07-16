@@ -56,20 +56,55 @@
   align-items: center;
 }
 
+@media (max-width: 991px) {
+  .hero {
+    min-height: auto;
+    display: block;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  .hero-grid {
+    gap: 0;
+  }
+
+  .hero-content {
+    width: 100%;
+    min-height: calc(100svh - 64px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+  }
+
+  .hero-visual {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 2rem 0 3rem;
+  }
+}
+
 @media (min-width: 992px) {
   .hero-grid {
     flex-direction: row;
     text-align: left;
     justify-content: space-between;
   }
-  .hero-content, .hero-visual {
+
+  .hero-content,
+  .hero-visual {
     flex: 1;
     width: 100%;
   }
+
   .hero-actions {
     justify-content: flex-start;
   }
-  .hero-title, .hero-subtitle {
+
+  .hero-title,
+  .hero-subtitle {
     margin-left: 0;
     margin-right: 0;
   }
@@ -93,19 +128,22 @@
 }
 
 @media (min-width: 768px) {
-  .agentic-container, .risk-manager-container {
+
+  .agentic-container,
+  .risk-manager-container {
     flex-direction: row;
     text-align: left;
     align-items: center;
   }
-  
+
   .agentic-text {
     margin-left: 0;
     margin-right: 0;
   }
 }
 
-.agentic-content, .agentic-visual {
+.agentic-content,
+.agentic-visual {
   flex: 1;
   width: 100%;
 }

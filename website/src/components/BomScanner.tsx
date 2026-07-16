@@ -36,8 +36,14 @@ export const BomScanner: React.FC = () => {
               <tr>
                 <th>MPN</th>
                 <th>Qty</th>
-                <th>Unit Price</th>
-                <th>PartPilot Score</th>
+                <th>
+                  <span className="bom-label-full">Unit Price</span>
+                  <span className="bom-label-short">Price</span>
+                </th>
+                <th>
+                  <span className="bom-label-full">PartPilot Score</span>
+                  <span className="bom-label-short">Score</span>
+                </th>
               </tr>
             </thead>
             <tbody>

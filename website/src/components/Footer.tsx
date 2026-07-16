@@ -1,6 +1,5 @@
 import React from 'react';
 import './Footer.css';
-import { Cpu } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -21,12 +20,6 @@ export const Footer: React.FC = () => {
             <a href="#">AI for Supply Chain</a>
           </div>
           <div className="footer-column">
-            <h4>SOLUTIONS</h4>
-            <a href="#">Supply Chain Risk Management</a>
-            <a href="#">Compliance & Sustainability</a>
-            <a href="#">Electronics Supply Chain</a>
-          </div>
-          <div className="footer-column">
             <h4>FOR INDUSTRY</h4>
             <a href="#">Consumer Electronics</a>
             <a href="#">Aerospace & Defense</a>
@@ -41,15 +34,21 @@ export const Footer: React.FC = () => {
             <a href="#">Blog</a>
             <a href="#">Newsletter</a>
             <a href="#">Case Studies</a>
-            <a href="#">Guides</a>
           </div>
           <div className="footer-column">
             <h4>COMPANY</h4>
-            <a href="#">About Us</a>
             <a href="#">Contact Us</a>
-            <a href="#">Our Data</a>
-            <a href="#">Brand Assets</a>
-            <a href="https://www.linkedin.com/company/bestpartpilot/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            <a
+              href="https://www.linkedin.com/company/bestpartpilot/"
+              className="footer-social-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="PartPilot on LinkedIn"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.61 0 4.27 2.37 4.27 5.46v6.28ZM5.32 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12Zm1.78 13.02H3.54V9H7.1v11.45ZM22.23 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.46c.98 0 1.77-.77 1.77-1.72V1.72C24 .77 23.21 0 22.23 0Z" />
+              </svg>
+            </a>
           </div>
         </div>
 

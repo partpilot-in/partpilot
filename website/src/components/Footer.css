@@ -53,7 +53,7 @@
 
 @media (min-width: 1024px) {
   .footer-links-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -74,6 +74,21 @@
 
 .footer-column a:hover {
   color: var(--primary);
+}
+
+.footer-column a.footer-social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 0;
+}
+
+.footer-social-link svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: currentColor;
 }
 
 .footer-bottom {

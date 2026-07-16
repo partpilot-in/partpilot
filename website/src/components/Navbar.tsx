@@ -1,7 +1,6 @@
 import React from 'react';
 
 import './Navbar.css';
-import { Cpu } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   return (
