@@ -54,7 +54,7 @@ export const Footer: React.FC = () => {
 
         <div className="footer-bottom">
           <div className="footer-logo">
-            <img src="/logo.png" alt="PartPilot Logo" style={{height: '20px', width: 'auto', filter: 'grayscale(100%) opacity(70%)'}} />
+            <img src="/logo.png" alt="PartPilot Logo" style={{ height: '20px', width: 'auto', filter: 'grayscale(100%) opacity(70%)' }} />
             <span>PartPilot</span>
           </div>
           <p>&copy; {new Date().getFullYear()} PartPilot. All rights reserved.</p>

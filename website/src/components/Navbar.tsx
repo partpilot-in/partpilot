@@ -7,12 +7,12 @@ export const Navbar: React.FC = () => {
     <nav className="navbar">
       <div className="container navbar-container">
         <a href="/" className="navbar-logo">
-          <img src="/logo.png" alt="PartPilot Logo" style={{height: '24px', width: 'auto'}} />
+          <img src="/logo.png" alt="PartPilot Logo" style={{ height: '24px', width: 'auto' }} />
           <span>PartPilot</span>
         </a>
-        
+
         <div className="navbar-actions">
-          <a href="https://partpilot-client-production.up.railway.app/dashboard" className="btn btn-primary btn-sm">Sign In</a>
+          <a href="https://calendly.com" className="btn btn-primary btn-sm">Sign In</a>
         </div>
       </div>
     </nav>

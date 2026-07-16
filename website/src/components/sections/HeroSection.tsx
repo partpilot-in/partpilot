@@ -15,11 +15,11 @@ export const HeroSection: React.FC = () => {
           </p>
           <div className="hero-actions">
             <a href="https://calendly.com" className="btn btn-primary btn-lg" target="_blank" rel="noopener noreferrer">
-              See a Demo
+              Book My Demo
             </a>
           </div>
         </div>
-        
+
         <div className="hero-visual">
           <BomScanner />
         </div>
