@@ -47,25 +47,32 @@
   display: flex;
   justify-content: center;
   gap: 1rem;
-  margin-bottom: 4rem;
 }
 
-.trusted-by {
-  border-top: 1px solid var(--border-color);
-  padding-top: 2rem;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.trusted-logos {
+.hero-grid {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   gap: 3rem;
-  margin-top: 1.5rem;
-  opacity: 0.5;
+  align-items: center;
+}
+
+@media (min-width: 992px) {
+  .hero-grid {
+    flex-direction: row;
+    text-align: left;
+    justify-content: space-between;
+  }
+  .hero-content, .hero-visual {
+    flex: 1;
+    width: 100%;
+  }
+  .hero-actions {
+    justify-content: flex-start;
+  }
+  .hero-title, .hero-subtitle {
+    margin-left: 0;
+    margin-right: 0;
+  }
 }
 
 /* Agentic AI Section & Risk Manager */
