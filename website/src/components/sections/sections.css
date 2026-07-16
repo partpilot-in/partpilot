@@ -1,0 +1,237 @@
+/* Revamped Sections CSS */
+
+/* Common */
+.section-header {
+  margin-bottom: 3rem;
+  max-width: 700px;
+}
+
+.section-header-center {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.section-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+/* Hero Section */
+.hero {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+  text-align: center;
+}
+
+.hero-title {
+  max-width: 800px;
+  margin: 0 auto 1.5rem;
+}
+
+.hero-subtitle {
+  font-size: 1.125rem;
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: 0 auto 2.5rem;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 4rem;
+}
+
+.trusted-by {
+  border-top: 1px solid var(--border-color);
+  padding-top: 2rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.trusted-logos {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin-top: 1.5rem;
+  opacity: 0.5;
+}
+
+/* Agentic AI Section & Risk Manager */
+.agentic-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  align-items: center;
+  text-align: center;
+}
+
+.risk-manager-container {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3rem;
+  align-items: center;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .agentic-container, .risk-manager-container {
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+  }
+  
+  .agentic-text {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.agentic-content, .agentic-visual {
+  flex: 1;
+  width: 100%;
+}
+
+.agentic-text {
+  font-size: 1.125rem;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mockup-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.mockup-header {
+  font-weight: bold;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mockup-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--bg-color-muted);
+}
+
+/* Part Risk Manager */
+.testimonial {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--bg-color-muted);
+  border-left: 4px solid var(--primary);
+  border-radius: 0 8px 8px 0;
+  text-align: left;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 768px) {
+  .testimonial {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* Platform Overview */
+.tags-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 3rem;
+}
+
+.tag {
+  background: white;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 99px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.tag:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Products Grid */
+.products-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.product-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.product-title {
+  margin-bottom: 1rem;
+}
+
+.product-desc {
+  color: var(--text-muted);
+}
+
+/* News Section */
+.news-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .news-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.news-item {
+  display: block;
+  padding: 1.5rem;
+  border-radius: 8px;
+  background: var(--bg-color-muted);
+  color: var(--text-main);
+  transition: background 0.2s;
+}
+
+.news-item:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+}
