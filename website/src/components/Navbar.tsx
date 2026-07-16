@@ -11,13 +11,6 @@ export const Navbar: React.FC = () => {
           <span>PartPilot</span>
         </a>
         
-        <div className="navbar-links">
-          <a href="#products">Products</a>
-          <a href="#solutions">Solutions</a>
-          <a href="#industry">Industry</a>
-          <a href="#resources">Resources</a>
-        </div>
-        
         <div className="navbar-actions">
           <a href="https://partpilot-client-production.up.railway.app/dashboard" className="btn btn-primary btn-sm">Sign In</a>
         </div>
