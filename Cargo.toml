@@ -1,3 +1,3 @@
 [workspace]
-members = ["crates/partpilot-engine"]
+members = ["crates/partpilot-engine", "crates/partpilot-server"]
 resolver = "2"
