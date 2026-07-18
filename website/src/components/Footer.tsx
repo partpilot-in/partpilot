@@ -7,7 +7,7 @@ export const Footer: React.FC = () => {
       <div className="container">
         <div className="footer-top-row">
           <h2 className="footer-headline">Find the supply chain risk before it finds you.</h2>
-          <a href="https://calendly.com" className="footer-cta" target="_blank" rel="noopener noreferrer">Book My Demo &rarr;</a>
+          <a href="https://calendly.com" className="footer-cta" target="_blank" rel="noopener noreferrer">Schedule Intro Call &rarr;</a>
         </div>
 
         <div className="footer-links-grid">

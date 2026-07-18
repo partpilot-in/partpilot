@@ -12,7 +12,7 @@ export const Navbar: React.FC = () => {
         </a>
 
         <div className="navbar-actions">
-          <a href="https://calendly.com" className="btn btn-primary btn-sm">Sign In</a>
+          {/* <a href="https://calendly.com" className="btn btn-primary btn-sm">Sign In</a> */}
         </div>
       </div>
     </nav>
