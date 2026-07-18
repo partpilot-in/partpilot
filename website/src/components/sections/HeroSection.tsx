@@ -8,10 +8,10 @@ export const HeroSection: React.FC = () => {
       <div className="container hero-grid animate-fade-in">
         <div className="hero-content">
           <h1 className="hero-title">
-            Know before your supply chain breaks.
+            See supply chain risks before they become production issues.
           </h1>
           <p className="hero-subtitle">
-            Build resilience for engineering, sourcing, compliance, and supply chain teams on one platform.
+            Give engineering, sourcing, compliance, and supply chain teams a single platform for component intelligence and risk management.
           </p>
           <div className="hero-actions">
             <a href="https://calendly.com" className="btn btn-primary btn-md" target="_blank" rel="noopener noreferrer">
