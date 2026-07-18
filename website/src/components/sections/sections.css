@@ -37,6 +37,10 @@
   margin: 0 auto 1.5rem;
 }
 
+.hero-title-highlight {
+  color: var(--primary);
+}
+
 .hero-subtitle {
   font-size: 1.125rem;
   color: var(--text-muted);
@@ -81,7 +85,14 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3rem 0;
+    padding: 2rem 0;
+  }
+
+  .hero-title {
+    max-width: 23rem;
+    font-size: clamp(2.75rem, 11vw, 3.15rem);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
   }
 
   .hero-visual {
