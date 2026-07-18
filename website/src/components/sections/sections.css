@@ -116,7 +116,7 @@
   }
 }
 
-/* Agentic AI Section & Risk Manager */
+/* Source Intelligence Section & Risk Manager */
 .agentic-container {
   display: flex;
   flex-direction: column;
@@ -157,10 +157,16 @@
 .agentic-text {
   font-size: 1.125rem;
   color: var(--text-muted);
+  margin-top: 1.25rem;
   margin-bottom: 2rem;
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
+}
+
+.source-intelligence-text,
+.risk-manager-text {
+  margin-bottom: 0;
 }
 
 .mockup-card {
@@ -188,27 +194,15 @@
   border-bottom: 1px solid var(--bg-color-muted);
 }
 
-/* Part Risk Manager */
-.testimonial {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background: var(--bg-color-muted);
-  border-left: 4px solid var(--primary);
-  border-radius: 0 8px 8px 0;
-  text-align: left;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (min-width: 768px) {
-  .testimonial {
-    margin-left: 0;
-    margin-right: 0;
-  }
-}
-
 /* Platform Overview */
+.overview-subtitle {
+  color: var(--text-muted);
+  font-size: 1.125rem;
+  margin: 1.25rem auto 0;
+  max-width: 640px;
+  text-align: center;
+}
+
 .tags-cloud {
   display: flex;
   flex-wrap: wrap;
@@ -224,12 +218,16 @@
   border-radius: 99px;
   font-size: 0.875rem;
   color: var(--text-muted);
-  transition: all 0.2s;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
 .tag:hover {
+  background: color-mix(in srgb, var(--primary) 10%, white);
   border-color: var(--primary);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
   color: var(--primary);
+  transform: translateY(-2px);
 }
 
 /* Products Grid */

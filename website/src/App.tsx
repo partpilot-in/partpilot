@@ -1,7 +1,7 @@
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { HeroSection } from './components/sections/HeroSection';
-import { AgenticAI } from './components/sections/AgenticAI';
+import { SourceIntelligence } from './components/sections/SourceIntelligence';
 import { PartRiskManager } from './components/sections/PartRiskManager';
 import { PlatformOverview } from './components/sections/PlatformOverview';
 import { ProductsGrid } from './components/sections/ProductsGrid';
@@ -12,7 +12,7 @@ function App() {
       <Navbar />
       <main>
         <HeroSection />
-        <AgenticAI />
+        <SourceIntelligence />
         <PartRiskManager />
         <PlatformOverview />
         <ProductsGrid />

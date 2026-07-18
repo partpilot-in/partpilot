@@ -4,19 +4,19 @@ import './sections.css';
 const capabilities = [
   {
     title: "Supply Chain Visibility",
-    desc: "Map your BOM to manufacturing sites across 4 tiers. Get 2-week earlier disruption alerts than competitors, filtered to events that actually affect your parts."
+    desc: "Trace each BOM to production sites across four supplier tiers. Receive earlier disruption signals filtered to the events that materially affect your approved parts."
   },
   {
     title: "Compliance Management",
-    desc: "Achieve 80%+ compliance coverage from day one. Assess every BOM against 270+ global regulations (RoHS, REACH, PFAS, TSCA, and more), with audit-ready reports on demand."
+    desc: "Start with broad compliance coverage and assess every BOM against 270+ global regulations, including RoHS, REACH, PFAS, and TSCA, with audit-ready reports available on demand."
   },
   {
     title: "Part Risk Management",
-    desc: "Score every component on 6 risk factors. Forecast EOL up to 36 months out. Find compliant alternates in hours, not days."
+    desc: "Evaluate every component across six risk dimensions, forecast end-of-life risk up to 36 months ahead, and identify compliant alternates in hours instead of days."
   },
   {
     title: "Supplier Insights",
-    desc: "1M+ suppliers pre-scored across 12 risk categories: financial health, geopolitical exposure, sanctions screening, ESG, and more. Know your exposure before a supplier fails."
+    desc: "Review more than 1M suppliers scored across 12 risk categories, from financial health and geopolitical risk to sanctions screening and ESG, before supplier issues escalate."
   }
 ];
 
@@ -25,9 +25,9 @@ export const ProductsGrid: React.FC = () => {
     <section id="capabilities" className="section">
       <div className="container">
         <div className="section-header-center">
-          <h2 className="section-title">One powerful platform for everything.</h2>
+          <h2 className="section-title">One connected platform for the work that matters.</h2>
         </div>
-        
+
         <div className="products-grid">
           {capabilities.map((p, i) => (
             <div key={i} className="product-card hover-lift">

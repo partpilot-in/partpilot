@@ -17,7 +17,7 @@ export const Footer: React.FC = () => {
             <a href="#">Compliance Manager</a>
             <a href="#">Part Risk Manager</a>
             <a href="#">Supplier Insights</a>
-            <a href="#">AI for Supply Chain</a>
+            <a href="#">Source Data Intelligence</a>
           </div>
           <div className="footer-column">
             <h4>FOR INDUSTRY</h4>
