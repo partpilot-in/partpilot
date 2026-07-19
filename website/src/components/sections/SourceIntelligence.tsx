@@ -4,7 +4,7 @@ import './sections.css';
 
 export const SourceIntelligence: React.FC = () => {
   return (
-    <section className="section section-alt">
+    <section className="section">
       <div className="container agentic-container">
         <div className="agentic-content">
           <div className="section-label">PartPilot Source Intelligence</div>

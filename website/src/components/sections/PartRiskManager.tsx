@@ -4,7 +4,7 @@ import './sections.css';
 
 export const PartRiskManager: React.FC = () => {
   return (
-    <section className="section">
+    <section className="section section-alt">
       <div className="container risk-manager-container">
 
         <div className="agentic-visual">

@@ -11,7 +11,7 @@ const tags = [
 
 export const PlatformOverview: React.FC = () => {
   return (
-    <section className="section section-alt text-center">
+    <section className="section text-center">
       <div className="container">
         <div className="section-header-center" style={{ maxWidth: '800px' }}>
           <h2 className="section-title">Everything your teams have to answer for, in one place.</h2>

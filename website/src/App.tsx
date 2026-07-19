@@ -1,6 +1,7 @@
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { HeroSection } from './components/sections/HeroSection';
+import { SmartPcnAnalyser } from './components/sections/SmartPcnAnalyser';
 import { SourceIntelligence } from './components/sections/SourceIntelligence';
 import { PartRiskManager } from './components/sections/PartRiskManager';
 import { PlatformOverview } from './components/sections/PlatformOverview';
@@ -12,6 +13,7 @@ function App() {
       <Navbar />
       <main>
         <HeroSection />
+        <SmartPcnAnalyser />
         <SourceIntelligence />
         <PartRiskManager />
         <PlatformOverview />

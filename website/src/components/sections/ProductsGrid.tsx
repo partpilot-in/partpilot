@@ -3,26 +3,30 @@ import './sections.css';
 
 const capabilities = [
   {
+    title: "Smart PCN Analyser",
+    desc: "Parse PCNs, flag hidden material changes, and highlight affected properties."
+  },
+  {
     title: "Supply Chain Visibility",
-    desc: "Trace each BOM to production sites across four supplier tiers. Receive earlier disruption signals filtered to the events that materially affect your approved parts."
+    desc: "Trace BOM exposure and filter disruption signals to approved parts."
   },
   {
     title: "Compliance Management",
-    desc: "Start with broad compliance coverage and assess every BOM against 270+ global regulations, including RoHS, REACH, PFAS, and TSCA, with audit-ready reports available on demand."
+    desc: "Assess BOMs against RoHS, REACH, PFAS, TSCA, and audit evidence."
   },
   {
     title: "Part Risk Management",
-    desc: "Evaluate every component across six risk dimensions, forecast end-of-life risk up to 36 months ahead, and identify compliant alternates in hours instead of days."
+    desc: "Score lifecycle risk, forecast EOL exposure, and find compliant alternates."
   },
   {
     title: "Supplier Insights",
-    desc: "Review more than 1M suppliers scored across 12 risk categories, from financial health and geopolitical risk to sanctions screening and ESG, before supplier issues escalate."
+    desc: "Review supplier risk across financial, geopolitical, sanctions, and ESG signals."
   }
 ];
 
 export const ProductsGrid: React.FC = () => {
   return (
-    <section id="capabilities" className="section">
+    <section id="capabilities" className="section section-alt">
       <div className="container">
         <div className="section-header-center">
           <h2 className="section-title">One connected platform for the work that matters.</h2>
