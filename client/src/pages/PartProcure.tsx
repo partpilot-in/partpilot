@@ -140,6 +140,8 @@ export function PartProcure() {
         ))}
       </div>
 
+      <h2 className="section-title">Recent Searches</h2>
+
       <DataTable
         columns={columns}
         rows={rows}

@@ -49,7 +49,7 @@ export function TopAppBar({ organizationSlug, user }: TopAppBarProps) {
       <div className="top-app-bar__inner">
         <div className="top-app-bar__identity">
           <Link className="brand-link" to="/dashboard" aria-label="PartPilot dashboard">
-            <span className="brand-mark">P</span>
+            <img className="brand-mark" src="/logo.png" alt="" />
             <span>PartPilot</span>
           </Link>
         </div>
