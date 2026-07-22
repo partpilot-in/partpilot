@@ -142,136 +142,134 @@ export function DataTable<T>({
           )}
         </div>
       )}
-      <table className="data-table">
-        <thead>
-          <tr>
-            {selectable && (
-              <th className="data-table__checkbox">
-                <input
-                  type="checkbox"
-                  aria-label="Select all rows"
-                  checked={allVisibleSelected}
-                  onChange={toggleAllVisible}
-                />
-              </th>
-            )}
-            {columns.map((column) => {
-              const key = String(column.key);
-              const align = column.align ?? (column.numeric ? "right" : "left");
-              const isSorted = activeSort?.key === key;
-              return (
-                <th
-                  key={key}
-                  className={column.numeric ? "data-table__numeric" : undefined}
-                  aria-sort={
-                    isSorted ? (activeSort.direction === "asc" ? "ascending" : "descending") : undefined
-                  }
-                >
-                  {column.sortable ? (
-                    <button
-                      type="button"
-                      className="data-table__sort"
-                      data-align={align}
-                      onClick={() => setSort(key)}
-                    >
-                      <span>{column.header}</span>
-                      {isSorted ? (
-                        activeSort.direction === "asc" ? (
-                          <ArrowUp size={14} aria-hidden="true" />
-                        ) : (
-                          <ArrowDown size={14} aria-hidden="true" />
-                        )
-                      ) : (
-                        <ChevronsUpDown size={14} aria-hidden="true" />
-                      )}
-                    </button>
-                  ) : (
-                    column.header
-                  )}
+      <div className="data-table__scroll">
+        <table className="data-table">
+          <thead>
+            <tr>
+              {selectable && (
+                <th className="data-table__checkbox">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all rows"
+                    checked={allVisibleSelected}
+                    onChange={toggleAllVisible}
+                  />
                 </th>
-              );
-            })}
-          </tr>
-        </thead>
-        <tbody>
-          {loading &&
-            Array.from({ length: 5 }).map((_, index) => (
-              <tr key={`skeleton-${index}`}>
-                {selectable && (
-                  <td className="data-table__checkbox" data-label="Selected">
-                    <span className="skeleton-cell" />
-                  </td>
-                )}
-                {columns.map((column) => (
-                  <td key={String(column.key)} data-label={column.header}>
-                    <span className="skeleton-cell" />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          {!loading &&
-            sortedRows.map((row) => {
-              const id = getRowId(row);
-              const rowClasses = [
-                "data-table-row",
-                onRowClick && "data-table-row--clickable",
-                rowClassName?.(row),
-              ]
-                .filter(Boolean)
-                .join(" ");
-              return (
-                <tr
-                  key={id}
-                  className={rowClasses}
-                  onClick={() => onRowClick?.(row)}
-                  tabIndex={onRowClick ? 0 : undefined}
-                  onKeyDown={(event) => {
-                    if (onRowClick && (event.key === "Enter" || event.key === " ")) {
-                      event.preventDefault();
-                      onRowClick(row);
+              )}
+              {columns.map((column) => {
+                const key = String(column.key);
+                const isSorted = activeSort?.key === key;
+                return (
+                  <th
+                    key={key}
+                    className={column.numeric ? "data-table__numeric" : undefined}
+                    aria-sort={
+                      isSorted ? (activeSort.direction === "asc" ? "ascending" : "descending") : undefined
                     }
-                  }}
-                >
+                  >
+                    {column.sortable ? (
+                      <button
+                        type="button"
+                        className="data-table__sort"
+                        onClick={() => setSort(key)}
+                      >
+                        <span>{column.header}</span>
+                        {isSorted ? (
+                          activeSort.direction === "asc" ? (
+                            <ArrowUp size={14} aria-hidden="true" />
+                          ) : (
+                            <ArrowDown size={14} aria-hidden="true" />
+                          )
+                        ) : (
+                          <ChevronsUpDown size={14} aria-hidden="true" />
+                        )}
+                      </button>
+                    ) : (
+                      column.header
+                    )}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {loading &&
+              Array.from({ length: 5 }).map((_, index) => (
+                <tr key={`skeleton-${index}`}>
                   {selectable && (
-                    <td
-                      className="data-table__checkbox"
-                      data-label="Selected"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <input
-                        type="checkbox"
-                        aria-label={`Select row ${id}`}
-                        checked={selectedIds.has(id)}
-                        onChange={() => toggleRow(id)}
-                      />
+                    <td className="data-table__checkbox" data-label="Selected">
+                      <span className="skeleton-cell" />
                     </td>
                   )}
-                  {columns.map((column) => {
-                    const align = column.align ?? (column.numeric ? "right" : "left");
-                    return (
-                      <td
-                        key={String(column.key)}
-                        className={column.numeric ? "data-table__numeric" : undefined}
-                        data-label={column.header}
-                        style={{ textAlign: align }}
-                      >
-                        {column.render ? column.render(row) : String(getValue(row, String(column.key)) ?? "")}
-                      </td>
-                    );
-                  })}
+                  {columns.map((column) => (
+                    <td key={String(column.key)} data-label={column.header}>
+                      <span className="skeleton-cell" />
+                    </td>
+                  ))}
                 </tr>
-              );
-            })}
-          {!loading && sortedRows.length === 0 && (
-            <tr>
-              <td className="data-table__empty" colSpan={columns.length + (selectable ? 1 : 0)}>
-                {emptyState ?? <EmptyState title="No rows" body="Adjust filters or try another search." />}
-              </td>
-            </tr>
-          )}
-        </tbody>
-        {footer && <tfoot>{footer}</tfoot>}
-      </table>
+              ))}
+            {!loading &&
+              sortedRows.map((row) => {
+                const id = getRowId(row);
+                const rowClasses = [
+                  "data-table-row",
+                  onRowClick && "data-table-row--clickable",
+                  rowClassName?.(row),
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+                return (
+                  <tr
+                    key={id}
+                    className={rowClasses}
+                    onClick={() => onRowClick?.(row)}
+                    tabIndex={onRowClick ? 0 : undefined}
+                    onKeyDown={(event) => {
+                      if (onRowClick && (event.key === "Enter" || event.key === " ")) {
+                        event.preventDefault();
+                        onRowClick(row);
+                      }
+                    }}
+                  >
+                    {selectable && (
+                      <td
+                        className="data-table__checkbox"
+                        data-label="Selected"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          aria-label={`Select row ${id}`}
+                          checked={selectedIds.has(id)}
+                          onChange={() => toggleRow(id)}
+                        />
+                      </td>
+                    )}
+                    {columns.map((column) => {
+                      return (
+                        <td
+                          key={String(column.key)}
+                          className={column.numeric ? "data-table__numeric" : undefined}
+                          data-label={column.header}
+                        >
+                          {column.render ? column.render(row) : String(getValue(row, String(column.key)) ?? "")}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            {!loading && sortedRows.length === 0 && (
+              <tr>
+                <td className="data-table__empty" colSpan={columns.length + (selectable ? 1 : 0)}>
+                  {emptyState ?? <EmptyState title="No rows" body="Adjust filters or try another search." />}
+                </td>
+              </tr>
+            )}
+          </tbody>
+          {footer && <tfoot>{footer}</tfoot>}
+        </table>
+      </div>
     </div>
   );
 }

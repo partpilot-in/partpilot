@@ -160,8 +160,7 @@ a:hover {
   width: min(100%, calc(var(--page-max) + var(--page-gutter) * 2));
   height: var(--topbar-height);
   margin: 0 auto;
-  padding: 0 max(var(--page-gutter), var(--safe-right)) 0
-    max(var(--page-gutter), var(--safe-left));
+  padding: 0 max(var(--page-gutter), var(--safe-right)) 0 max(var(--page-gutter), var(--safe-left));
 }
 
 .top-app-bar__identity {
@@ -380,8 +379,7 @@ a:hover {
 .page-shell {
   width: min(100%, calc(var(--page-max) + var(--page-gutter) * 2 + var(--nav-rail-width)));
   margin: 0 auto;
-  padding: calc(var(--topbar-safe-height) + 32px) var(--page-gutter) 96px
-    calc(var(--page-gutter) + var(--nav-rail-width));
+  padding: calc(var(--topbar-safe-height) + 32px) var(--page-gutter) 96px calc(var(--page-gutter) + var(--nav-rail-width));
 }
 
 .page-header {
@@ -577,11 +575,23 @@ a:hover {
 }
 
 .data-table-wrap {
-  overflow: auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--shadow-sm);
+}
+
+.data-table__scroll {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table__mobile-controls {
@@ -600,7 +610,7 @@ a:hover {
   height: 52px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--bg-color-muted);
-  text-align: left;
+  text-align: center;
   vertical-align: middle;
 }
 
@@ -614,7 +624,13 @@ a:hover {
 
 .bom-total-label {
   color: var(--text-secondary);
-  text-align: right;
+  text-align: center;
+}
+
+.bom-total-cell {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
 }
 
 .data-table th {
@@ -637,24 +653,21 @@ a:hover {
 
 .data-table__numeric {
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  text-align: center;
 }
 
 .data-table__sort {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   width: 100%;
   border: 0;
   background: transparent;
   color: inherit;
   font: inherit;
-  text-align: inherit;
+  text-align: center;
   cursor: pointer;
-}
-
-.data-table__sort[data-align="right"] {
-  justify-content: flex-end;
 }
 
 .data-table__checkbox {
@@ -701,6 +714,7 @@ a:hover {
   from {
     background-position: 200% 0;
   }
+
   to {
     background-position: -200% 0;
   }
@@ -922,10 +936,11 @@ a:hover {
 
 .compare-table th,
 .compare-table td {
+  height: 52px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
-  text-align: left;
-  vertical-align: top;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .compare-table th {
@@ -1184,8 +1199,7 @@ a:hover {
 
   .page-shell {
     width: 100%;
-    padding: calc(var(--topbar-safe-height) + 18px) var(--page-gutter)
-      calc(var(--bottom-nav-safe-height) + 112px);
+    padding: calc(var(--topbar-safe-height) + 18px) var(--page-gutter) calc(var(--bottom-nav-safe-height) + 112px);
   }
 
   .stack {
@@ -1211,7 +1225,7 @@ a:hover {
   }
 
   .page-header .inline-stack .button,
-  .page-header > .button {
+  .page-header>.button {
     flex: 1 1 140px;
   }
 
@@ -1285,31 +1299,46 @@ a:hover {
 
   .data-table-wrap {
     display: grid;
-    gap: 10px;
-    overflow: visible;
-    border: 0;
-    background: transparent;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .data-table__scroll {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
   }
 
   .data-table__mobile-controls {
     display: grid;
-    gap: 8px;
+    gap: 6px;
+    padding: 8px 8px 0;
   }
 
   .data-table__mobile-select-all {
     display: inline-flex;
-    min-height: 44px;
+    min-height: 30px;
     align-items: center;
     gap: 8px;
     color: var(--text-secondary);
+    font-size: 12px;
     font-weight: 500;
   }
 
   .data-table__mobile-sort-list {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
-    padding-bottom: 2px;
+    padding-bottom: 8px;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
   }
@@ -1321,14 +1350,15 @@ a:hover {
   .data-table__mobile-sort {
     display: inline-flex;
     flex: 0 0 auto;
-    min-height: 40px;
+    min-height: 28px;
     align-items: center;
-    gap: 6px;
-    padding: 0 12px;
+    gap: 4px;
+    padding: 0 8px;
     border: 1px solid var(--border);
     border-radius: 999px;
     background: var(--surface);
     color: var(--text-secondary);
+    font-size: 11px;
     font-weight: 500;
   }
 
@@ -1339,47 +1369,23 @@ a:hover {
   }
 
   .data-table {
-    display: block;
-    min-width: 0;
-    border-collapse: separate;
-    font-size: 13px;
-  }
-
-  .data-table thead {
-    display: none;
-  }
-
-  .data-table tbody {
-    display: grid;
-    gap: 10px;
-  }
-
-  .data-table tr {
-    display: grid;
-  }
-
-  .data-table tbody tr {
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--surface);
-    box-shadow: var(--shadow-sm);
-  }
-
-  .data-table tbody tr:hover {
-    background: var(--surface);
+    width: 900px;
+    min-width: 900px;
+    table-layout: auto;
+    border-collapse: collapse;
+    font-size: 12px;
   }
 
   .data-table-row--added {
-    border-left: 4px solid var(--signal-good);
+    background: var(--signal-good-surface);
   }
 
   .data-table-row--removed {
-    border-left: 4px solid var(--signal-critical);
+    background: var(--signal-critical-surface);
   }
 
   .data-table-row--changed {
-    border-left: 4px solid var(--signal-caution);
+    background: var(--signal-caution-surface);
   }
 
   .data-table th,
@@ -1388,34 +1394,36 @@ a:hover {
   }
 
   .data-table td {
-    display: grid;
     min-height: 44px;
-    grid-template-columns: minmax(88px, 38%) minmax(0, 1fr);
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    text-align: left !important;
+    padding: 9px 10px;
+    text-align: center;
     vertical-align: middle;
+    white-space: normal;
+    word-break: normal;
+  }
+
+  .data-table th {
+    min-height: 42px;
+    padding: 8px 10px;
+    white-space: normal;
+    word-break: normal;
+  }
+
+  .data-table__sort {
+    gap: 3px;
   }
 
   .data-table td::before {
-    color: var(--text-secondary);
-    content: attr(data-label);
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  .data-table tr td:last-child {
-    border-bottom: 0;
+    content: none;
   }
 
   .data-table__numeric {
-    text-align: left;
+    text-align: center;
   }
 
   .data-table__checkbox {
-    width: auto;
-    text-align: left;
+    width: 40px;
+    text-align: center;
   }
 
   .data-table__checkbox input,
@@ -1425,45 +1433,22 @@ a:hover {
   }
 
   .data-table__empty {
-    display: block;
-    padding: 0;
-    border-bottom: 0;
-  }
-
-  .data-table__empty::before {
-    content: none;
+    padding: 40px 16px;
   }
 
   .data-table tfoot {
-    display: block;
-    margin-top: 10px;
-  }
-
-  .data-table tfoot tr {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--surface-alt);
+    display: table-footer-group;
   }
 
   .data-table tfoot td {
-    display: none;
-    padding: 0;
-    border: 0;
-    background: transparent;
-  }
-
-  .data-table tfoot .bom-total-label,
-  .data-table tfoot .data-table__numeric {
-    display: block;
+    display: table-cell;
+    padding: 8px 10px;
+    border-top: 1px solid var(--border);
+    background: var(--surface-alt);
   }
 
   .bom-total-label {
-    text-align: left;
+    text-align: center;
   }
 
   .compliance-badge {
@@ -1474,7 +1459,8 @@ a:hover {
   .status-badge,
   .delta-badge,
   .compliance-badge__item {
-    min-height: 28px;
+    min-height: 24px;
+    padding: 2px 7px;
     border-radius: 999px;
   }
 
@@ -1574,7 +1560,7 @@ a:hover {
     padding: 12px;
   }
 
-  .floating-bar > span {
+  .floating-bar>span {
     width: 100%;
     font-weight: 500;
   }

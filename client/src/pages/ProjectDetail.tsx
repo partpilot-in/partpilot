@@ -125,11 +125,18 @@ export function ProjectDetail() {
           onRowClick={(row) => navigate(`/parts/${row.part_id}`)}
           footer={
             <tr>
-              <td colSpan={6} className="bom-total-label">
-                Total cost
+              <td />
+              <td />
+              <td />
+              <td />
+              <td />
+              <td />
+              <td className="data-table__numeric bom-total-cell">
+                <span>{currencyFormatter.format(totalCost)}</span>
               </td>
-              <td className="data-table__numeric">{currencyFormatter.format(totalCost)}</td>
-              <td colSpan={3} />
+              <td />
+              <td />
+              <td />
             </tr>
           }
         />
