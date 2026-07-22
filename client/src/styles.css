@@ -200,10 +200,20 @@ a:hover {
 
 .user-chip {
   display: inline-flex;
+  min-height: 36px;
   align-items: center;
   gap: 8px;
+  padding: 0 4px 0 10px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
   color: var(--text-primary);
   font-weight: 500;
+  cursor: pointer;
+}
+
+.user-chip:hover {
+  background: #eef0f1;
 }
 
 .user-chip__name {
@@ -211,6 +221,43 @@ a:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.account-menu {
+  position: relative;
+}
+
+.account-menu__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  display: grid;
+  width: 208px;
+  overflow: hidden;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow-overlay);
+}
+
+.account-menu__item {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.account-menu__item:hover {
+  background: var(--surface-alt);
 }
 
 .tab-nav {

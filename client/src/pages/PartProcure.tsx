@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GitCompareArrows, Search, X } from "lucide-react";
-import { useSearchParts } from "../api/hooks/parts";
+import { useRecentlySearchedParts } from "../api/hooks/parts";
 import type { LifecycleStage, Part, PartFilters } from "../api/types";
 import {
   DataTable,
@@ -51,7 +51,7 @@ export function PartProcure() {
     }),
     [searchParams],
   );
-  const rows = useSearchParts(query, filters);
+  const rows = useRecentlySearchedParts();
 
   const columns: Column<Part>[] = [
     { key: "mpn", header: "MPN", sortable: true },
@@ -99,7 +99,7 @@ export function PartProcure() {
       <section className="page-header">
         <div>
           <h1 className="page-title">PartProcure</h1>
-          <p className="page-subtitle">Search and compare lifecycle, sourcing, and compliance signals.</p>
+          <p className="page-subtitle">Recently searched parts for quick sourcing review.</p>
         </div>
       </section>
 
@@ -148,7 +148,7 @@ export function PartProcure() {
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         onRowClick={(row) => navigate(`/parts/${row.id}`)}
-        emptyState={<EmptyState title="No matching parts" body="Clear filters or try another manufacturer." />}
+        emptyState={<EmptyState title="No recent searches" body="Recently searched parts will appear here." />}
       />
 
       {selectedCount >= 2 && (
