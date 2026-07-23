@@ -1,0 +1,106 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Download, Save } from "lucide-react";
+import { useProject, useUpdateBom } from "../api/hooks/boms";
+import {
+  BomEditor,
+  bomLineToEditable,
+  editableToBomLines,
+  exportBomCsv,
+  type EditableBomLine,
+} from "../components/BomEditor";
+import { Card, EmptyState, useToast } from "../components/ui";
+
+export function BomEdit() {
+  const { id } = useParams();
+  const project = useProject(id);
+  const { updateBom } = useUpdateBom();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+  const [bomName, setBomName] = useState("");
+  const [rows, setRows] = useState<EditableBomLine[]>([]);
+
+  useEffect(() => {
+    if (!project) return;
+    setBomName(project.name);
+    setRows(project.lines.map(bomLineToEditable));
+  }, [project]);
+
+  if (!project) {
+    return (
+      <EmptyState
+        title="Project not found"
+        body="The mock BOM list does not include this project."
+        action={
+          <Link className="button" to="/projects">
+            Back to projects
+          </Link>
+        }
+      />
+    );
+  }
+
+  const activeProject = project;
+
+  function buildLines() {
+    return editableToBomLines(rows, activeProject.id);
+  }
+
+  function saveBom() {
+    const lines = buildLines();
+    if (!lines.length) {
+      showToast({ title: "Add at least one line", body: "Enter an MPN or description before saving." });
+      return;
+    }
+    const updated = updateBom(activeProject.id, lines);
+    if (updated) {
+      updated.name = bomName.trim() || updated.name;
+      showToast({ title: "BOM updated", body: `${updated.name} now has ${updated.part_count} parts.`, tone: "success" });
+      navigate(`/projects/${updated.id}`);
+    }
+  }
+
+  function exportBom() {
+    exportBomCsv(bomName || activeProject.name, buildLines());
+    showToast({ title: "CSV exported", body: `${bomName || activeProject.name} downloaded.`, tone: "success" });
+  }
+
+  return (
+    <div className="stack">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Edit BOM</h1>
+          <p className="page-subtitle">Update BOM lines directly in PartPilot.</p>
+        </div>
+        <Link className="button" to={`/projects/${activeProject.id}`}>
+          <ArrowLeft size={16} />
+          Back
+        </Link>
+      </div>
+
+      <Card
+        title="Edit in app"
+        action={
+          <div className="inline-stack">
+            <button type="button" className="button" onClick={exportBom}>
+              <Download size={16} />
+              Export CSV
+            </button>
+            <button type="button" className="button button--primary" onClick={saveBom}>
+              <Save size={16} />
+              Save BOM
+            </button>
+          </div>
+        }
+      >
+        <div className="stack" style={{ gap: 16 }}>
+          <label className="field-label">
+            BOM name
+            <input className="form-control" value={bomName} onChange={(event) => setBomName(event.target.value)} />
+          </label>
+          <BomEditor rows={rows} onRowsChange={setRows} />
+        </div>
+      </Card>
+    </div>
+  );
+}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GitCompareArrows, Upload, X } from "lucide-react";
+import { FilePlus2, GitCompareArrows, Upload, X } from "lucide-react";
 import { useProjects, useUploadBom } from "../api/hooks/boms";
 import { Card, FileDropzone, Modal, ScoreRing, useToast } from "../components/ui";
 import { formatDate } from "../lib/format";
@@ -38,10 +38,16 @@ export function Projects() {
           <h1 className="page-title">Projects</h1>
           <p className="page-subtitle">Review uploaded BOMs and compare lifecycle changes across revisions.</p>
         </div>
-        <button type="button" className="button button--primary" onClick={() => setUploadOpen(true)}>
-          <Upload size={16} />
-          Upload BOM
-        </button>
+        <div className="inline-stack">
+          <Link className="button" to="/projects/upload">
+            <FilePlus2 size={16} />
+            Create BOM
+          </Link>
+          <button type="button" className="button button--primary" onClick={() => setUploadOpen(true)}>
+            <Upload size={16} />
+            Upload BOM
+          </button>
+        </div>
       </div>
 
       <section className="project-grid" aria-label="Uploaded BOM projects">

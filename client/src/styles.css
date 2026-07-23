@@ -574,6 +574,81 @@ a:hover {
   color: var(--text-primary);
 }
 
+.field-label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.bom-editor {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.bom-editor__scroll {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  -webkit-overflow-scrolling: touch;
+}
+
+.bom-editor__table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.bom-editor__table th,
+.bom-editor__table td {
+  height: 48px;
+  padding: 8px;
+  border-bottom: 1px solid var(--bg-color-muted);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.bom-editor__table th {
+  background: var(--surface-alt);
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.bom-editor__table tr:last-child td {
+  border-bottom: 0;
+}
+
+.bom-editor__table input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.bom-editor__table input:focus {
+  border-color: var(--accent);
+  outline: 0;
+}
+
+.bom-editor__table th:first-child,
+.bom-editor__table td:first-child,
+.bom-editor__table th:last-child,
+.bom-editor__table td:last-child {
+  width: 72px;
+}
+
 .data-table-wrap {
   width: 100%;
   min-width: 0;
@@ -1282,6 +1357,22 @@ a:hover {
   .form-control {
     min-height: 44px;
     padding: 0 12px;
+  }
+
+  .bom-editor__table {
+    min-width: 860px;
+    font-size: 12px;
+  }
+
+  .bom-editor__table th,
+  .bom-editor__table td {
+    height: 42px;
+    padding: 6px;
+  }
+
+  .bom-editor__table input {
+    height: 30px;
+    padding: 0 6px;
   }
 
   .filter-strip {

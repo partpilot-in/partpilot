@@ -9,6 +9,7 @@ import { PartDetail } from "./pages/PartDetail";
 import { Projects } from "./pages/Projects";
 import { ProjectDetail } from "./pages/ProjectDetail";
 import { BomCompare } from "./pages/BomCompare";
+import { BomEdit } from "./pages/BomEdit";
 import { BomUpload } from "./pages/BomUpload";
 import { Watchlist } from "./pages/Watchlist";
 
@@ -56,6 +57,7 @@ export function App() {
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/upload" element={<BomUpload />} />
         <Route path="/projects/compare" element={<BomCompare />} />
+        <Route path="/projects/:id/edit" element={<BomEdit />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/watchlist" element={<Watchlist />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

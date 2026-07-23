@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, GitCompareArrows, Upload } from "lucide-react";
+import { ArrowLeft, Download, GitCompareArrows, Pencil, Upload } from "lucide-react";
 import { useProject, useProjects, useUploadBom } from "../api/hooks/boms";
 import type { BomLine, Project } from "../api/types";
+import { exportBomCsv } from "../components/BomEditor";
 import {
   Card,
   ComplianceBadge,
@@ -76,6 +77,12 @@ export function ProjectDetail() {
     navigate(`/projects/compare?a=${project.id}&b=${projectToCompare.id}`);
   }
 
+  function exportProjectBom() {
+    if (!project) return;
+    exportBomCsv(project.name, project.lines);
+    showToast({ title: "CSV exported", body: `${project.name} downloaded.`, tone: "success" });
+  }
+
   if (!project) {
     return (
       <EmptyState
@@ -109,6 +116,14 @@ export function ProjectDetail() {
           <button type="button" className="button" onClick={() => setCompareOpen(true)}>
             <GitCompareArrows size={16} />
             Compare BOM
+          </button>
+          <Link className="button" to={`/projects/${project.id}/edit`}>
+            <Pencil size={16} />
+            Edit BOM
+          </Link>
+          <button type="button" className="button" onClick={exportProjectBom}>
+            <Download size={16} />
+            Export CSV
           </button>
           <button type="button" className="button button--primary" onClick={() => setUploadOpen(true)}>
             <Upload size={16} />
