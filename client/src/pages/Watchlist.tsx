@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useWatchlist } from "../api/hooks/watchlist";
 import type { WatchlistItem } from "../api/types";
-import { Card, DataTable, LifecycleBadge, ScoreRing, type Column } from "../components/ui";
+import { Card, DataTable, ErrorMessage, LifecycleBadge, ScoreRing, Spinner, type Column } from "../components/ui";
 import { formatDate } from "../lib/format";
 
 export function Watchlist() {
   const navigate = useNavigate();
-  const rows = useWatchlist();
+  const { data: rows, loading, error } = useWatchlist();
 
   const columns: Column<WatchlistItem>[] = [
     { key: "mpn", header: "MPN", sortable: true },
@@ -38,11 +38,17 @@ export function Watchlist() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Watchlist</h1>
-          <p className="page-subtitle">Mocked watchlist rows used by the dashboard risk summary.</p>
+          <p className="page-subtitle">Track parts at risk of obsolescence.</p>
         </div>
       </div>
       <Card title="Tracked parts">
-        <DataTable columns={columns} rows={rows} getRowId={(row) => row.id} onRowClick={(row) => navigate(`/parts/${row.id}`)} />
+        {loading ? (
+          <Spinner message="Loading watchlist..." />
+        ) : error ? (
+          <ErrorMessage message={error} />
+        ) : (
+          <DataTable columns={columns} rows={rows ?? []} getRowId={(row) => row.id} onRowClick={(row) => navigate(`/parts/${row.id}`)} />
+        )}
       </Card>
     </div>
   );

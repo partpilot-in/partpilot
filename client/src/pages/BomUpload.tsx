@@ -41,13 +41,13 @@ export function BomUpload() {
     return editableToBomLines(rows, `manual-${Date.now()}`);
   }
 
-  function saveManualBom() {
+  async function saveManualBom() {
     const lines = buildManualLines();
     if (!lines.length) {
       showToast({ title: "Add at least one line", body: "Enter an MPN or description before saving." });
       return;
     }
-    const project = createBom({ name: bomName, lines });
+    const project = await createBom({ name: bomName, lines });
     showToast({ title: "BOM created", body: `${project.name} is ready to review.`, tone: "success" });
     navigate(`/projects/${project.id}`);
   }

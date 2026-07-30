@@ -1,14 +1,16 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GitCompareArrows, Search, X } from "lucide-react";
-import { useRecentlySearchedParts } from "../api/hooks/parts";
+import { useSearchParts } from "../api/hooks/parts";
 import type { LifecycleStage, Part, PartFilters } from "../api/types";
 import {
   DataTable,
   EmptyState,
+  ErrorMessage,
   FilterChip,
   LifecycleBadge,
   ScoreRing,
+  Spinner,
   type Column,
 } from "../components/ui";
 
@@ -51,7 +53,8 @@ export function PartProcure() {
     }),
     [searchParams],
   );
-  const rows = useRecentlySearchedParts();
+
+  const { data: rows, loading, error } = useSearchParts(query, filters);
 
   const columns: Column<Part>[] = [
     { key: "mpn", header: "MPN", sortable: true },
@@ -99,7 +102,7 @@ export function PartProcure() {
       <section className="page-header">
         <div>
           <h1 className="page-title">PartProcure</h1>
-          <p className="page-subtitle">Recently searched parts for quick sourcing review.</p>
+          <p className="page-subtitle">Search parts for sourcing review.</p>
         </div>
       </section>
 
@@ -140,18 +143,24 @@ export function PartProcure() {
         ))}
       </div>
 
-      <h2 className="section-title">Recent Searches</h2>
+      <h2 className="section-title">Search Results</h2>
 
-      <DataTable
-        columns={columns}
-        rows={rows}
-        getRowId={(row) => row.id}
-        selectable
-        selectedIds={selectedIds}
-        onSelectionChange={setSelectedIds}
-        onRowClick={(row) => navigate(`/parts/${row.id}`)}
-        emptyState={<EmptyState title="No recent searches" body="Recently searched parts will appear here." />}
-      />
+      {loading ? (
+        <Spinner message="Searching parts..." />
+      ) : error ? (
+        <ErrorMessage message={error} />
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={rows ?? []}
+          getRowId={(row) => row.id}
+          selectable
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
+          onRowClick={(row) => navigate(`/parts/${row.id}`)}
+          emptyState={<EmptyState title="No results" body="Try a different search query or adjust the filters." />}
+        />
+      )}
 
       {selectedCount >= 2 && (
         <div className="floating-bar" role="region" aria-label="Compare selected parts">

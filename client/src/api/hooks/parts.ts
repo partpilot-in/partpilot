@@ -1,42 +1,7 @@
 import { useMemo } from "react";
-import { assertMockMode } from "../client";
-import { mockParts, mockProjects } from "../mockData";
+import { api } from "../client";
 import type { Part, PartFilters } from "../types";
-
-const recentPartIds = ["part-lm317t-ti", "part-rc0603-10k-yageo", "part-nrf52840", "part-mcp1700"];
-
-export function useSearchParts(query: string, filters: PartFilters) {
-  assertMockMode();
-  const normalizedQuery = query.trim().toLowerCase();
-
-  return useMemo(() => {
-    return mockParts.filter((part) => {
-      const matchesQuery =
-        !normalizedQuery ||
-        [part.mpn, part.manufacturer, part.category, part.description]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedQuery);
-      const matchesCategory = !filters.category?.length || filters.category.includes(part.category);
-      const matchesManufacturer =
-        !filters.manufacturer?.length || filters.manufacturer.includes(part.manufacturer);
-      const matchesLifecycle =
-        !filters.lifecycle?.length || filters.lifecycle.includes(part.lifecycle_stage);
-      return matchesQuery && matchesCategory && matchesManufacturer && matchesLifecycle;
-    });
-  }, [filters.category, filters.lifecycle, filters.manufacturer, normalizedQuery]);
-}
-
-export function useRecentlySearchedParts() {
-  assertMockMode();
-  return useMemo(
-    () =>
-      recentPartIds
-        .map((id) => mockParts.find((part) => part.id === id))
-        .filter((part): part is Part => Boolean(part)),
-    [],
-  );
-}
+import { useAsync } from "./useAsync";
 
 export interface ProjectPartRow extends Part {
   project_count: number;
@@ -44,22 +9,91 @@ export interface ProjectPartRow extends Part {
   total_qty: number;
 }
 
-export function useProjectParts() {
-  assertMockMode();
+/**
+ * Search parts via `GET /v1/parts/search`.
+ */
+export function useSearchParts(query: string, filters: PartFilters) {
+  const q = query.trim();
 
+  return useAsync<Part[]>(
+    () => {
+      const params: Record<string, string> = {};
+      if (q) params.q = q;
+      if (filters.category?.length) params.category = filters.category.join(",");
+      if (filters.manufacturer?.length) params.manufacturer = filters.manufacturer.join(",");
+      if (filters.lifecycle?.length) params.lifecycle = filters.lifecycle.join(",");
+      params.limit = "25";
+
+      return api.get("/v1/parts/search", { params }).then((res) => res.data?.items ?? res.data ?? []);
+    },
+    [q, filters.category?.join(","), filters.manufacturer?.join(","), filters.lifecycle?.join(",")],
+  );
+}
+
+/**
+ * Get a single part via `GET /v1/parts/{id}`.
+ */
+export function usePart(id: string | undefined) {
+  return useAsync<Part>(
+    id ? () => api.get(`/v1/parts/${id}`).then((res) => res.data) : null,
+    [id],
+  );
+}
+
+/**
+ * Get alternates for a part via `GET /v1/parts/{id}/alternates`.
+ */
+export function usePartAlternates(id: string | undefined) {
+  return useAsync<Part[]>(
+    id ? () => api.get(`/v1/parts/${id}/alternates`).then((res) => res.data?.items ?? res.data ?? []) : null,
+    [id],
+  );
+}
+
+/**
+ * Compare parts via `GET /v1/parts/compare?ids=id1,id2,...`.
+ */
+export function useComparePartsProperties(ids: string[]) {
+  const idsKey = ids.filter(Boolean).join(",");
+
+  return useAsync<{ id: string; label: string; parameters: Record<string, string | number | boolean> }[]>(
+    idsKey
+      ? () =>
+        api
+          .get("/v1/parts/compare", { params: { ids: idsKey } })
+          .then((res) => {
+            const parts: Part[] = res.data?.items ?? res.data ?? [];
+            return parts.map((part) => ({
+              id: part.id,
+              label: `${part.mpn} - ${part.manufacturer}`,
+              parameters: part.parameters,
+            }));
+          })
+      : null,
+    [idsKey],
+  );
+}
+
+/**
+ * Aggregate all parts across loaded BOMs into a deduped list with
+ * project counts and total quantities. This is a client-side derivation
+ * — there's no dedicated server endpoint.
+ */
+export function useProjectParts(
+  projects: { name: string; lines: { part_id: string; qty: number; mpn: string; manufacturer: string; category: string; description: string; lifecycle_stage: Part["lifecycle_stage"]; score: number; country_of_origin: string; unit_price: number; compliance: Part["compliance"]; parameters?: Part["parameters"] }[] }[] | undefined,
+) {
   return useMemo(() => {
+    if (!projects) return [];
+
     const rows = new Map<string, ProjectPartRow>();
 
-    mockProjects.forEach((project) => {
+    projects.forEach((project) => {
       project.lines.forEach((line) => {
-        const part = mockParts.find((item) => item.id === line.part_id);
-        if (!part) return;
-
-        const existing = rows.get(part.id);
+        const existing = rows.get(line.part_id);
         if (existing) {
           const projectNames = new Set(existing.project_names.split(", "));
           projectNames.add(project.name);
-          rows.set(part.id, {
+          rows.set(line.part_id, {
             ...existing,
             project_count: projectNames.size,
             project_names: Array.from(projectNames).join(", "),
@@ -68,8 +102,18 @@ export function useProjectParts() {
           return;
         }
 
-        rows.set(part.id, {
-          ...part,
+        rows.set(line.part_id, {
+          id: line.part_id,
+          mpn: line.mpn,
+          manufacturer: line.manufacturer,
+          category: line.category,
+          description: line.description,
+          lifecycle_stage: line.lifecycle_stage,
+          score: line.score,
+          country_of_origin: line.country_of_origin,
+          unit_price: line.unit_price,
+          compliance: line.compliance,
+          parameters: line.parameters ?? {},
           project_count: 1,
           project_names: project.name,
           total_qty: line.qty,
@@ -78,33 +122,5 @@ export function useProjectParts() {
     });
 
     return Array.from(rows.values());
-  }, []);
-}
-
-export function usePart(id: string | undefined) {
-  assertMockMode();
-  return useMemo(() => mockParts.find((part) => part.id === id), [id]);
-}
-
-export function usePartAlternates(id: string | undefined) {
-  assertMockMode();
-  const part = mockParts.find((item) => item.id === id);
-  return useMemo(() => {
-    if (!part) return [];
-    return mockParts.filter((candidate) => candidate.id !== part.id && candidate.category === part.category);
-  }, [part]);
-}
-
-export function useComparePartsProperties(ids: string[]) {
-  assertMockMode();
-  return useMemo(() => {
-    const idSet = new Set(ids);
-    return mockParts
-      .filter((part) => idSet.has(part.id))
-      .map((part) => ({
-        id: part.id,
-        label: `${part.mpn} - ${part.manufacturer}`,
-        parameters: part.parameters,
-      }));
-  }, [ids]);
+  }, [projects]);
 }

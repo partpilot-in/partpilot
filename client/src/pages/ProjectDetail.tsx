@@ -2,17 +2,19 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Download, GitCompareArrows, Pencil, Upload } from "lucide-react";
 import { useProject, useProjects, useUploadBom } from "../api/hooks/boms";
-import type { BomLine, Project } from "../api/types";
+import type { BomLine } from "../api/types";
 import { exportBomCsv } from "../components/BomEditor";
 import {
   Card,
   ComplianceBadge,
   DataTable,
   EmptyState,
+  ErrorMessage,
   FileDropzone,
   LifecycleBadge,
   Modal,
   ScoreRing,
+  Spinner,
   useToast,
   type Column,
 } from "../components/ui";
@@ -20,8 +22,8 @@ import { currencyFormatter, formatDate } from "../lib/format";
 
 export function ProjectDetail() {
   const { id } = useParams();
-  const project = useProject(id);
-  const projects = useProjects();
+  const { data: project, loading, error } = useProject(id);
+  const { data: projects } = useProjects();
   const navigate = useNavigate();
   const { uploadBom } = useUploadBom();
   const { showToast } = useToast();
@@ -72,22 +74,25 @@ export function ProjectDetail() {
     navigate(`/projects/${uploaded.id}`);
   }
 
-  function compareWith(projectToCompare: Project) {
-    if (!project) return;
-    navigate(`/projects/compare?a=${project.id}&b=${projectToCompare.id}`);
-  }
-
   function exportProjectBom() {
     if (!project) return;
     exportBomCsv(project.name, project.lines);
     showToast({ title: "CSV exported", body: `${project.name} downloaded.`, tone: "success" });
   }
 
+  if (loading) {
+    return <Spinner message="Loading project..." />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} />;
+  }
+
   if (!project) {
     return (
       <EmptyState
         title="Project not found"
-        body="The mock BOM list does not include this project."
+        body="This project does not exist."
         action={
           <Link className="button" to="/projects">
             Back to projects
@@ -105,7 +110,7 @@ export function ProjectDetail() {
         <div>
           <h1 className="page-title">{project.name}</h1>
           <p className="page-subtitle">
-            {project.part_count} parts - uploaded {formatDate(project.uploaded_at)}
+            {project.part_count} parts – uploaded {formatDate(project.uploaded_at)}
           </p>
         </div>
         <div className="inline-stack">
@@ -170,7 +175,7 @@ export function ProjectDetail() {
             aria-label="Select BOM to compare"
           >
             <option value="">Choose a project</option>
-            {projects
+            {(projects ?? [])
               .filter((candidate) => candidate.id !== project.id)
               .map((candidate) => (
                 <option key={candidate.id} value={candidate.id}>
@@ -184,8 +189,9 @@ export function ProjectDetail() {
               className="button button--primary"
               disabled={!compareTarget}
               onClick={() => {
-                const target = projects.find((candidate) => candidate.id === compareTarget);
-                if (target) compareWith(target);
+                if (compareTarget) {
+                  navigate(`/projects/compare?a=${project.id}&b=${compareTarget}`);
+                }
               }}
             >
               <GitCompareArrows size={16} />

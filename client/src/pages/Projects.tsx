@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FilePlus2, GitCompareArrows, Upload, X } from "lucide-react";
 import { useProjects, useUploadBom } from "../api/hooks/boms";
-import { Card, FileDropzone, Modal, ScoreRing, useToast } from "../components/ui";
+import { Card, ErrorMessage, FileDropzone, Modal, ScoreRing, Spinner, useToast } from "../components/ui";
 import { formatDate } from "../lib/format";
 
 export function Projects() {
-  const projects = useProjects();
+  const { data: projects, loading, error } = useProjects();
   const navigate = useNavigate();
   const { uploadBom } = useUploadBom();
   const { showToast } = useToast();
@@ -50,36 +50,42 @@ export function Projects() {
         </div>
       </div>
 
-      <section className="project-grid" aria-label="Uploaded BOM projects">
-        {projects.map((project) => (
-          <Card key={project.id} className="project-card">
-            <div className="project-card__top">
-              <div>
-                <h3>
-                  <Link to={`/projects/${project.id}`}>{project.name}</Link>
-                </h3>
-                <p>
-                  {project.part_count} parts - uploaded {formatDate(project.uploaded_at)}
-                </p>
+      {loading ? (
+        <Spinner message="Loading projects..." />
+      ) : error ? (
+        <ErrorMessage message={error} />
+      ) : (
+        <section className="project-grid" aria-label="Uploaded BOM projects">
+          {(projects ?? []).map((project) => (
+            <Card key={project.id} className="project-card">
+              <div className="project-card__top">
+                <div>
+                  <h3>
+                    <Link to={`/projects/${project.id}`}>{project.name}</Link>
+                  </h3>
+                  <p>
+                    {project.part_count} parts – uploaded {formatDate(project.uploaded_at)}
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${project.name} for comparison`}
+                  checked={selectedIds.has(project.id)}
+                  onChange={() => toggleProject(project.id)}
+                />
               </div>
-              <input
-                type="checkbox"
-                aria-label={`Select ${project.name} for comparison`}
-                checked={selectedIds.has(project.id)}
-                onChange={() => toggleProject(project.id)}
-              />
-            </div>
-            <div className="metric-row">
-              <span className="metric-row__label">Lowest score</span>
-              <ScoreRing value={project.lowest_score} size="lg" />
-            </div>
-            <div className="metric-row">
-              <span className="metric-row__label">Owner</span>
-              <strong>{project.owner}</strong>
-            </div>
-          </Card>
-        ))}
-      </section>
+              <div className="metric-row">
+                <span className="metric-row__label">Lowest score</span>
+                <ScoreRing value={project.lowest_score} size="lg" />
+              </div>
+              <div className="metric-row">
+                <span className="metric-row__label">Owner</span>
+                <strong>{project.owner}</strong>
+              </div>
+            </Card>
+          ))}
+        </section>
+      )}
 
       {selectedIds.size > 0 && (
         <div className="floating-bar" role="region" aria-label="Compare selected BOMs">

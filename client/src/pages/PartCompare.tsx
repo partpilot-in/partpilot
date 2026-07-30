@@ -1,12 +1,12 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useComparePartsProperties } from "../api/hooks/parts";
-import { Card, EmptyState, PropertyCompareTable } from "../components/ui";
+import { Card, EmptyState, ErrorMessage, PropertyCompareTable, Spinner } from "../components/ui";
 
 export function PartCompare() {
   const [searchParams] = useSearchParams();
   const ids = (searchParams.get("ids") ?? "").split(",").filter(Boolean);
-  const parts = useComparePartsProperties(ids);
+  const { data: parts, loading, error } = useComparePartsProperties(ids);
 
   return (
     <div className="stack">
@@ -21,8 +21,12 @@ export function PartCompare() {
         </Link>
       </div>
       <Card>
-        {parts.length >= 2 ? (
-          <PropertyCompareTable parts={parts} />
+        {loading ? (
+          <Spinner message="Comparing parts..." />
+        ) : error ? (
+          <ErrorMessage message={error} />
+        ) : (parts ?? []).length >= 2 ? (
+          <PropertyCompareTable parts={parts!} />
         ) : (
           <EmptyState title="Select at least two parts" body="Use PartProcure to choose rows for side-by-side comparison." />
         )}

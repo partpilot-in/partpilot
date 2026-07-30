@@ -1,16 +1,20 @@
 import { useNavigate } from "react-router-dom";
+import { useProjects } from "../api/hooks/boms";
 import { useProjectParts, type ProjectPartRow } from "../api/hooks/parts";
 import {
   DataTable,
   EmptyState,
+  ErrorMessage,
   LifecycleBadge,
   ScoreRing,
+  Spinner,
   type Column,
 } from "../components/ui";
 
 export function MyParts() {
   const navigate = useNavigate();
-  const rows = useProjectParts();
+  const { data: projects, loading, error } = useProjects();
+  const rows = useProjectParts(projects);
 
   const columns: Column<ProjectPartRow>[] = [
     { key: "mpn", header: "MPN", sortable: true },
@@ -43,13 +47,19 @@ export function MyParts() {
         </div>
       </section>
 
-      <DataTable
-        columns={columns}
-        rows={rows}
-        getRowId={(row) => row.id}
-        onRowClick={(row) => navigate(`/parts/${row.id}`)}
-        emptyState={<EmptyState title="No project parts" body="Uploaded projects will appear here." />}
-      />
+      {loading ? (
+        <Spinner message="Loading parts..." />
+      ) : error ? (
+        <ErrorMessage message={error} />
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={rows}
+          getRowId={(row) => row.id}
+          onRowClick={(row) => navigate(`/parts/${row.id}`)}
+          emptyState={<EmptyState title="No project parts" body="Uploaded projects will appear here." />}
+        />
+      )}
     </div>
   );
 }

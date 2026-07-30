@@ -1675,3 +1675,9 @@ a:hover {
     align-items: center;
   }
 }
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

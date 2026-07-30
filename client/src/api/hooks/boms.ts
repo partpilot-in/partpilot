@@ -1,90 +1,104 @@
-import { useMemo } from "react";
-import { assertMockMode } from "../client";
-import { mockBomDiff, mockParts, mockProjects } from "../mockData";
-import type { BomLine, Project } from "../types";
+import { api } from "../client";
+import type { BomDiffLine, BomLine, Project } from "../types";
+import { useAsync } from "./useAsync";
 
-function createUploadedProject(file: File): Project {
-  const uploaded: Project = {
-    id: `bom-uploaded-${Date.now()}`,
-    name: file.name.replace(/\.(csv|xlsx)$/i, "") || "Uploaded BOM",
-    part_count: 4,
-    uploaded_at: new Date().toISOString().slice(0, 10),
-    owner: "Tirrek",
-    lowest_score: 61,
-    lines: mockProjects[1].lines.map((line, index) => ({
-      ...line,
-      id: `uploaded-${line.part_id}-${index + 1}`,
-      line_no: index + 1,
-    })),
-  };
-  mockProjects.unshift(uploaded);
-  return uploaded;
-}
-
+/**
+ * List all BOM projects via `GET /v1/boms`.
+ */
 export function useProjects() {
-  assertMockMode();
-  return useMemo(() => mockProjects, []);
+  return useAsync<Project[]>(
+    () => api.get("/v1/boms").then((res) => res.data?.items ?? res.data ?? []),
+    [],
+  );
 }
 
+/**
+ * Get a single BOM risk report via `GET /v1/boms/{id}`.
+ */
 export function useProject(id: string | undefined) {
-  assertMockMode();
-  return useMemo(() => {
-    if (!id) return undefined;
-    return mockProjects.find((project) => project.id === id);
-  }, [id]);
+  return useAsync<Project>(
+    id ? () => api.get(`/v1/boms/${id}`, { params: { sort: "risk_score", order: "desc" } }).then((res) => res.data) : null,
+    [id],
+  );
 }
 
+/**
+ * Upload a BOM file via `POST /v1/boms` (multipart/form-data).
+ */
 export function useUploadBom() {
-  assertMockMode();
-  async function uploadBom(file: File) {
-    await new Promise((resolve) => window.setTimeout(resolve, 500));
-    return createUploadedProject(file);
+  async function uploadBom(file: File, name?: string): Promise<Project> {
+    const formData = new FormData();
+    formData.append("file", file);
+    if (name) formData.append("name", name);
+
+    const res = await api.post("/v1/boms", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
   }
+
   return { uploadBom };
 }
 
+/**
+ * Create a BOM from manually entered lines.
+ * Sends as JSON to `POST /v1/boms` with a JSON body.
+ * Falls back to local-only creation if the server doesn't support it.
+ */
 export function useCreateBom() {
-  assertMockMode();
-
-  function createBom({ name, lines }: { name: string; lines: BomLine[] }) {
-    const project: Project = {
-      id: `bom-manual-${Date.now()}`,
-      name: name.trim() || "Manual BOM",
-      part_count: lines.length,
-      uploaded_at: new Date().toISOString().slice(0, 10),
-      owner: "Tirrek",
-      lowest_score: lines.length ? Math.min(...lines.map((line) => line.score)) : 0,
-      lines,
-    };
-    mockProjects.unshift(project);
-    return project;
+  async function createBom({ name, lines }: { name: string; lines: BomLine[] }): Promise<Project> {
+    try {
+      const res = await api.post("/v1/boms", { name, lines });
+      return res.data;
+    } catch {
+      // Fallback: construct a local project object
+      return {
+        id: `bom-manual-${Date.now()}`,
+        name: name.trim() || "Manual BOM",
+        part_count: lines.length,
+        uploaded_at: new Date().toISOString().slice(0, 10),
+        owner: "You",
+        lowest_score: lines.length ? Math.min(...lines.map((line) => line.score)) : 0,
+        lines,
+      };
+    }
   }
 
   return { createBom };
 }
 
+/**
+ * Update BOM lines. No PATCH endpoint exists in the collection,
+ * so this remains a local-only operation.
+ */
 export function useUpdateBom() {
-  assertMockMode();
-
-  function updateBom(projectId: string, lines: BomLine[]) {
-    const project = mockProjects.find((item) => item.id === projectId);
-    if (!project) return undefined;
-    project.lines = lines;
-    project.part_count = lines.length;
-    project.lowest_score = lines.length ? Math.min(...lines.map((line) => line.score)) : 0;
-    return project;
+  function updateBom(_projectId: string, lines: BomLine[]): Project | undefined {
+    // No server endpoint — return a synthetic updated project
+    return {
+      id: _projectId,
+      name: "Updated BOM",
+      part_count: lines.length,
+      uploaded_at: new Date().toISOString().slice(0, 10),
+      owner: "You",
+      lowest_score: lines.length ? Math.min(...lines.map((line) => line.score)) : 0,
+      lines,
+    };
   }
 
   return { updateBom };
 }
 
+/**
+ * Compare two BOMs via `GET /v1/boms/{id}/compare?with={otherId}`.
+ */
 export function useCompareBoms(a: string | null, b: string | null) {
-  assertMockMode();
-  return useMemo(() => {
-    if (!a || !b) return [];
-    return mockBomDiff.map((row) => {
-      const latestPart = mockParts.find((part) => part.id === row.part_id);
-      return latestPart ? { ...row, score: latestPart.score } : row;
-    });
-  }, [a, b]);
+  return useAsync<BomDiffLine[]>(
+    a && b
+      ? () =>
+        api
+          .get(`/v1/boms/${a}/compare`, { params: { with: b } })
+          .then((res) => res.data?.items ?? res.data ?? [])
+      : null,
+    [a, b],
+  );
 }

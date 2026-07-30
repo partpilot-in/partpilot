@@ -9,8 +9,10 @@ import {
   ComplianceBadge,
   DataTable,
   EmptyState,
+  ErrorMessage,
   LifecycleBadge,
   ScoreRing,
+  Spinner,
   useToast,
   type Column,
 } from "../components/ui";
@@ -19,8 +21,8 @@ import { currencyFormatter } from "../lib/format";
 export function PartDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const part = usePart(id);
-  const alternates = usePartAlternates(id);
+  const { data: part, loading, error } = usePart(id);
+  const { data: alternates, loading: altLoading } = usePartAlternates(id);
   const { addToWatchlist } = useAddToWatchlist();
   const { showToast } = useToast();
 
@@ -51,15 +53,24 @@ export function PartDetail() {
   ];
 
   async function watchPart() {
-    await addToWatchlist();
-    showToast({ title: "Added to watchlist", body: part ? part.mpn : undefined, tone: "success" });
+    if (!part) return;
+    await addToWatchlist(part.id);
+    showToast({ title: "Added to watchlist", body: part.mpn, tone: "success" });
+  }
+
+  if (loading) {
+    return <Spinner message="Loading part details..." />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} />;
   }
 
   if (!part) {
     return (
       <EmptyState
         title="Part not found"
-        body="The mock catalog does not include this part."
+        body="This part does not exist in the catalog."
         action={
           <Link className="button" to="/search">
             Back to search
@@ -75,7 +86,7 @@ export function PartDetail() {
         <div>
           <h1 className="page-title">{part.mpn}</h1>
           <p className="page-subtitle">
-            {part.manufacturer} - {part.description}
+            {part.manufacturer} – {part.description}
           </p>
         </div>
         <div className="inline-stack">
@@ -125,12 +136,16 @@ export function PartDetail() {
       </section>
 
       <Card title="Alternates">
-        <DataTable
-          columns={columns}
-          rows={alternates}
-          getRowId={(row) => row.id}
-          onRowClick={(row) => navigate(`/parts/${row.id}`)}
-        />
+        {altLoading ? (
+          <Spinner message="Loading alternates..." />
+        ) : (
+          <DataTable
+            columns={columns}
+            rows={alternates ?? []}
+            getRowId={(row) => row.id}
+            onRowClick={(row) => navigate(`/parts/${row.id}`)}
+          />
+        )}
       </Card>
     </div>
   );

@@ -8,7 +8,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "https://partpilot-server-production.up.railway.app",
+      "value": "https://api.bestpartpilot.com",
       "description": "Switch to http://localhost:8080 for local dev"
     },
     {

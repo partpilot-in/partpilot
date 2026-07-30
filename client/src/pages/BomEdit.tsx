@@ -9,11 +9,11 @@ import {
   exportBomCsv,
   type EditableBomLine,
 } from "../components/BomEditor";
-import { Card, EmptyState, useToast } from "../components/ui";
+import { Card, EmptyState, ErrorMessage, Spinner, useToast } from "../components/ui";
 
 export function BomEdit() {
   const { id } = useParams();
-  const project = useProject(id);
+  const { data: project, loading, error } = useProject(id);
   const { updateBom } = useUpdateBom();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -26,11 +26,19 @@ export function BomEdit() {
     setRows(project.lines.map(bomLineToEditable));
   }, [project]);
 
+  if (loading) {
+    return <Spinner message="Loading BOM..." />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} />;
+  }
+
   if (!project) {
     return (
       <EmptyState
         title="Project not found"
-        body="The mock BOM list does not include this project."
+        body="This project does not exist."
         action={
           <Link className="button" to="/projects">
             Back to projects

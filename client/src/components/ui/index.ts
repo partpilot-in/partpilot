@@ -9,6 +9,7 @@ export { LifecycleBadge } from "./LifecycleBadge";
 export { Modal } from "./Modal";
 export { PropertyCompareTable } from "./PropertyCompareTable";
 export { ScoreRing } from "./ScoreRing";
+export { Spinner, ErrorMessage } from "./Spinner";
 export { TabNav } from "./TabNav";
 export { ToastProvider, useToast } from "./Toast";
 export { TopAppBar } from "./TopAppBar";

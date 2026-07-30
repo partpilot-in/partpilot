@@ -7,8 +7,10 @@ import {
   ComplianceBadge,
   DataTable,
   EmptyState,
+  ErrorMessage,
   LifecycleBadge,
   ScoreRing,
+  Spinner,
   type Column,
 } from "../components/ui";
 import { currencyFormatter } from "../lib/format";
@@ -17,9 +19,9 @@ export function BomCompare() {
   const [searchParams] = useSearchParams();
   const a = searchParams.get("a");
   const b = searchParams.get("b");
-  const left = useProject(a ?? undefined);
-  const right = useProject(b ?? undefined);
-  const rows = useCompareBoms(a, b);
+  const { data: left } = useProject(a ?? undefined);
+  const { data: right } = useProject(b ?? undefined);
+  const { data: rows, loading, error } = useCompareBoms(a, b);
 
   const columns: Column<BomDiffLine>[] = [
     {
@@ -76,15 +78,19 @@ export function BomCompare() {
         </Link>
       </div>
       <Card>
-        {a && b ? (
+        {!a || !b ? (
+          <EmptyState title="Choose two BOMs" body="Select two project cards to open a line-level diff." />
+        ) : loading ? (
+          <Spinner message="Comparing BOMs..." />
+        ) : error ? (
+          <ErrorMessage message={error} />
+        ) : (
           <DataTable
             columns={columns}
-            rows={rows}
+            rows={rows ?? []}
             getRowId={(row) => `${row.delta}-${row.id}`}
             rowClassName={(row) => `data-table-row--${row.delta}`}
           />
-        ) : (
-          <EmptyState title="Choose two BOMs" body="Select two project cards to open a line-level diff." />
         )}
       </Card>
     </div>
