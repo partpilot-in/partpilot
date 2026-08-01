@@ -45,6 +45,15 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
     .join("")
     .toUpperCase();
 
+  const toggleTheme = () => {
+    setTheme((current) => (current === "light" ? "dark" : "light"));
+  };
+
+  const selectThemeMenuItem = () => {
+    toggleTheme();
+    setAccountMenuOpen(false);
+  };
+
   return (
     <header className="top-app-bar">
       <div className="top-app-bar__inner">
@@ -80,10 +89,13 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
                   type="button"
                   className="account-menu__item"
                   role="menuitem"
-                  onClick={() => {
-                    setTheme((current) => (current === "light" ? "dark" : "light"));
-                    setAccountMenuOpen(false);
+                  onPointerDown={(event) => {
+                    if (event.pointerType === "mouse") return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    selectThemeMenuItem();
                   }}
+                  onClick={selectThemeMenuItem}
                 >
                   {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
                   <span>{theme === "light" ? "Dark theme" : "Light theme"}</span>
