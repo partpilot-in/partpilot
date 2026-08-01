@@ -9,6 +9,15 @@ export interface ProjectPartRow extends Part {
   total_qty: number;
 }
 
+function itemsFromResponse<T>(payload: unknown, key = "data"): T[] {
+  if (Array.isArray(payload)) return payload as T[];
+  if (!payload || typeof payload !== "object") return [];
+  const record = payload as Record<string, unknown>;
+  if (Array.isArray(record.items)) return record.items as T[];
+  if (Array.isArray(record[key])) return record[key] as T[];
+  return [];
+}
+
 /**
  * Search parts via `GET /v1/parts/search`.
  */
@@ -24,7 +33,7 @@ export function useSearchParts(query: string, filters: PartFilters) {
       if (filters.lifecycle?.length) params.lifecycle = filters.lifecycle.join(",");
       params.limit = "25";
 
-      return api.get("/v1/parts/search", { params }).then((res) => res.data?.items ?? res.data ?? []);
+      return api.get("/v1/parts/search", { params }).then((res) => itemsFromResponse<Part>(res.data));
     },
     [q, filters.category?.join(","), filters.manufacturer?.join(","), filters.lifecycle?.join(",")],
   );
@@ -45,7 +54,7 @@ export function usePart(id: string | undefined) {
  */
 export function usePartAlternates(id: string | undefined) {
   return useAsync<Part[]>(
-    id ? () => api.get(`/v1/parts/${id}/alternates`).then((res) => res.data?.items ?? res.data ?? []) : null,
+    id ? () => api.get(`/v1/parts/${id}/alternates`).then((res) => itemsFromResponse<Part>(res.data, "alternates")) : null,
     [id],
   );
 }
@@ -62,7 +71,7 @@ export function useComparePartsProperties(ids: string[]) {
         api
           .get("/v1/parts/compare", { params: { ids: idsKey } })
           .then((res) => {
-            const parts: Part[] = res.data?.items ?? res.data ?? [];
+            const parts = itemsFromResponse<Part>(res.data, "parts");
             return parts.map((part) => ({
               id: part.id,
               label: `${part.mpn} - ${part.manufacturer}`,

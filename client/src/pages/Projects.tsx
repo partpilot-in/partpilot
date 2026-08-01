@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FilePlus2, GitCompareArrows, Upload, X } from "lucide-react";
 import { useProjects, useUploadBom } from "../api/hooks/boms";
-import { Card, ErrorMessage, FileDropzone, Modal, ScoreRing, Spinner, useToast } from "../components/ui";
+import { Card, EmptyState, ErrorMessage, FileDropzone, Modal, ScoreRing, Spinner, useToast } from "../components/ui";
 import { formatDate } from "../lib/format";
 
 export function Projects() {
@@ -54,6 +54,8 @@ export function Projects() {
         <Spinner message="Loading projects..." />
       ) : error ? (
         <ErrorMessage message={error} />
+      ) : !projects?.length ? (
+        <EmptyState title="No BOM projects" body="Create or upload a BOM to populate this workspace." />
       ) : (
         <section className="project-grid" aria-label="Uploaded BOM projects">
           {(projects ?? []).map((project) => (

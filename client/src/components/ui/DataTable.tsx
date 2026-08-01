@@ -14,7 +14,7 @@ export interface Column<T> {
 
 interface DataTableProps<T> {
   columns: Column<T>[];
-  rows: T[];
+  rows: T[] | unknown;
   getRowId: (row: T) => string;
   sort?: { key: string; direction: "asc" | "desc" };
   onSortChange?: (key: string, direction: "asc" | "desc") => void;
@@ -58,14 +58,15 @@ export function DataTable<T>({
   const [internalSort, setInternalSort] = useState<{ key: string; direction: "asc" | "desc" } | undefined>();
   const activeSort = sort ?? internalSort;
   const sortableColumns = columns.filter((column) => column.sortable);
+  const safeRows = Array.isArray(rows) ? rows : [];
 
   const sortedRows = useMemo(() => {
-    if (!activeSort) return rows;
-    return [...rows].sort((a, b) => {
+    if (!activeSort) return safeRows;
+    return [...safeRows].sort((a, b) => {
       const result = compareValues(getValue(a, activeSort.key), getValue(b, activeSort.key));
       return activeSort.direction === "asc" ? result : -result;
     });
-  }, [activeSort, rows]);
+  }, [activeSort, safeRows]);
 
   const allVisibleSelected = sortedRows.length > 0 && sortedRows.every((row) => selectedIds.has(getRowId(row)));
 
