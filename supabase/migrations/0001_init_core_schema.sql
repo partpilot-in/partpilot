@@ -2,6 +2,7 @@
 -- Core reference data: sources, parts, and reconciled/raw lifecycle statuses.
 
 create extension if not exists pg_trgm;
+create extension if not exists pgcrypto;
 create extension if not exists "uuid-ossp";
 
 create table sources (

@@ -1,7 +1,9 @@
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { ClipboardList, LayoutDashboard, Package, Search } from "lucide-react";
-import { TabNav, TopAppBar } from "./components/ui";
+import { AuthProvider, useAuth } from "./auth/AuthProvider";
+import { Spinner, TabNav, TopAppBar } from "./components/ui";
 import { Dashboard } from "./pages/Dashboard";
+import { Login } from "./pages/Login";
 import { MyParts } from "./pages/MyParts";
 import { PartProcure } from "./pages/PartProcure";
 import { PartCompare } from "./pages/PartCompare";
@@ -29,12 +31,14 @@ function activeTabForPath(pathname: string) {
 
 function AppLayout() {
   const location = useLocation();
+  const { signOut, user } = useAuth();
 
   return (
     <>
       <TopAppBar
-        organizationSlug="partpilot-hq"
-        user={{ name: "Tirrek Payne" }}
+        organizationSlug={user?.organizationSlug ?? "personal"}
+        user={user}
+        onSignOut={signOut}
       />
       <TabNav tabs={tabs} activeKey={activeTabForPath(location.pathname)} />
       <main className="page-shell">
@@ -44,7 +48,19 @@ function AppLayout() {
   );
 }
 
-export function App() {
+function AuthenticatedRoutes() {
+  const { loading, user } = useAuth();
+
+  if (loading) {
+    return (
+      <main className="auth-shell">
+        <Spinner message="Opening workspace" />
+      </main>
+    );
+  }
+
+  if (!user) return <Login />;
+
   return (
     <Routes>
       <Route element={<AppLayout />}>
@@ -63,5 +79,13 @@ export function App() {
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>
+  );
+}
+
+export function App() {
+  return (
+    <AuthProvider>
+      <AuthenticatedRoutes />
+    </AuthProvider>
   );
 }

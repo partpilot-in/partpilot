@@ -18,7 +18,6 @@ graph TD
         Mouser["adapter-mouser"]
         Octopart["adapter-octopart"]
         PCN["adapter-pcn-parser"]
-        Postgres["adapter-postgres"]
         Notify["adapter-notify"]
         CommunityPulse["adapter-community-pulse"]
     end
@@ -36,7 +35,6 @@ graph TD
     Mouser --> External
     Octopart --> External
     PCN --> External
-    Postgres --> Supabase
     Notify --> External
     CommunityPulse --> Forums
 
@@ -51,6 +49,32 @@ The client talks to partpilot-server over HTTP and directly to Supabase only for
 
 It contains no business logic. Reconciliation, risk scoring, and BOM diffing all happen server-side; the client simply renders the results.
 
+## Database Migrations
+
+Database migrations use the Supabase CLI and live in `supabase/migrations/`.
+
+To apply migrations to a linked Supabase project:
+
+```bash
+supabase login
+supabase link --project-ref <project-ref>
+supabase db push
+```
+
+To apply migrations with a database connection string instead of linking:
+
+```bash
+supabase db push --db-url <db_connection_string>
+```
+
+To create a new migration:
+
+```bash
+supabase migration new <migration_name>
+```
+
+For Supabase GitHub integration, set the working directory to `.` because the `supabase/` directory is at the repository root. Supabase automatically runs new files in `supabase/migrations/` for preview branches and production deployments when that integration is enabled.
+
 ### 2. adapters
 
 The outward-facing edges of the system — one crate per external integration:
@@ -59,7 +83,6 @@ The outward-facing edges of the system — one crate per external integration:
 * adapter-mouser
 * adapter-octopart
 * adapter-pcn-parser
-* adapter-postgres
 * adapter-notify
 * adapter-community-pulse
 

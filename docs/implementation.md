@@ -71,14 +71,14 @@ partpilot/
 │       │   └── src/{lib.rs, graphql.rs, mapping.rs}
 │       ├── adapter-pcn-parser/
 │       │   └── src/{lib.rs, feeds.rs, parse.rs}
-│       ├── adapter-postgres/
-│       │   └── src/lib.rs
-│       │   └── migrations/         # sqlx migrations, source of truth for schema
-│       │       ├── 0001_init.sql
-│       │       ├── 0002_alternates.sql
-│       │       └── 0003_rls_policies.sql
 │       └── adapter-notify/
 │           └── src/{lib.rs, email.rs, webhook.rs}
+│
+├── supabase/
+│   └── migrations/                 # Supabase CLI migrations, source of truth for schema
+│       ├── 0001_init_core_schema.sql
+│       ├── 0002_user_data_and_alternates.sql
+│       └── ...
 │
 ├── client/                         # partpilot-client (Vite + React), own npm workspace
 │   ├── package.json
@@ -516,7 +516,6 @@ pub fn find_alternates(
 | `adapter-mouser` | `DataSourceConnector` | Static API key | Partial | Simplest auth — good first adapter to implement end-to-end |
 | `adapter-octopart` | `DataSourceConnector` | Bearer token (Nexar) | Yes — GraphQL batch query | Weight lower than direct-from-manufacturer sources; useful as cross-check |
 | `adapter-pcn-parser` | `DataSourceConnector` | None (public feeds) or scraping | No | Highest trust tier, hardest to parse. Start with a hand-maintained list of top-N manufacturers' PCN RSS/email feeds rather than generic web scraping |
-| `adapter-postgres` | `PartRepository` | Supabase connection string (service role) | N/A | `sqlx::PgPool`, compile-time checked queries via `sqlx::query!` |
 | `adapter-notify` | `NotificationSender` | Provider API key (Resend/Postmark) + optional webhook URL | N/A | Email primary; webhook as a secondary channel for Slack/Teams |
 
 Shared rate-limiting wrapper used by every distributor adapter:
@@ -560,7 +559,7 @@ pub enum PcnParserKind {
 
 Ship with a curated `pcn_feeds.toml` config listing the top 20-30 manufacturers by BOM frequency in early usage, rather than attempting to auto-discover PCN pages. Each feed entry is hand-verified once; the worker logs parse failures per feed so broken parsers (manufacturers redesign their PCN pages periodically) surface quickly instead of silently going stale.
 
-### 4.2 `adapter-postgres` detail
+### 4.2 Supabase repository detail
 
 ```rust
 pub struct PostgresRepository {
@@ -928,7 +927,7 @@ alter table alternates enable row level security;
 create policy "public read alternates" on alternates for select using (true);
 ```
 
-Migrations run via `sqlx migrate run --database-url $DATABASE_URL`, checked into `adapter-postgres/migrations/` as the single source of truth for schema — never hand-edit the schema through the Supabase dashboard in a way that isn't captured in a migration file.
+Migrations run via the Supabase CLI from files checked into `supabase/migrations/` as the single source of truth for schema. Use `supabase db push` for linked projects and never hand-edit the schema through the Supabase dashboard in a way that isn't captured in a migration file.
 
 ---
 
@@ -977,7 +976,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo sqlx migrate run --database-url postgres://postgres:postgres@localhost/postgres
+      - run: supabase db push --db-url postgres://postgres:postgres@localhost/postgres
       - run: cargo check --workspace
       - run: cargo clippy --workspace -- -D warnings
       - run: cargo test --workspace
@@ -1023,7 +1022,7 @@ Use Supabase's pooled (pgbouncer) connection string for the server's many short-
 ## 13. Build order
 
 1. `partpilot-engine`: domain types + `normalize` + `risk` — pure, fully unit-testable with no DB.
-2. `adapter-postgres` + schema (section 7); minimal axum server exposing just `GET /v1/parts/:id` against seeded data.
+2. Supabase repository + schema (section 7); minimal axum server exposing just `GET /v1/parts/:id` against seeded data.
 3. `adapter-mouser` (simplest auth) + `partpilot-worker` sweep mode end-to-end for a handful of seeded parts.
 4. `reconcile` once ≥2 real sources disagree on a real part — tune the policy against real data rather than imagined cases.
 5. React client search + detail view against the now-working API.

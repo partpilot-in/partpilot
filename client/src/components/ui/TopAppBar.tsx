@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Building2, ChevronDown, Moon, Settings, Sun, UserCircle } from "lucide-react";
+import { Building2, ChevronDown, LogOut, Moon, Settings, Sun, UserCircle } from "lucide-react";
 
 interface TopAppBarProps {
   organizationSlug: string;
   user: { name: string; avatarUrl?: string } | null;
+  onSignOut?: () => void | Promise<void>;
 }
 
-export function TopAppBar({ organizationSlug, user }: TopAppBarProps) {
+export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
@@ -96,6 +97,20 @@ export function TopAppBar({ organizationSlug, user }: TopAppBarProps) {
                   <Settings size={18} />
                   <span>Settings</span>
                 </button>
+                {onSignOut && (
+                  <button
+                    type="button"
+                    className="account-menu__item"
+                    role="menuitem"
+                    onClick={() => {
+                      setAccountMenuOpen(false);
+                      void onSignOut();
+                    }}
+                  >
+                    <LogOut size={18} />
+                    <span>Sign out</span>
+                  </button>
+                )}
               </div>
             )}
           </div>

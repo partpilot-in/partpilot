@@ -5,6 +5,9 @@
 -- when connecting with the service role key — never expose that key to the
 -- client).
 
+alter table sources enable row level security;
+create policy "public read sources" on sources for select using (true);
+
 alter table watchlist enable row level security;
 create policy "users manage own watchlist" on watchlist
     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -14,8 +17,10 @@ create policy "users manage own boms" on boms
     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 alter table bom_lines enable row level security;
-create policy "users read own bom lines" on bom_lines
-    for select using (
+create policy "users manage own bom lines" on bom_lines
+    for all using (
+        exists (select 1 from boms where boms.id = bom_lines.bom_id and boms.user_id = auth.uid())
+    ) with check (
         exists (select 1 from boms where boms.id = bom_lines.bom_id and boms.user_id = auth.uid())
     );
 
@@ -31,3 +36,5 @@ create policy "public read lifecycle" on lifecycle_statuses for select using (tr
 
 alter table alternates enable row level security;
 create policy "public read alternates" on alternates for select using (true);
+
+alter table source_health enable row level security;
