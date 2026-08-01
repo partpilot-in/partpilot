@@ -12,6 +12,7 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
+  const logoSrc = theme === "dark" ? "/PartPilot Logo - Dark.png" : "/PartPilot Logo - Light.png";
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -59,7 +60,7 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
       <div className="top-app-bar__inner">
         <div className="top-app-bar__identity">
           <Link className="brand-link" to="/dashboard" aria-label="PartPilot dashboard">
-            <img className="brand-mark" src="/logo.png" alt="" />
+            <img className="brand-mark" src={logoSrc} alt="" />
             <span>PartPilot</span>
           </Link>
         </div>
