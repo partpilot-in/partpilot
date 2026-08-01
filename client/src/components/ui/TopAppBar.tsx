@@ -12,7 +12,7 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
-  const logoSrc = theme === "dark" ? "/PartPilot Logo - Dark.png" : "/PartPilot Logo - Light.png";
+  const logoSrc = theme === "dark" ? "/PP Logo - Dark.png" : "/PP Logo - Light.png";
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
