@@ -36,7 +36,7 @@ export function Dashboard() {
   function submit(event: FormEvent) {
     event.preventDefault();
     const next = query.trim();
-    navigate(next ? `/search?q=${encodeURIComponent(next)}` : "/search");
+    navigate(next ? `/my-parts?q=${encodeURIComponent(next)}` : "/my-parts");
   }
 
   return (

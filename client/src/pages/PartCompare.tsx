@@ -15,9 +15,9 @@ export function PartCompare() {
           <h1 className="page-title">Compare parts</h1>
           <p className="page-subtitle">Parameter differences are highlighted for quick replacement review.</p>
         </div>
-        <Link className="button" to="/search">
+        <Link className="button" to="/my-parts">
           <ArrowLeft size={16} />
-          Back to search
+          Back to My Parts
         </Link>
       </div>
       <Card>
@@ -28,7 +28,7 @@ export function PartCompare() {
         ) : (parts ?? []).length >= 2 ? (
           <PropertyCompareTable parts={parts!} />
         ) : (
-          <EmptyState title="Select at least two parts" body="Use PartProcure to choose rows for side-by-side comparison." />
+          <EmptyState title="Select at least two parts" body="Use My Parts search to choose rows for side-by-side comparison." />
         )}
       </Card>
     </div>

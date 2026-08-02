@@ -1,12 +1,13 @@
-import { Check, ChevronDown } from "lucide-react";
+import { Check } from "lucide-react";
 
 interface FilterChipProps {
   label: string;
   active: boolean;
   onToggle: () => void;
+  showActiveIcon?: boolean;
 }
 
-export function FilterChip({ label, active, onToggle }: FilterChipProps) {
+export function FilterChip({ label, active, onToggle, showActiveIcon = true }: FilterChipProps) {
   return (
     <button
       type="button"
@@ -14,7 +15,7 @@ export function FilterChip({ label, active, onToggle }: FilterChipProps) {
       aria-pressed={active}
       onClick={onToggle}
     >
-      {active ? <Check size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
+      {active && showActiveIcon ? <Check size={14} aria-hidden="true" /> : null}
       {label}
     </button>
   );

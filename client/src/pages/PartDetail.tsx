@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, BellPlus } from "lucide-react";
+import { ArrowLeft, BellPlus, Plus } from "lucide-react";
 import { usePart, usePartAlternates } from "../api/hooks/parts";
 import { useAddToWatchlist } from "../api/hooks/watchlist";
 import type { Part } from "../api/types";
@@ -17,6 +17,48 @@ import {
   type Column,
 } from "../components/ui";
 import { currencyFormatter } from "../lib/format";
+
+const manualPartsStorageKey = "partpilot.manualParts";
+const recentSearchesStorageKey = "partpilot.recentPartSearches";
+
+interface StoredMyPart extends Part {
+  project_count: number;
+  project_names: string;
+  total_qty: number;
+  source: "manual" | "project";
+}
+
+function readStoredMyParts(): StoredMyPart[] {
+  try {
+    const raw = window.localStorage.getItem(manualPartsStorageKey);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredMyParts(parts: StoredMyPart[]) {
+  window.localStorage.setItem(manualPartsStorageKey, JSON.stringify(parts));
+}
+
+function removeRecentSearch(part: Part) {
+  try {
+    const raw = window.localStorage.getItem(recentSearchesStorageKey);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return;
+    const next = parsed.filter((item) => {
+      if (!item || typeof item !== "object") return false;
+      const record = item as { id?: unknown; mpn?: unknown };
+      return record.id !== part.id && String(record.mpn ?? "").toLowerCase() !== part.mpn.toLowerCase();
+    });
+    window.localStorage.setItem(recentSearchesStorageKey, JSON.stringify(next));
+  } catch {
+    // Ignore malformed local storage.
+  }
+}
 
 export function PartDetail() {
   const { id } = useParams();
@@ -58,6 +100,32 @@ export function PartDetail() {
     showToast({ title: "Added to watchlist", body: part.mpn, tone: "success" });
   }
 
+  function addToMyParts() {
+    if (!part) return;
+    const stored = readStoredMyParts();
+    const exists = stored.some(
+      (item) => item.id === part.id || item.mpn.trim().toLowerCase() === part.mpn.trim().toLowerCase(),
+    );
+
+    if (exists) {
+      showToast({ title: "Already in My Parts", body: part.mpn });
+      return;
+    }
+
+    writeStoredMyParts([
+      {
+        ...part,
+        project_count: 0,
+        project_names: "Added from catalog",
+        total_qty: 1,
+        source: "manual",
+      },
+      ...stored,
+    ]);
+    removeRecentSearch(part);
+    showToast({ title: "Added to My Parts", body: part.mpn, tone: "success" });
+  }
+
   if (loading) {
     return <Spinner message="Loading part details..." />;
   }
@@ -72,8 +140,8 @@ export function PartDetail() {
         title="Part not found"
         body="This part does not exist in the catalog."
         action={
-          <Link className="button" to="/search">
-            Back to search
+          <Link className="button" to="/my-parts">
+            Back to My Parts
           </Link>
         }
       />
@@ -90,11 +158,15 @@ export function PartDetail() {
           </p>
         </div>
         <div className="inline-stack">
-          <Link className="button" to="/search">
+          <Link className="button" to="/my-parts">
             <ArrowLeft size={16} />
             Back
           </Link>
-          <button type="button" className="button button--primary" onClick={watchPart}>
+          <button type="button" className="button button--primary" onClick={addToMyParts}>
+            <Plus size={16} />
+            Add to My Parts
+          </button>
+          <button type="button" className="button" onClick={watchPart}>
             <BellPlus size={16} />
             Watch
           </button>

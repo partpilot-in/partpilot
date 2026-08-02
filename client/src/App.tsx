@@ -1,5 +1,5 @@
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
-import { ClipboardList, LayoutDashboard, Package, Search } from "lucide-react";
+import { ClipboardList, LayoutDashboard, Package } from "lucide-react";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { Spinner, TabNav, TopAppBar } from "./components/ui";
 import { Dashboard } from "./pages/Dashboard";
@@ -18,13 +18,11 @@ import { Watchlist } from "./pages/Watchlist";
 const tabs = [
   { key: "dashboard", label: "Dashboard", to: "/dashboard", icon: <LayoutDashboard size={22} /> },
   { key: "my-parts", label: "My Parts", to: "/my-parts", icon: <Package size={22} /> },
-  { key: "search", label: "PartProcure", to: "/search", icon: <Search size={22} /> },
   { key: "projects", label: "Projects", to: "/projects", icon: <ClipboardList size={22} /> },
 ];
 
 function activeTabForPath(pathname: string) {
-  if (pathname.startsWith("/my-parts")) return "my-parts";
-  if (pathname.startsWith("/search") || pathname.startsWith("/parts")) return "search";
+  if (pathname.startsWith("/my-parts") || pathname.startsWith("/search") || pathname.startsWith("/parts")) return "my-parts";
   if (pathname.startsWith("/projects")) return "projects";
   return "dashboard";
 }
@@ -67,6 +65,7 @@ function AuthenticatedRoutes() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/my-parts" element={<MyParts />} />
+        <Route path="/my-parts/compare" element={<PartCompare />} />
         <Route path="/search" element={<PartProcure />} />
         <Route path="/search/compare" element={<PartCompare />} />
         <Route path="/parts/:id" element={<PartDetail />} />

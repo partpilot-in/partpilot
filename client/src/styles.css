@@ -668,6 +668,76 @@ a:hover {
   font-size: 16px;
 }
 
+.part-search {
+  position: relative;
+  display: grid;
+  gap: 8px;
+}
+
+.part-search__dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  z-index: 25;
+  display: grid;
+  max-height: 320px;
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-overlay);
+}
+
+.part-search__option {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.part-search__option:hover {
+  background: var(--surface-alt);
+}
+
+.part-search__option span:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.part-search__option strong,
+.part-search__option span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.part-search__option span span,
+.part-search__option>span:last-child,
+.part-search__status {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.part-search__status {
+  padding: 12px 10px;
+}
+
+.part-search__status--error {
+  color: var(--signal-critical);
+}
+
 .form-control {
   width: 100%;
   min-height: 36px;
@@ -678,12 +748,36 @@ a:hover {
   color: var(--text-primary);
 }
 
+.form-control--textarea {
+  min-height: 88px;
+  padding: 10px;
+  resize: vertical;
+}
+
 .field-label {
   display: grid;
   gap: 6px;
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
+}
+
+.part-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.part-form__wide,
+.part-form__actions {
+  grid-column: 1 / -1;
+}
+
+.part-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
 }
 
 .bom-editor {
@@ -1469,9 +1563,33 @@ a:hover {
     border-radius: 12px;
   }
 
+  .part-search__dropdown {
+    position: static;
+    max-height: 280px;
+  }
+
+  .part-search__option {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
   .form-control {
     min-height: 44px;
     padding: 0 12px;
+  }
+
+  .form-control--textarea {
+    padding: 10px 12px;
+  }
+
+  .part-form {
+    grid-template-columns: 1fr;
+  }
+
+  .part-form__actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
   }
 
   .bom-editor__table {
