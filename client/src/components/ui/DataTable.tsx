@@ -57,7 +57,6 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   const [internalSort, setInternalSort] = useState<{ key: string; direction: "asc" | "desc" } | undefined>();
   const activeSort = sort ?? internalSort;
-  const sortableColumns = columns.filter((column) => column.sortable);
   const safeRows = Array.isArray(rows) ? rows : [];
 
   const sortedRows = useMemo(() => {
@@ -95,54 +94,6 @@ export function DataTable<T>({
 
   return (
     <div className="data-table-wrap">
-      {(selectable || sortableColumns.length > 0) && (
-        <div className="data-table__mobile-controls" aria-label="Table controls">
-          {selectable && (
-            <label className="data-table__mobile-select-all">
-              <input
-                type="checkbox"
-                aria-label="Select all rows"
-                checked={allVisibleSelected}
-                onChange={toggleAllVisible}
-              />
-              <span>{allVisibleSelected ? "Deselect rows" : "Select rows"}</span>
-            </label>
-          )}
-          {sortableColumns.length > 0 && (
-            <div className="data-table__mobile-sort-list" aria-label="Sort table">
-              {sortableColumns.map((column) => {
-                const key = String(column.key);
-                const isSorted = activeSort?.key === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    className={[
-                      "data-table__mobile-sort",
-                      isSorted && "data-table__mobile-sort--active",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    aria-pressed={isSorted}
-                    onClick={() => setSort(key)}
-                  >
-                    <span>{column.header}</span>
-                    {isSorted ? (
-                      activeSort.direction === "asc" ? (
-                        <ArrowUp size={14} aria-hidden="true" />
-                      ) : (
-                        <ArrowDown size={14} aria-hidden="true" />
-                      )
-                    ) : (
-                      <ChevronsUpDown size={14} aria-hidden="true" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
       <div className="data-table__scroll">
         <table className="data-table">
           <thead>
