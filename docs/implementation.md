@@ -62,17 +62,21 @@ partpilot/
 │   │       ├── enrich.rs
 │   │       └── source_health.rs
 │   │
-│   └── adapters/
-│       ├── adapter-digikey/
-│       │   └── src/{lib.rs, auth.rs, client.rs, mapping.rs}
-│       ├── adapter-mouser/
-│       │   └── src/{lib.rs, client.rs, mapping.rs}
-│       ├── adapter-octopart/
-│       │   └── src/{lib.rs, graphql.rs, mapping.rs}
-│       ├── adapter-pcn-parser/
-│       │   └── src/{lib.rs, feeds.rs, parse.rs}
-│       └── adapter-notify/
-│           └── src/{lib.rs, email.rs, webhook.rs}
+│   ├── adapters/
+│   │   ├── adapter-digikey/
+│   │   │   └── src/{lib.rs, auth.rs, client.rs, mapping.rs}
+│   │   ├── adapter-mouser/
+│   │   │   └── src/{lib.rs, client.rs, mapping.rs}
+│   │   ├── adapter-octopart/
+│   │   │   └── src/{lib.rs, graphql.rs, mapping.rs}
+│   │   ├── adapter-pcn-parser/
+│   │   │   └── src/{lib.rs, feeds.rs, parse.rs}
+│   │   └── adapter-notify/
+│   │       └── src/{lib.rs, email.rs, webhook.rs}
+│   │
+│   └── partpilot-cache/                # Redis-backed CachedConnector<T> decorator, shared by server + worker
+│       ├── Cargo.toml
+│       └── src/{lib.rs, connector.rs, key.rs}
 │
 ├── supabase/
 │   └── migrations/                 # Supabase CLI migrations, source of truth for schema
@@ -541,6 +545,51 @@ impl<T: DataSourceConnector> DataSourceConnector for RateLimited<T> {
 
 Retry/backoff: wrap `ConnectorError::RateLimited` and `ConnectorError::Unavailable` in an exponential backoff (`backoff` crate or hand-rolled), capped at 3 attempts, surfaced to `source_health` on exhaustion rather than silently dropped.
 
+### 4.0 `partpilot-cache` — Redis-backed response cache
+
+Same decorator shape as `RateLimited<T>`, composed *outside* it (`RateLimited::new(CachedConnector::new(inner, redis))`) so a cache hit never consumes rate-limit budget — only real upstream calls do.
+
+```rust
+pub struct CachedConnector<T> {
+    inner: T,
+    pool: deadpool_redis::Pool,
+    ttl: std::time::Duration, // default 24h, matches sweep cadence
+}
+
+#[async_trait::async_trait]
+impl<T: DataSourceConnector> DataSourceConnector for CachedConnector<T> {
+    fn source_id(&self) -> SourceId { self.inner.source_id() }
+
+    async fn fetch_status(&self, mpn: &NormalizedMpn, mfr: &NormalizedManufacturer)
+        -> Result<Option<LifecycleStatus>, ConnectorError>
+    {
+        let key = cache_key(self.inner.source_id(), mpn, mfr);
+        let mut conn = self.pool.get().await.map_err(|e| ConnectorError::Unavailable(e.to_string()))?;
+
+        if let Ok(Some(raw)) = conn.get::<_, Option<String>>(&key).await {
+            if let Ok(status) = serde_json::from_str(&raw) {
+                return Ok(status);
+            }
+        }
+
+        let status = self.inner.fetch_status(mpn, mfr).await?;
+        if let Ok(raw) = serde_json::to_string(&status) {
+            let _: Result<(), _> = conn.set_ex(&key, raw, self.ttl.as_secs()).await;
+        }
+        Ok(status)
+    }
+}
+
+fn cache_key(source: SourceId, mpn: &NormalizedMpn, mfr: &NormalizedManufacturer) -> String {
+    format!("adapter:{}:{}:{}", source.0, mpn.0, mfr.0)
+}
+```
+
+- **Why Redis over a Postgres cache table**: this data is disposable and re-fetchable, wants TTL expiry rather than a cleanup job, and must be shared between `partpilot-server` (synchronous enrich-mode lookups) and `partpilot-worker` (sweep) — two separate Railway services — without adding read/write load to the Postgres instance holding the actual source of truth.
+- Redis prevents the main failure mode this solves: several users uploading BOMs containing the same not-yet-seen part in quick succession, each triggering a separate paid/rate-limited call to the same upstream API before the worker's next sweep would have fetched it anyway.
+- A Redis outage should degrade to cache-miss-always (log + fall through to `inner`), never fail the request — the cache is a performance/cost optimization, not a correctness dependency.
+- TTL default of 24h matches the sweep cadence (§6.4): cached data can't be staler, in practice, than what the next scheduled sweep would produce.
+
 ### 4.1 `adapter-pcn-parser` detail
 
 ```rust
@@ -609,6 +658,7 @@ pub struct AppState {
     pub reconcile_policy: std::sync::Arc<ReconcilePolicy>,
     pub risk_weights: std::sync::Arc<RiskWeights>,
     pub db: sqlx::PgPool, // raw pool for server-specific queries (pagination, full-text search) outside the engine's port
+    pub redis: deadpool_redis::Pool, // shared with partpilot-worker; backs CachedConnector for enrich-mode lookups
 }
 
 pub async fn build_state(config: &Config) -> anyhow::Result<AppState> {
@@ -616,10 +666,12 @@ pub async fn build_state(config: &Config) -> anyhow::Result<AppState> {
         .max_connections(config.db_max_connections)
         .connect(&config.database_url)
         .await?;
+    let redis_cfg = deadpool_redis::Config::from_url(&config.redis_url);
+    let redis = redis_cfg.create_pool(Some(deadpool_redis::Runtime::Tokio1))?;
     let repo = std::sync::Arc::new(PostgresRepository::from_pool(db.clone()));
     let notifier = std::sync::Arc::new(EmailNotifier::new(config.notify_api_key.clone()));
     Ok(AppState {
-        repo, notifier, db,
+        repo, notifier, db, redis,
         reconcile_policy: std::sync::Arc::new(ReconcilePolicy::default()),
         risk_weights: std::sync::Arc::new(RiskWeights::default()),
     })
@@ -632,6 +684,7 @@ pub async fn build_state(config: &Config) -> anyhow::Result<AppState> {
 #[derive(Debug, serde::Deserialize)]
 pub struct Config {
     pub database_url: String,
+    pub redis_url: String,
     pub supabase_jwks_url: String,
     pub notify_api_key: String,
     pub port: u16,
@@ -997,10 +1050,13 @@ jobs:
 
 | Service | Source dir | Trigger | Key env vars |
 |---|---|---|---|
-| `partpilot-server` | `/` (bin: `partpilot-server`) | always-on, auto-deploy on push to `main` | `DATABASE_URL` (pooled), `SUPABASE_JWKS_URL`, `NOTIFY_API_KEY`, `CORS_ALLOWED_ORIGIN` |
-| `partpilot-worker-sweep` | `/` (bin: `partpilot-worker --mode sweep`) | Railway Cron, daily 03:00 UTC | `DATABASE_URL` (direct), `DIGIKEY_CLIENT_ID/SECRET`, `MOUSER_API_KEY`, `OCTOPART_API_TOKEN`, `NOTIFY_API_KEY` |
+| `partpilot-server` | `/` (bin: `partpilot-server`) | always-on, auto-deploy on push to `main` | `DATABASE_URL` (pooled), `REDIS_URL`, `SUPABASE_JWKS_URL`, `NOTIFY_API_KEY`, `CORS_ALLOWED_ORIGIN` |
+| `partpilot-worker-sweep` | `/` (bin: `partpilot-worker --mode sweep`) | Railway Cron, daily 03:00 UTC | `DATABASE_URL` (direct), `REDIS_URL`, `DIGIKEY_CLIENT_ID/SECRET`, `MOUSER_API_KEY`, `OCTOPART_API_TOKEN`, `NOTIFY_API_KEY` |
+| Redis | Railway Redis plugin | n/a | in-memory, no persistence needed — every key is re-derivable from adapter calls |
 | Supabase project | external | n/a | Postgres, Auth, Storage — not hosted on Railway |
 | Client | `client/` | static host (Vercel/Netlify/Cloudflare Pages), separate from Railway | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_BASE_URL` |
+
+Both `partpilot-server` and `partpilot-worker-sweep` point `REDIS_URL` at the same Railway Redis instance — the cache is shared deliberately, not per-service, so a sweep-populated key is available to a same-day enrich-mode lookup and vice versa.
 
 Use Supabase's pooled (pgbouncer) connection string for the server's many short-lived request-scoped connections, and the direct connection string for the worker's longer batch transactions to avoid pgbouncer's transaction-mode limitations with long-running writes.
 
@@ -1012,6 +1068,7 @@ Use Supabase's pooled (pgbouncer) connection string for the server's many short-
 |---|---|
 | `partpilot-engine` | Pure unit tests, table-driven, no DB/network — this is where correctness matters most and is cheapest to verify |
 | Adapters | Contract tests against recorded fixtures (`wiremock` or checked-in JSON responses) rather than live API calls in CI; a small manual/scheduled smoke test against real APIs, separate from the main CI run |
+| `partpilot-cache` | Unit tests against a `redis-rs` test instance (Docker service in CI, same pattern as Postgres) covering: cache hit skips `inner`, miss falls through and populates, TTL expiry, and Redis-unavailable degrades to always-miss rather than erroring |
 | `partpilot-server` | Integration tests spinning up the router with a test Postgres (via `sqlx::test` or a Docker service in CI), hitting routes with `axum::body::Body` requests |
 | `partpilot-worker` | Unit tests on `sweep`/`enrich` logic with mock `DataSourceConnector`/`PartRepository` implementations (trivial thanks to the port traits) |
 | Client | Component tests for risk-band rendering logic; light end-to-end smoke test against a staging server |
@@ -1028,5 +1085,6 @@ Use Supabase's pooled (pgbouncer) connection string for the server's many short-
 5. React client search + detail view against the now-working API.
 6. BOM upload + risk report.
 7. `adapter-digikey`, `adapter-octopart`, `adapter-pcn-parser` — expand source coverage.
-8. `match_alt` + alternates UI.
-9. KiCad plugin — smallest surface area, depends on an API that should be stable by this point.
+8. `partpilot-cache` — add once ≥2 adapters exist and either rate-limit pressure or duplicate-lookup cost is actually observed, not speculatively; wire in via the composition root, no changes needed to the adapter crates themselves.
+9. `match_alt` + alternates UI.
+10. KiCad plugin — smallest surface area, depends on an API that should be stable by this point.

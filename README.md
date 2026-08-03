@@ -2,7 +2,7 @@
 
 Electronic component obsolescence intelligence platform.
 
-**Stack**: Rust (engine/server/worker), React (client), Supabase (Postgres + Auth + Storage), Railway (hosting), Python (KiCad plugin). Single monorepo, Cargo workspace for the Rust side.
+**Stack**: Rust (engine/server/worker), React (client), Supabase (Postgres + Auth + Storage), Redis (adapter response cache), Railway (hosting), Python (KiCad plugin). Single monorepo, Cargo workspace for the Rust side.
 
 ## Components
 
@@ -22,7 +22,10 @@ graph TD
         CommunityPulse["adapter-community-pulse"]
     end
 
+    Cache["partpilot-cache<br/>(CachedConnector decorator)"]
+
     Supabase[("Supabase\n(Postgres/Auth/Storage)")]
+    Redis[("Redis\n(adapter response cache)")]
     External[("External sources\nDigiKey · Mouser · Octopart · PCNs")]
     Forums[("Public forums\nReddit · EEVblog · StackExchange\nvendor communities")]
 
@@ -30,6 +33,8 @@ graph TD
     Server -->|calls ports| Engine
     Worker -->|calls ports| Engine
     Engine -.->|implemented by| Adapters
+    Adapters -.->|wrapped by| Cache
+    Cache --> Redis
 
     DigiKey --> External
     Mouser --> External
@@ -118,6 +123,17 @@ Credible sources this adapter draws from:
 * Microchip Forums
 * NXP Community
 * All About Circuits forums
+
+### Caching layer (`partpilot-cache`)
+
+`partpilot-server` and `partpilot-worker` both call out to the same rate-limited, sometimes-paid external APIs (DigiKey, Mouser, Octopart) — the worker on its daily sweep, the server synchronously in enrich mode when a user searches/uploads a BOM containing a part with no data yet. Without a shared cache, a burst of enrich-mode lookups for the same not-yet-seen part (e.g. several users uploading BOMs that share a part) each re-hit the paid API before the worker ever gets to it.
+
+`partpilot-cache` is a `CachedConnector<T: DataSourceConnector>` decorator — same shape as the existing `RateLimited<T>` wrapper — backed by Redis. It sits *inside* the rate limiter in the composition root (`RateLimited(CachedConnector(inner))`), so cache hits never consume rate-limit budget; only real misses do.
+
+* **Why Redis, not another Postgres table**: the cached data is disposable (re-fetchable from source), wants TTL-based expiry rather than a cleanup job, and needs to be shared between two separate Railway services (server + worker) without adding read/write load to the Postgres instance that holds the actual source of truth.
+* **Key shape**: `adapter:{source_id}:{normalized_mpn}:{normalized_manufacturer}` → serialized raw connector response.
+* **TTL**: defaults to the sweep cadence (24h) — data can't be fresher than the next scheduled sweep anyway, so caching past that point costs nothing in staleness.
+* Client: `deadpool-redis` for pooling, added to both `AppState` (server) and the worker's composition root.
 
 ### 3. partpilot-engine
 
