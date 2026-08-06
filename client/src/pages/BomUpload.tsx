@@ -16,7 +16,7 @@ export function BomUpload() {
   const { createBom } = useCreateBom();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const [bomName, setBomName] = useState("Manual BOM");
+  const [bomName, setBomName] = useState("Untitled");
   const [rows, setRows] = useState<EditableBomLine[]>([
     {
       ...createEditableBomLine(1),

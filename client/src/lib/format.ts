@@ -13,8 +13,15 @@ export const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
-export function formatDate(value: string) {
-  return dateFormatter.format(new Date(`${value}T00:00:00`));
+export function formatDate(value: string | undefined) {
+  if (!value) return "Unknown date";
+
+  const dateOnly = value.match(/^\d{4}-\d{2}-\d{2}$/);
+  const date = new Date(dateOnly ? `${value}T00:00:00` : value);
+
+  if (!Number.isFinite(date.getTime())) return "Unknown date";
+
+  return dateFormatter.format(date);
 }
 
 export function formatLifecycleForParam(stage: LifecycleStage) {

@@ -310,6 +310,18 @@ a:hover {
   background: var(--surface-alt);
 }
 
+.account-menu__item--danger {
+  color: var(--signal-critical);
+}
+
+.account-menu__item--danger:hover {
+  background: var(--signal-critical-surface);
+}
+
+.project-actions-menu__panel {
+  width: 220px;
+}
+
 .tab-nav {
   position: fixed;
   top: var(--topbar-safe-height);
@@ -502,6 +514,21 @@ a:hover {
   line-height: 1.15;
 }
 
+.project-title-row,
+.project-title-edit {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-title-input {
+  width: min(460px, calc(100vw - 64px));
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
 .page-subtitle {
   margin: 6px 0 0;
   color: var(--text-secondary);
@@ -556,6 +583,15 @@ a:hover {
   background: var(--accent-hover);
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
+}
+
+.button--danger {
+  border-color: var(--signal-critical);
+  color: var(--signal-critical);
+}
+
+.button--danger:hover {
+  background: var(--signal-critical-surface);
 }
 
 .button--ghost {
