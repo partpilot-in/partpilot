@@ -749,12 +749,12 @@ a:hover {
 
 .dashboard-grid {
   display: grid;
-  gap: 14px;
+  gap: 24px;
 }
 
 .dashboard-command {
   display: grid;
-  gap: 4px;
+  gap: 8px;
 }
 
 .dashboard-command h1 {
@@ -774,7 +774,7 @@ a:hover {
 .dashboard-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 16px;
 }
 
 .dashboard-stat {
@@ -783,7 +783,7 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface);
@@ -811,7 +811,7 @@ a:hover {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
   align-items: start;
-  gap: 14px;
+  gap: 24px;
 }
 
 .dashboard-overview > .alternates-section,
@@ -821,8 +821,8 @@ a:hover {
 }
 
 .dashboard-attention {
-  gap: 12px;
-  padding: 12px;
+  gap: 16px;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface);
@@ -835,23 +835,23 @@ a:hover {
 
 .dashboard-side-column {
   display: grid;
-  gap: 14px;
+  gap: 24px;
 }
 
 .attention-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 16px;
 }
 
 .attention-card {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr) max-content;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
-  min-height: 62px;
-  padding: 10px;
+  min-height: 72px;
+  padding: 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface-alt);
@@ -907,9 +907,9 @@ a:hover {
 .market-prices,
 .manufacturer-news {
   display: grid;
-  gap: 12px;
+  gap: 16px;
   min-width: 0;
-  padding: 12px;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface);
@@ -924,14 +924,14 @@ a:hover {
 .metal-price-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  gap: 12px;
 }
 
 .metal-price {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
-  padding: 8px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface-alt);
@@ -970,7 +970,7 @@ a:hover {
 
 .news-tabs {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
   padding-bottom: 2px;
 }
@@ -1004,7 +1004,7 @@ a:hover {
 
 .news-list {
   display: grid;
-  gap: 8px;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1012,8 +1012,8 @@ a:hover {
 
 .news-list li {
   display: grid;
-  gap: 4px;
-  padding-bottom: 8px;
+  gap: 6px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--bg-color-muted);
 }
 
