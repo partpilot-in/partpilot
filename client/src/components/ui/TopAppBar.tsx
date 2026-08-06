@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Building2, ChevronDown, LogOut, Moon, Settings, Sun, UserCircle } from "lucide-react";
+import { Building2, Check, ChevronDown, ChevronLeft, DollarSign, LogOut, Moon, Settings, Sun, UserCircle } from "lucide-react";
+import { supportedCurrencies, type CurrencyCode } from "../../lib/format";
+import { useCurrencyPreference } from "../../lib/useCurrencyPreference";
 
 interface TopAppBarProps {
   organizationSlug: string;
@@ -11,7 +13,9 @@ interface TopAppBarProps {
 export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
+  const { currency, updateCurrency } = useCurrencyPreference();
   const logoSrc = theme === "dark" ? "/PP Logo - Dark.png" : "/PP Logo - Light.png";
 
   useEffect(() => {
@@ -26,7 +30,10 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
     }
 
     function closeAccountMenuOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setAccountMenuOpen(false);
+      if (event.key === "Escape") {
+        setCurrencyMenuOpen(false);
+        setAccountMenuOpen(false);
+      }
     }
 
     document.addEventListener("mousedown", closeAccountMenu);
@@ -52,6 +59,13 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
 
   const selectThemeMenuItem = () => {
     toggleTheme();
+    setCurrencyMenuOpen(false);
+    setAccountMenuOpen(false);
+  };
+
+  const selectCurrencyMenuItem = (nextCurrency: CurrencyCode) => {
+    updateCurrency(nextCurrency);
+    setCurrencyMenuOpen(false);
     setAccountMenuOpen(false);
   };
 
@@ -76,7 +90,10 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
               aria-haspopup="menu"
               aria-expanded={accountMenuOpen}
               aria-label={user ? `${user.name} account menu` : "Guest account menu"}
-              onClick={() => setAccountMenuOpen((open) => !open)}
+              onClick={() => {
+                setAccountMenuOpen((open) => !open);
+                setCurrencyMenuOpen(false);
+              }}
             >
               <span className="user-chip__name">{user?.name ?? "Guest"}</span>
               <span className="avatar">
@@ -96,16 +113,57 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
                     event.stopPropagation();
                     selectThemeMenuItem();
                   }}
+                  onMouseEnter={() => setCurrencyMenuOpen(false)}
                   onClick={selectThemeMenuItem}
                 >
                   {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
                   <span>{theme === "light" ? "Dark theme" : "Light theme"}</span>
                 </button>
+                <div className="account-menu__submenu-wrap">
+                  <button
+                    type="button"
+                    className="account-menu__item account-menu__item--submenu"
+                    role="menuitem"
+                    aria-haspopup="menu"
+                    aria-expanded={currencyMenuOpen}
+                    onMouseEnter={() => setCurrencyMenuOpen(true)}
+                    onClick={() => setCurrencyMenuOpen((open) => !open)}
+                  >
+                    <DollarSign size={18} />
+                    <span className="account-menu__item-main">
+                      <span>Default currency</span>
+                      <span className="account-menu__item-meta">{currency}</span>
+                    </span>
+                    <ChevronLeft size={16} aria-hidden="true" />
+                  </button>
+                  {currencyMenuOpen && (
+                    <div className="account-menu__panel account-menu__submenu account-menu__submenu--left" role="menu">
+                      {supportedCurrencies.map((option) => (
+                        <button
+                          key={option.code}
+                          type="button"
+                          className="account-menu__item"
+                          role="menuitem"
+                          onClick={() => selectCurrencyMenuItem(option.code)}
+                        >
+                          <span className="account-menu__check-slot">
+                            {currency === option.code && <Check size={16} />}
+                          </span>
+                          <span>{option.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <button
                   type="button"
                   className="account-menu__item"
                   role="menuitem"
-                  onClick={() => setAccountMenuOpen(false)}
+                  onMouseEnter={() => setCurrencyMenuOpen(false)}
+                  onClick={() => {
+                    setCurrencyMenuOpen(false);
+                    setAccountMenuOpen(false);
+                  }}
                 >
                   <Settings size={18} />
                   <span>Settings</span>
@@ -115,7 +173,9 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
                     type="button"
                     className="account-menu__item"
                     role="menuitem"
+                    onMouseEnter={() => setCurrencyMenuOpen(false)}
                     onClick={() => {
+                      setCurrencyMenuOpen(false);
                       setAccountMenuOpen(false);
                       void onSignOut();
                     }}

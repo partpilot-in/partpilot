@@ -1,6 +1,46 @@
 import type { LifecycleStage } from "../api/types";
 
-export const currencyFormatter = new Intl.NumberFormat("en-US", {
+export type CurrencyCode = "USD" | "EUR" | "GBP" | "INR" | "JPY";
+
+export const supportedCurrencies: { code: CurrencyCode; label: string }[] = [
+  { code: "USD", label: "USD - US Dollar" },
+  { code: "EUR", label: "EUR - Euro" },
+  { code: "GBP", label: "GBP - British Pound" },
+  { code: "INR", label: "INR - Indian Rupee" },
+  { code: "JPY", label: "JPY - Japanese Yen" },
+];
+
+export const defaultCurrency: CurrencyCode = "USD";
+export const currencyPreferenceStorageKey = "partpilot.defaultCurrency";
+export const currencyPreferenceChangeEvent = "partpilot:currency-change";
+
+export function isCurrencyCode(value: string): value is CurrencyCode {
+  return supportedCurrencies.some((currency) => currency.code === value);
+}
+
+export function readCurrencyPreference(): CurrencyCode {
+  if (typeof window === "undefined") return defaultCurrency;
+  const saved = window.localStorage.getItem(currencyPreferenceStorageKey);
+  return saved && isCurrencyCode(saved) ? saved : defaultCurrency;
+}
+
+export function saveCurrencyPreference(currency: CurrencyCode) {
+  window.localStorage.setItem(currencyPreferenceStorageKey, currency);
+  window.dispatchEvent(new CustomEvent(currencyPreferenceChangeEvent, { detail: { currency } }));
+}
+
+export function createCurrencyFormatter(currency: CurrencyCode = defaultCurrency) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  });
+}
+
+export const currencyFormatter = createCurrencyFormatter(defaultCurrency);
+
+export const usdCurrencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
   minimumFractionDigits: 2,

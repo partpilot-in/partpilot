@@ -284,7 +284,7 @@ a:hover {
   z-index: 50;
   display: grid;
   width: 208px;
-  overflow: hidden;
+  overflow: visible;
   padding: 6px;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -308,6 +308,41 @@ a:hover {
 
 .account-menu__item:hover {
   background: var(--surface-alt);
+}
+
+.account-menu__submenu-wrap {
+  position: relative;
+}
+
+.account-menu__item--submenu {
+  width: 100%;
+}
+
+.account-menu__item-main {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.account-menu__item-meta {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.account-menu__submenu {
+  top: 0;
+  width: 224px;
+}
+
+.account-menu__submenu--left {
+  right: calc(100% + 8px);
+}
+
+.account-menu__check-slot {
+  display: inline-grid;
+  width: 18px;
+  place-items: center;
 }
 
 .account-menu__item--danger {
@@ -1457,6 +1492,13 @@ a:hover {
 
   .account-menu__item {
     min-height: 44px;
+  }
+
+  .account-menu__submenu {
+    position: static;
+    width: 100%;
+    margin: 4px 0 6px;
+    box-shadow: none;
   }
 
   .user-chip__name {

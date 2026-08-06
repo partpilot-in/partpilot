@@ -16,7 +16,9 @@ import {
   useToast,
   type Column,
 } from "../components/ui";
-import { currencyFormatter, formatDate } from "../lib/format";
+import { createCurrencyFormatter, formatDate } from "../lib/format";
+import { useCurrencyPreference } from "../lib/useCurrencyPreference";
+import { useUsdExchangeRate } from "../lib/useExchangeRate";
 
 export function ProjectDetail() {
   const { id } = useParams();
@@ -26,6 +28,11 @@ export function ProjectDetail() {
   const { renameBom } = useRenameBom();
   const { deleteBom } = useDeleteBom();
   const { showToast } = useToast();
+  const { currency } = useCurrencyPreference();
+  const exchangeRate = useUsdExchangeRate(currency);
+  const displayCurrency = exchangeRate.loading || exchangeRate.error ? "USD" : currency;
+  const displayRate = exchangeRate.loading || exchangeRate.error ? 1 : exchangeRate.rate;
+  const bomCurrencyFormatter = createCurrencyFormatter(displayCurrency);
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareTarget, setCompareTarget] = useState<string>("");
   const [renaming, setRenaming] = useState(false);
@@ -70,7 +77,7 @@ export function ProjectDetail() {
       header: "Price",
       sortable: true,
       numeric: true,
-      render: (row) => currencyFormatter.format(row.unit_price),
+      render: (row) => bomCurrencyFormatter.format(row.unit_price * displayRate),
     },
     {
       key: "compliance",
@@ -148,6 +155,7 @@ export function ProjectDetail() {
 
   const projectLines = Array.isArray(project.lines) ? project.lines : [];
   const totalCost = projectLines.reduce((total, line) => total + line.qty * line.unit_price, 0);
+  const convertedTotalCost = totalCost * displayRate;
 
   return (
     <div className="stack">
@@ -180,6 +188,15 @@ export function ProjectDetail() {
           <p className="page-subtitle">
             {projectLines.length || project.part_count} parts – uploaded {formatDate(project.uploaded_at)}
           </p>
+          {currency !== "USD" && (
+            <p className="page-subtitle currency-note">
+              {exchangeRate.loading
+                ? `Loading live USD to ${currency} rate...`
+                : exchangeRate.error
+                  ? `${exchangeRate.error}; showing stored USD values.`
+                  : `Converted from USD using live USD to ${currency} rate ${exchangeRate.rate.toFixed(4)}${exchangeRate.date ? ` from ${formatDate(exchangeRate.date)}` : ""}.`}
+            </p>
+          )}
         </div>
         <div className="inline-stack">
           <Link className="button" to="/projects">
@@ -267,7 +284,7 @@ export function ProjectDetail() {
             <td />
             <td />
             <td className="data-table__numeric bom-total-cell">
-              <span>{currencyFormatter.format(totalCost)}</span>
+              <span>{bomCurrencyFormatter.format(convertedTotalCost)}</span>
             </td>
             <td />
             <td />
