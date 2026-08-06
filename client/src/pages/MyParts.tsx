@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Star } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
 import { useProjectParts, useSearchParts, type ProjectPartRow } from "../api/hooks/parts";
 import type { Part } from "../api/types";
@@ -16,8 +16,9 @@ import {
   useToast,
   type Column,
 } from "../components/ui";
+import { readManualParts, saveManualParts } from "../lib/myPartsStorage";
+import { useImportantParts } from "../lib/useImportantParts";
 
-const manualPartsStorageKey = "partpilot.manualParts";
 const recentSearchesStorageKey = "partpilot.recentPartSearches";
 const maxRecentSearches = 8;
 
@@ -59,21 +60,6 @@ function createManualPartId(mpn: string) {
   return `manual-${slug || "part"}-${suffix}`;
 }
 
-function readManualParts(): MyPartRow[] {
-  try {
-    const raw = window.localStorage.getItem(manualPartsStorageKey);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveManualParts(parts: MyPartRow[]) {
-  window.localStorage.setItem(manualPartsStorageKey, JSON.stringify(parts));
-}
-
 function readRecentSearches(): RecentSearchPart[] {
   try {
     const raw = window.localStorage.getItem(recentSearchesStorageKey);
@@ -104,6 +90,7 @@ export function MyParts() {
   const { showToast } = useToast();
   const { data: projects, loading, error } = useProjects();
   const projectRows = useProjectParts(projects);
+  const { ids: importantIds, toggleImportant } = useImportantParts();
   const [manualRows, setManualRows] = useState<MyPartRow[]>(() => readManualParts());
   const [recentSearches, setRecentSearches] = useState<RecentSearchPart[]>(() => readRecentSearches());
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
@@ -134,6 +121,31 @@ export function MyParts() {
   }, [myRows]);
 
   const myPartsColumns: Column<MyPartRow>[] = [
+    {
+      key: "important",
+      header: "Important",
+      render: (row) => {
+        const important = importantIds.has(row.id);
+        return (
+          <button
+            type="button"
+            className={["star-button", important && "star-button--active"].filter(Boolean).join(" ")}
+            aria-label={important ? `Unmark ${row.mpn} as important` : `Mark ${row.mpn} as important`}
+            onClick={(event) => {
+              event.stopPropagation();
+              const nextImportant = toggleImportant(row);
+              showToast({
+                title: nextImportant ? "Marked important" : "Removed important mark",
+                body: row.mpn,
+                tone: "success",
+              });
+            }}
+          >
+            <Star size={16} fill={important ? "currentColor" : "none"} />
+          </button>
+        );
+      },
+    },
     { key: "mpn", header: "MPN", sortable: true },
     { key: "manufacturer", header: "Manufacturer", sortable: true },
     { key: "category", header: "Category", sortable: true },

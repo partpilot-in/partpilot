@@ -575,6 +575,14 @@ a:hover {
   font-weight: 600;
 }
 
+.alternates-section {
+  gap: 16px;
+}
+
+.alternates-section .section-title {
+  margin-bottom: 0;
+}
+
 .stack {
   display: grid;
   gap: 24px;
@@ -739,10 +747,36 @@ a:hover {
   font-size: 16px;
 }
 
+.dashboard-star {
+  color: var(--signal-caution);
+}
+
 .part-search {
   position: relative;
   display: grid;
   gap: 8px;
+}
+
+.star-button {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.star-button:hover {
+  background: var(--bg-color-alt);
+  color: var(--signal-caution);
+}
+
+.star-button--active {
+  color: var(--signal-caution);
 }
 
 .part-search__dropdown {

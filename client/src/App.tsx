@@ -13,7 +13,6 @@ import { ProjectDetail } from "./pages/ProjectDetail";
 import { BomCompare } from "./pages/BomCompare";
 import { BomEdit } from "./pages/BomEdit";
 import { BomUpload } from "./pages/BomUpload";
-import { Watchlist } from "./pages/Watchlist";
 
 const tabs = [
   { key: "dashboard", label: "Dashboard", to: "/dashboard", icon: <LayoutDashboard size={22} /> },
@@ -74,7 +73,6 @@ function AuthenticatedRoutes() {
         <Route path="/projects/compare" element={<BomCompare />} />
         <Route path="/projects/:id/edit" element={<BomEdit />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
-        <Route path="/watchlist" element={<Watchlist />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

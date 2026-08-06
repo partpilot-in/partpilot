@@ -1,4 +1,4 @@
-import type { BomDiffLine, BomLine, Part, Project, WatchlistItem } from "./types";
+import type { BomDiffLine, BomLine, Part, Project } from "./types";
 
 export const mockParts: Part[] = [
   {
@@ -265,14 +265,6 @@ export const mockProjects: Project[] = [
       line("part-mcp1700", 4, 8),
     ],
   },
-];
-
-export const mockWatchlist: WatchlistItem[] = [
-  { ...mockParts[8], risk_band: "critical", last_changed: "2026-07-01" },
-  { ...mockParts[5], risk_band: "high", last_changed: "2026-06-25" },
-  { ...mockParts[1], risk_band: "medium", last_changed: "2026-06-20" },
-  { ...mockParts[7], risk_band: "low", last_changed: "2026-06-18" },
-  { ...mockParts[0], risk_band: "low", last_changed: "2026-06-10" },
 ];
 
 export const mockBomDiff: BomDiffLine[] = [

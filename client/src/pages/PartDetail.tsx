@@ -1,8 +1,8 @@
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, BellPlus, Plus } from "lucide-react";
-import { usePart, usePartAlternates } from "../api/hooks/parts";
-import { useAddToWatchlist } from "../api/hooks/watchlist";
+import { ArrowLeft, Plus, Star } from "lucide-react";
+import { useProjects } from "../api/hooks/boms";
+import { usePart, usePartAlternates, useProjectParts } from "../api/hooks/parts";
 import type { Part } from "../api/types";
 import {
   Card,
@@ -17,31 +17,10 @@ import {
   type Column,
 } from "../components/ui";
 import { currencyFormatter } from "../lib/format";
+import { readManualParts, saveManualParts, type StoredMyPart } from "../lib/myPartsStorage";
+import { useImportantParts } from "../lib/useImportantParts";
 
-const manualPartsStorageKey = "partpilot.manualParts";
 const recentSearchesStorageKey = "partpilot.recentPartSearches";
-
-interface StoredMyPart extends Part {
-  project_count: number;
-  project_names: string;
-  total_qty: number;
-  source: "manual" | "project";
-}
-
-function readStoredMyParts(): StoredMyPart[] {
-  try {
-    const raw = window.localStorage.getItem(manualPartsStorageKey);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeStoredMyParts(parts: StoredMyPart[]) {
-  window.localStorage.setItem(manualPartsStorageKey, JSON.stringify(parts));
-}
 
 function removeRecentSearch(part: Part) {
   try {
@@ -63,9 +42,28 @@ function removeRecentSearch(part: Part) {
 export function PartDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: part, loading, error } = usePart(id);
-  const { data: alternates, loading: altLoading } = usePartAlternates(id);
-  const { addToWatchlist } = useAddToWatchlist();
+  const { data: projects, loading: projectsLoading } = useProjects();
+  const projectParts = useProjectParts(projects);
+  const manualParts = useMemo(() => readManualParts(), []);
+  const { parts: importantParts, isImportant, toggleImportant } = useImportantParts();
+  const localPart = useMemo(
+    () =>
+      [
+        ...manualParts,
+        ...projectParts.map((row) => ({ ...row, source: "project" as const })),
+        ...importantParts.map((row) => ({
+          ...row,
+          project_count: 0,
+          project_names: "Important",
+          total_qty: 1,
+          source: "manual" as const,
+        })),
+      ].find((row) => row.id === id),
+    [id, importantParts, manualParts, projectParts],
+  );
+  const { data: catalogPart, loading, error } = usePart(localPart ? undefined : id);
+  const part = localPart ?? catalogPart;
+  const { data: alternates, loading: altLoading } = usePartAlternates(localPart ? undefined : id);
   const { showToast } = useToast();
 
   const columns: Column<Part>[] = [
@@ -94,25 +92,29 @@ export function PartDetail() {
     },
   ];
 
-  async function watchPart() {
+  function markImportant() {
     if (!part) return;
-    await addToWatchlist(part.id);
-    showToast({ title: "Added to watchlist", body: part.mpn, tone: "success" });
+    const important = toggleImportant(part);
+    showToast({
+      title: important ? "Marked important" : "Removed important mark",
+      body: part.mpn,
+      tone: "success",
+    });
   }
 
   function addToMyParts() {
     if (!part) return;
-    const stored = readStoredMyParts();
+    const stored = readManualParts();
     const exists = stored.some(
       (item) => item.id === part.id || item.mpn.trim().toLowerCase() === part.mpn.trim().toLowerCase(),
-    );
+    ) || !!localPart;
 
     if (exists) {
       showToast({ title: "Already in My Parts", body: part.mpn });
       return;
     }
 
-    writeStoredMyParts([
+    saveManualParts([
       {
         ...part,
         project_count: 0,
@@ -126,11 +128,11 @@ export function PartDetail() {
     showToast({ title: "Added to My Parts", body: part.mpn, tone: "success" });
   }
 
-  if (loading) {
+  if (!localPart && (loading || projectsLoading)) {
     return <Spinner message="Loading part details..." />;
   }
 
-  if (error) {
+  if (!localPart && error) {
     return <ErrorMessage message={error} />;
   }
 
@@ -166,9 +168,9 @@ export function PartDetail() {
             <Plus size={16} />
             Add to My Parts
           </button>
-          <button type="button" className="button" onClick={watchPart}>
-            <BellPlus size={16} />
-            Watch
+          <button type="button" className="button" onClick={markImportant}>
+            <Star size={16} fill={isImportant(part.id) ? "currentColor" : "none"} />
+            {isImportant(part.id) ? "Important" : "Mark Important"}
           </button>
         </div>
       </div>
@@ -207,7 +209,8 @@ export function PartDetail() {
         </Card>
       </section>
 
-      <Card title="Alternates">
+      <section className="stack alternates-section">
+        <h2 className="section-title">Alternates</h2>
         {altLoading ? (
           <Spinner message="Loading alternates..." />
         ) : (
@@ -218,7 +221,7 @@ export function PartDetail() {
             onRowClick={(row) => navigate(`/parts/${row.id}`)}
           />
         )}
-      </Card>
+      </section>
     </div>
   );
 }

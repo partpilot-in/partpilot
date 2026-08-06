@@ -1,21 +1,40 @@
-import { FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { FormEvent, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Search, Star } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
-import { useWatchlist, useWatchlistSummary } from "../api/hooks/watchlist";
-import type { WatchlistItem } from "../api/types";
-import { Card, DataTable, ErrorMessage, LifecycleBadge, ScoreRing, Spinner, type Column } from "../components/ui";
-import { formatDate, getGreeting } from "../lib/format";
+import { useProjectParts } from "../api/hooks/parts";
+import type { Part } from "../api/types";
+import { DataTable, ErrorMessage, LifecycleBadge, ScoreRing, Spinner, type Column } from "../components/ui";
+import { getGreeting } from "../lib/format";
+import { readManualParts } from "../lib/myPartsStorage";
+import { useImportantParts } from "../lib/useImportantParts";
 
 export function Dashboard() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
-  const { data: watchlist, loading: wlLoading, error: wlError } = useWatchlist();
-  const summary = useWatchlistSummary(watchlist);
+  const { ids: importantIds, parts: importantParts } = useImportantParts();
   const { data: projects, loading: projLoading, error: projError } = useProjects();
-  const needingAttention = [...(watchlist ?? [])].sort((a, b) => a.score - b.score).slice(0, 5);
-
-  const columns: Column<WatchlistItem>[] = [
+  const projectParts = useProjectParts(projects);
+  const manualParts = useMemo(() => readManualParts(), []);
+  const parts = useMemo(() => {
+    const rows = new Map<string, Part>();
+    [...projectParts, ...manualParts, ...importantParts].forEach((part) => rows.set(part.id, part));
+    return Array.from(rows.values());
+  }, [importantParts, manualParts, projectParts]);
+  const attentionRows = useMemo(
+    () =>
+      [...parts]
+        .sort((a, b) => Number(importantIds.has(b.id)) - Number(importantIds.has(a.id)) || a.score - b.score)
+        .slice(0, 10),
+    [importantIds, parts],
+  );
+  const columns: Column<Part>[] = [
+    {
+      key: "important",
+      header: "Important",
+      render: (row) =>
+        importantIds.has(row.id) ? <Star className="dashboard-star" size={16} fill="currentColor" /> : "",
+    },
     { key: "mpn", header: "MPN", sortable: true },
     { key: "manufacturer", header: "Manufacturer", sortable: true },
     {
@@ -54,91 +73,21 @@ export function Dashboard() {
         </form>
       </section>
 
-      <section className="metric-grid" aria-label="Dashboard summary">
-        <Card title="Watchlist risk">
-          {wlLoading ? (
-            <Spinner message="Loading watchlist..." />
-          ) : wlError ? (
-            <ErrorMessage message={wlError} />
-          ) : (
-            <ul className="metric-list">
-              <li className="metric-row">
-                <span className="metric-row__label" style={{ color: "var(--signal-critical)" }}>
-                  <span className="signal-dot" /> Critical
-                </span>
-                <strong>{summary.critical}</strong>
-              </li>
-              <li className="metric-row">
-                <span className="metric-row__label" style={{ color: "var(--signal-warn)" }}>
-                  <span className="signal-dot" /> High
-                </span>
-                <strong>{summary.high}</strong>
-              </li>
-              <li className="metric-row">
-                <span className="metric-row__label" style={{ color: "var(--signal-caution)" }}>
-                  <span className="signal-dot" /> Medium
-                </span>
-                <strong>{summary.medium}</strong>
-              </li>
-            </ul>
-          )}
-        </Card>
-
-        <Card title="Recent projects">
-          {projLoading ? (
-            <Spinner message="Loading projects..." />
-          ) : projError ? (
-            <ErrorMessage message={projError} />
-          ) : (
-            <ul className="metric-list">
-              {(projects ?? []).slice(0, 3).map((project) => (
-                <li key={project.id} className="metric-row">
-                  <Link to={`/projects/${project.id}`}>{project.name}</Link>
-                  <ScoreRing value={project.lowest_score} size="sm" />
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        <Card title="Needs review">
-          {wlLoading ? (
-            <Spinner />
-          ) : wlError ? (
-            <ErrorMessage message={wlError} />
-          ) : (
-            <ul className="metric-list">
-              <li className="metric-row">
-                <span className="metric-row__label">Parts with high risk</span>
-                <strong>{summary.needs_review}</strong>
-              </li>
-              <li className="metric-row">
-                <span className="metric-row__label">Last sweep</span>
-                <strong>{formatDate("2026-07-01")}</strong>
-              </li>
-              <li className="metric-row">
-                <span className="metric-row__label">Watchlist size</span>
-                <strong>{(watchlist ?? []).length}</strong>
-              </li>
-            </ul>
-          )}
-        </Card>
-      </section>
-
-      <Card title="Parts needing attention">
-        {wlLoading ? (
-          <Spinner message="Loading..." />
-        ) : wlError ? (
-          <ErrorMessage message={wlError} />
+      <section className="stack alternates-section" aria-label="Dashboard overview">
+        <h2 className="section-title">Parts needing attention</h2>
+        {projLoading ? (
+          <Spinner message="Scanning parts..." />
+        ) : projError ? (
+          <ErrorMessage message={projError} />
         ) : (
           <DataTable
             columns={columns}
-            rows={needingAttention}
+            rows={attentionRows}
             getRowId={(row) => row.id}
             onRowClick={(row) => navigate(`/parts/${row.id}`)}
           />
         )}
-      </Card>
+      </section>
     </div>
   );
 }

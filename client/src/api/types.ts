@@ -31,19 +31,6 @@ export interface PartFilters {
   lifecycle?: LifecycleStage[];
 }
 
-export interface WatchlistItem extends Part {
-  risk_band: "critical" | "high" | "medium" | "low";
-  last_changed: string;
-}
-
-export interface WatchlistSummary {
-  critical: number;
-  high: number;
-  medium: number;
-  low: number;
-  needs_review: number;
-}
-
 export interface BomLine {
   id: string;
   part_id: string;
