@@ -40,6 +40,43 @@ const DEFAULT_COMPLIANCE = [
   { standard: "REACH", status: "unknown" as const },
 ];
 
+const DESIGNATOR_CATEGORIES: Record<string, string> = {
+  A: "Removable Sub-assembly or Plug-in Module",
+  AE: "Antenna",
+  BT: "Battery",
+  C: "Capacitor",
+  D: "Diode",
+  DS: "Display",
+  F: "Fuse",
+  FB: "Ferrite Bead",
+  FD: "Fiducial",
+  FL: "Filter",
+  H: "Hardware",
+  J: "Jack",
+  JP: "Jumper / Link",
+  K: "Relay",
+  L: "Inductor",
+  LS: "Loudspeaker or Buzzer",
+  M: "Motor",
+  MK: "Microphone",
+  P: "Plug",
+  Q: "Transistor",
+  R: "Resistor",
+  RN: "Resistor Network",
+  RT: "Thermistor",
+  RV: "Varistor",
+  SW: "Switch",
+  T: "Transformer",
+  TC: "Thermocouple",
+  TJ: "Thermal Jumper",
+  TP: "Test Point",
+  U: "Integrated Circuit",
+  Y: "Crystal / Oscillator",
+  Z: "Zener Diode",
+};
+
+const DESIGNATOR_PREFIXES = Object.keys(DESIGNATOR_CATEGORIES).sort((a, b) => b.length - a.length);
+
 export async function parseBomFile(file: File): Promise<ParsedBom> {
   const extension = file.name.split(".").pop()?.toLowerCase();
   const rows = extension === "xlsx" ? await readXlsxRows(file) : parseCsv(await file.text());
@@ -370,18 +407,8 @@ function inferCategory(description: string) {
   const token = description.trim().match(/^[A-Za-z]+/)?.[0].toUpperCase();
   if (!token) return "";
 
-  if (token.startsWith("R")) return "Resistor";
-  if (token.startsWith("C")) return "Capacitor";
-  if (token.startsWith("L")) return "Inductor";
-  if (token.startsWith("D") || token.startsWith("LED")) return "Diode";
-  if (token.startsWith("Q")) return "Transistor";
-  if (token.startsWith("U") || token.startsWith("IC")) return "IC";
-  if (token.startsWith("J") || token.startsWith("P") || token.startsWith("CON")) return "Connector";
-  if (token.startsWith("Y") || token.startsWith("X")) return "Crystal";
-  if (token.startsWith("F")) return "Fuse";
-  if (token.startsWith("SW") || token.startsWith("S")) return "Switch";
-  if (token.startsWith("TP")) return "Test Point";
-  return "";
+  const prefix = DESIGNATOR_PREFIXES.find((candidate) => token.startsWith(candidate));
+  return prefix ? DESIGNATOR_CATEGORIES[prefix] : "";
 }
 
 function sanitizeId(value: string) {
