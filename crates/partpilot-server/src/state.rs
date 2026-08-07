@@ -73,7 +73,11 @@ impl AppState {
 
         Ok(Self {
             db: Some(db),
-            auth: AuthVerifier::jwks(config.supabase_jwks_url.clone()),
+            auth: AuthVerifier::supabase(
+                config.supabase_jwks_url.clone(),
+                config.supabase_url.clone(),
+                config.supabase_publishable_key.clone(),
+            ),
             memory: Arc::new(RwLock::new(MemoryStore::default())),
         })
     }

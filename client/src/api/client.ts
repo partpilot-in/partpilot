@@ -11,15 +11,36 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  let token = localStorage.getItem("supabase_access_token");
+  let token: string | null = null;
 
-  if (!token && supabase) {
+  if (supabase) {
     const { data } = await supabase.auth.getSession();
     token = data.session?.access_token ?? null;
   }
+
+  token ??= localStorage.getItem("supabase_access_token");
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config as (typeof error.config & { _partpilotAuthRetried?: boolean }) | undefined;
+    if (error.response?.status !== 401 || !supabase || !config || config._partpilotAuthRetried) {
+      return Promise.reject(error);
+    }
+
+    config._partpilotAuthRetried = true;
+    const { data, error: refreshError } = await supabase.auth.refreshSession();
+    const token = data.session?.access_token;
+    if (refreshError || !token) return Promise.reject(error);
+
+    localStorage.setItem("supabase_access_token", token);
+    config.headers.Authorization = `Bearer ${token}`;
+    return api(config);
+  },
+);
