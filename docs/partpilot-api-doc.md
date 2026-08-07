@@ -13,7 +13,7 @@ Three tiers, matched to the route table in §3:
 | Scheme | Header | Used for |
 |---|---|---|
 | None | — | Public read endpoints (parts, search) |
-| Supabase session | `Authorization: Bearer <supabase_access_token>` | User-scoped endpoints (watchlist, BOMs) |
+| Supabase session | `Authorization: Bearer <supabase_access_token>` | User-scoped endpoints (BOMs, Important parts) |
 | API key | `X-API-Key: <key>` | KiCad plugin endpoint |
 
 Supabase tokens are obtained client-side via the Supabase Auth SDK, not from this API. API keys are generated from the client's account settings page and map to a `user_id` server-side via the `api_keys` table.
@@ -44,7 +44,7 @@ Response envelope for paginated lists:
 
 **Non-paginated responses** return the resource directly (no envelope).
 
-**Sorting** (BOM line tables): `sort` + `order` query params, e.g. `?sort=risk_score&order=desc`. Sortable fields are listed per endpoint below.
+**Sorting** (BOM line tables): `sort` + `order` query params, e.g. `?sort=score&order=desc`. Sortable fields are listed per endpoint below.
 
 ---
 
@@ -60,7 +60,7 @@ Fuzzy search by MPN or description.
 
 | Param | Type | Required | Notes |
 |---|---|---|---|
-| `q` | string | yes | MPN or description fragment |
+| `q` | string | no | MPN or description fragment; omit to list parts |
 | `category` | string | no | filter, e.g. `regulator` |
 | `manufacturer` | string | no | filter, exact canonical name |
 | `lifecycle` | string | no | one of `active`, `nrnd`, `last_time_buy`, `obsolete`, `unknown` |
@@ -79,7 +79,13 @@ Fuzzy search by MPN or description.
       "description": "3-terminal adjustable regulator, TO-220",
       "category": "regulator",
       "lifecycle_stage": "active",
-      "score": 92
+      "score": 92,
+      "country_of_origin": "US",
+      "unit_price": 0.42,
+      "compliance": [{ "standard": "RoHS", "status": "pass" }],
+      "parameters": {
+        "package": "TO-220"
+      }
     }
   ],
   "next_cursor": null,
@@ -106,6 +112,10 @@ Part detail — reconciled lifecycle status and risk/PartPilot score.
   "manufacturer": "TEXAS INSTRUMENTS",
   "description": "3-terminal adjustable regulator, TO-220",
   "category": "regulator",
+  "country_of_origin": "US",
+  "unit_price": 0.42,
+  "compliance": [{ "standard": "RoHS", "status": "pass" }],
+  "lifecycle_stage": "active",
   "parameters": {
     "output_current_max_a": 1.5,
     "package": "TO-220",
@@ -270,7 +280,33 @@ Side-by-side parameter comparison for the Part Search "Compare" flow.
 
 ---
 
-### 3.7 `POST /v1/boms`
+### 3.7 `GET /v1/boms`
+
+List the current user's BOM projects for the Projects page and dashboard aggregations.
+
+**Auth**: Supabase session
+
+**Response** `200`
+
+```json
+{
+  "data": [
+    {
+      "id": "d4e5f6a7-...",
+      "name": "Amp-v3 BOM",
+      "part_count": 42,
+      "uploaded_at": "2026-07-13T10:00:00Z",
+      "owner": "You",
+      "lowest_score": 58,
+      "lines": []
+    }
+  ]
+}
+```
+
+---
+
+### 3.8 `POST /v1/boms`
 
 Upload a BOM (CSV or XLSX) and generate a risk report.
 
@@ -289,9 +325,27 @@ Upload a BOM (CSV or XLSX) and generate a risk report.
 {
   "id": "d4e5f6a7-...",
   "name": "Amp-v3 BOM",
+  "part_count": 42,
   "uploaded_at": "2026-07-13T10:00:00Z",
-  "line_count": 42,
-  "unmatched_line_count": 2
+  "owner": "You",
+  "lowest_score": 58,
+  "lines": [
+    {
+      "id": "line-1",
+      "part_id": "9f8e7d6c-...",
+      "line_no": 1,
+      "mpn": "RC0805FR-0710KL",
+      "description": "10k resistor, 1%",
+      "manufacturer": "YAGEO",
+      "country_of_origin": "TW",
+      "category": "resistor",
+      "qty": 12,
+      "unit_price": 0.01,
+      "compliance": [{ "standard": "RoHS", "status": "pass" }],
+      "lifecycle_stage": "active",
+      "score": 97
+    }
+  ]
 }
 ```
 
@@ -299,7 +353,7 @@ Upload a BOM (CSV or XLSX) and generate a risk report.
 
 ---
 
-### 3.8 `GET /v1/boms/:id`
+### 3.9 `GET /v1/boms/:id`
 
 Fetch a stored BOM's risk report.
 
@@ -313,33 +367,40 @@ Fetch a stored BOM's risk report.
 {
   "id": "d4e5f6a7-...",
   "name": "Amp-v3 BOM",
+  "part_count": 2,
   "uploaded_at": "2026-07-13T10:00:00Z",
+  "owner": "You",
+  "lowest_score": 58,
   "lines": [
     {
+      "id": "line-1",
+      "part_id": "9f8e7d6c-...",
       "line_no": 1,
+      "mpn": "RC0805FR-0710KL",
       "description": "10k resistor, 1%",
       "manufacturer": "YAGEO",
       "country_of_origin": "TW",
       "category": "resistor",
       "qty": 12,
       "unit_price": 0.01,
-      "compliance": [{ "standard": "rohs", "status": "pass" }],
+      "compliance": [{ "standard": "RoHS", "status": "pass" }],
       "lifecycle_stage": "active",
-      "score": 97,
-      "matched_part_id": "9f8e7d6c-..."
+      "score": 97
     },
     {
+      "id": "line-2",
+      "part_id": "8e4c1a20-...",
       "line_no": 2,
+      "mpn": "LM317T",
       "description": "LM317T regulator",
       "manufacturer": "TEXAS INSTRUMENTS",
       "country_of_origin": "US",
       "category": "regulator",
       "qty": 4,
       "unit_price": 0.42,
-      "compliance": [{ "standard": "rohs", "status": "pass" }],
+      "compliance": [{ "standard": "RoHS", "status": "pass" }],
       "lifecycle_stage": "nrnd",
-      "score": 58,
-      "matched_part_id": "8e4c1a20-..."
+      "score": 58
     }
   ]
 }
@@ -349,7 +410,7 @@ Fetch a stored BOM's risk report.
 
 ---
 
-### 3.9 `GET /v1/boms/:id/compare`
+### 3.10 `GET /v1/boms/:id/compare`
 
 Line-by-line diff against another BOM (e.g. two revisions of a project).
 
@@ -361,25 +422,58 @@ Line-by-line diff against another BOM (e.g. two revisions of a project).
 
 ```json
 {
-  "base_bom_id": "d4e5f6a7-...",
-  "compare_bom_id": "e5f6a7b8-...",
-  "changes": [
+  "items": [
     {
-      "line_key": "LM317T / TEXAS INSTRUMENTS",
-      "status": "changed",
-      "fields_changed": ["lifecycle_stage", "score"],
-      "base": { "lifecycle_stage": "active", "score": 92 },
-      "compare": { "lifecycle_stage": "nrnd", "score": 58 }
+      "id": "line-2",
+      "part_id": "8e4c1a20-...",
+      "line_no": 2,
+      "mpn": "LM317T",
+      "description": "LM317T regulator",
+      "manufacturer": "TEXAS INSTRUMENTS",
+      "country_of_origin": "US",
+      "category": "regulator",
+      "qty": 4,
+      "unit_price": 0.42,
+      "compliance": [{ "standard": "RoHS", "status": "pass" }],
+      "lifecycle_stage": "nrnd",
+      "score": 58,
+      "delta": "changed",
+      "change_summary": "Lifecycle changed from active to NRND; score dropped from 92 to 58.",
+      "previous_score": 92
     },
     {
-      "line_key": "74HC595 / NXP",
-      "status": "added",
-      "compare": { "lifecycle_stage": "active", "score": 89 }
+      "id": "line-3",
+      "part_id": "74hc595-...",
+      "line_no": 3,
+      "mpn": "74HC595",
+      "description": "8-bit shift register",
+      "manufacturer": "NXP",
+      "country_of_origin": "NL",
+      "category": "logic",
+      "qty": 8,
+      "unit_price": 0.18,
+      "compliance": [{ "standard": "RoHS", "status": "pass" }],
+      "lifecycle_stage": "active",
+      "score": 89,
+      "delta": "added",
+      "change_summary": "Added in comparison BOM."
     },
     {
-      "line_key": "OLD-PART-123 / VENDOR",
-      "status": "removed",
-      "base": { "lifecycle_stage": "obsolete", "score": 3 }
+      "id": "line-4",
+      "part_id": "old-part-...",
+      "line_no": 4,
+      "mpn": "OLD-PART-123",
+      "description": "Legacy component",
+      "manufacturer": "VENDOR",
+      "country_of_origin": "Unknown",
+      "category": "Uncategorized",
+      "qty": 1,
+      "unit_price": 0,
+      "compliance": [],
+      "lifecycle_stage": "obsolete",
+      "score": 3,
+      "delta": "removed",
+      "change_summary": "Removed from comparison BOM."
     }
   ]
 }
@@ -387,9 +481,9 @@ Line-by-line diff against another BOM (e.g. two revisions of a project).
 
 ---
 
-### 3.10 `GET /v1/watchlist`
+### 3.11 `GET /v1/important-parts`
 
-Current user's watched parts.
+Current user's important parts.
 
 **Auth**: Supabase session
 
@@ -399,12 +493,18 @@ Current user's watched parts.
 {
   "data": [
     {
-      "part_id": "8e4c1a20-...",
+      "id": "8e4c1a20-...",
       "mpn": "LM317T",
       "manufacturer": "TEXAS INSTRUMENTS",
+      "description": "3-terminal adjustable regulator, TO-220",
+      "category": "regulator",
       "lifecycle_stage": "active",
       "score": 92,
-      "added_at": "2026-06-01T00:00:00Z"
+      "country_of_origin": "US",
+      "unit_price": 0.42,
+      "compliance": [{ "standard": "RoHS", "status": "pass" }],
+      "parameters": { "package": "TO-220" },
+      "created_at": "2026-06-01T00:00:00Z"
     }
   ]
 }
@@ -412,9 +512,9 @@ Current user's watched parts.
 
 ---
 
-### 3.11 `POST /v1/watchlist`
+### 3.12 `POST /v1/important-parts`
 
-Add a part to the current user's watchlist.
+Mark a part as important for the current user.
 
 **Auth**: Supabase session
 
@@ -427,16 +527,16 @@ Add a part to the current user's watchlist.
 **Response** `201`
 
 ```json
-{ "part_id": "8e4c1a20-1f3a-4b8e-9e2a-0a1b2c3d4e5f", "added_at": "2026-07-13T10:00:00Z" }
+{ "part_id": "8e4c1a20-1f3a-4b8e-9e2a-0a1b2c3d4e5f", "created_at": "2026-07-13T10:00:00Z" }
 ```
 
-**Errors**: `409` if already watchlisted.
+**Errors**: `409` if already marked important.
 
 ---
 
-### 3.12 `DELETE /v1/watchlist/:part_id`
+### 3.13 `DELETE /v1/important-parts/:part_id`
 
-Remove a part from the current user's watchlist.
+Remove the important mark from a part.
 
 **Auth**: Supabase session
 
@@ -444,7 +544,7 @@ Remove a part from the current user's watchlist.
 
 ---
 
-### 3.13 `GET /v1/kicad/lookup`
+### 3.14 `GET /v1/kicad/lookup`
 
 Slim single-part lookup for the KiCad plugin.
 
@@ -473,7 +573,7 @@ Slim single-part lookup for the KiCad plugin.
 
 ---
 
-### 3.14 `GET /healthz`
+### 3.15 `GET /healthz`
 
 Liveness/readiness check (used by Railway).
 
@@ -501,7 +601,7 @@ All non-2xx responses share one shape:
 | `401` | Missing/invalid credential |
 | `403` | Authenticated but not authorized for this resource |
 | `404` | Resource not found |
-| `409` | Conflict (e.g. duplicate watchlist entry) |
+| `409` | Conflict (e.g. duplicate important part) |
 | `429` | Rate limited |
 | `500` | Internal error — logged server-side with a request id, never leaks internals in the response |
 

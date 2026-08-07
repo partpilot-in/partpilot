@@ -54,17 +54,18 @@ export function BomEdit() {
     return editableToBomLines(rows, activeProject.id);
   }
 
-  function saveBom() {
+  async function saveBom() {
     const lines = buildLines();
     if (!lines.length) {
       showToast({ title: "Add at least one line", body: "Enter an MPN or description before saving." });
       return;
     }
-    const updated = updateBom(activeProject.id, lines);
-    if (updated) {
-      updated.name = bomName.trim() || updated.name;
+    try {
+      const updated = await updateBom(activeProject.id, { name: bomName, lines });
       showToast({ title: "BOM updated", body: `${updated.name} now has ${updated.part_count} parts.`, tone: "success" });
       navigate(`/projects/${updated.id}`);
+    } catch (saveError) {
+      showToast({ title: "Could not save BOM", body: saveError instanceof Error ? saveError.message : "Please try again." });
     }
   }
 

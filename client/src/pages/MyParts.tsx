@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, Search, Star } from "lucide-react";
+import { Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
+import { useMyParts, useMyPartsMutations, type MyPartInput } from "../api/hooks/myParts";
 import { useProjectParts, useSearchParts, type ProjectPartRow } from "../api/hooks/parts";
 import type { Part } from "../api/types";
 import {
@@ -16,7 +17,6 @@ import {
   useToast,
   type Column,
 } from "../components/ui";
-import { readManualParts, saveManualParts } from "../lib/myPartsStorage";
 import { useImportantParts } from "../lib/useImportantParts";
 
 const recentSearchesStorageKey = "partpilot.recentPartSearches";
@@ -52,14 +52,6 @@ const emptyManualPartForm: ManualPartForm = {
   country_of_origin: "",
 };
 
-function createManualPartId(mpn: string) {
-  const slug = mpn.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-  const suffix = "crypto" in window && "randomUUID" in window.crypto
-    ? window.crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  return `manual-${slug || "part"}-${suffix}`;
-}
-
 function readRecentSearches(): RecentSearchPart[] {
   try {
     const raw = window.localStorage.getItem(recentSearchesStorageKey);
@@ -84,17 +76,28 @@ function saveRecentSearches(searches: RecentSearchPart[]) {
   window.localStorage.setItem(recentSearchesStorageKey, JSON.stringify(searches));
 }
 
+function errorMessage(error: unknown) {
+  if (error && typeof error === "object" && "response" in error) {
+    const response = (error as { response?: { data?: { error?: unknown } } }).response;
+    if (typeof response?.data?.error === "string") return response.data.error;
+  }
+  return error instanceof Error ? error.message : "Please try again.";
+}
+
 export function MyParts() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
-  const { data: projects, loading, error } = useProjects();
+  const { data: projects, loading: projectsLoading, error: projectsError } = useProjects();
+  const { data: storedParts, loading: partsLoading, error: partsError, refetch: refetchParts } = useMyParts();
+  const { createMyPart, updateMyPart, deleteMyPart } = useMyPartsMutations();
   const projectRows = useProjectParts(projects);
   const { ids: importantIds, toggleImportant } = useImportantParts();
-  const [manualRows, setManualRows] = useState<MyPartRow[]>(() => readManualParts());
   const [recentSearches, setRecentSearches] = useState<RecentSearchPart[]>(() => readRecentSearches());
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [addPartOpen, setAddPartOpen] = useState(false);
+  const [editingPart, setEditingPart] = useState<MyPartRow | null>(null);
+  const [savingPart, setSavingPart] = useState(false);
   const [manualForm, setManualForm] = useState<ManualPartForm>(emptyManualPartForm);
 
   useEffect(() => {
@@ -105,10 +108,10 @@ export function MyParts() {
   const { data: searchRows, loading: searchLoading, error: searchError } = useSearchParts(activeQuery, {});
   const myRows: MyPartRow[] = useMemo(
     () => [
-      ...manualRows,
+      ...(storedParts ?? []),
       ...projectRows.map((row) => ({ ...row, source: "project" as const })),
     ],
-    [manualRows, projectRows],
+    [storedParts, projectRows],
   );
   const myPartKeys = useMemo(() => {
     const ids = new Set<string>();
@@ -165,6 +168,53 @@ export function MyParts() {
       numeric: true,
       render: (row) => <ScoreRing value={row.score} size="sm" />,
     },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (row) => row.source === "manual" ? (
+        <div className="inline-stack">
+          <button
+            type="button"
+            className="icon-button"
+            aria-label={`Edit ${row.mpn}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              setEditingPart(row);
+              setManualForm({
+                mpn: row.mpn,
+                manufacturer: row.manufacturer,
+                category: row.category,
+                description: row.description,
+                qty: String(row.total_qty),
+                unit_price: String(row.unit_price),
+                country_of_origin: row.country_of_origin,
+              });
+              setAddPartOpen(true);
+            }}
+          >
+            <Pencil size={16} />
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label={`Delete ${row.mpn}`}
+            onClick={async (event) => {
+              event.stopPropagation();
+              if (!window.confirm(`Remove ${row.mpn} from My Parts?`)) return;
+              try {
+                await deleteMyPart(row.id);
+                refetchParts();
+                showToast({ title: "Part removed", body: row.mpn, tone: "success" });
+              } catch (deleteError) {
+                showToast({ title: "Could not remove part", body: errorMessage(deleteError) });
+              }
+            }}
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      ) : null,
+    },
   ];
 
   useEffect(() => {
@@ -210,13 +260,12 @@ export function MyParts() {
     setManualForm((current) => ({ ...current, [key]: value }));
   }
 
-  function submitManualPart(event: FormEvent) {
+  async function submitManualPart(event: FormEvent) {
     event.preventDefault();
     const qty = Number(manualForm.qty);
     const unitPrice = Number(manualForm.unit_price || 0);
 
-    const part: MyPartRow = {
-      id: createManualPartId(manualForm.mpn),
+    const input: MyPartInput = {
       mpn: manualForm.mpn.trim(),
       manufacturer: manualForm.manufacturer.trim(),
       category: manualForm.category.trim() || "Uncategorized",
@@ -227,18 +276,23 @@ export function MyParts() {
       unit_price: Number.isFinite(unitPrice) ? Math.max(0, unitPrice) : 0,
       compliance: [{ standard: "Manual review", status: "unknown" }],
       parameters: {},
-      project_count: 0,
-      project_names: "Manual entry",
       total_qty: Number.isFinite(qty) ? Math.max(1, qty) : 1,
-      source: "manual",
     };
-
-    const next = [part, ...manualRows];
-    setManualRows(next);
-    saveManualParts(next);
-    setManualForm(emptyManualPartForm);
-    setAddPartOpen(false);
-    showToast({ title: "Part added", body: part.mpn, tone: "success" });
+    setSavingPart(true);
+    try {
+      const part = editingPart
+        ? await updateMyPart(editingPart.id, input)
+        : await createMyPart(input);
+      refetchParts();
+      setManualForm(emptyManualPartForm);
+      setEditingPart(null);
+      setAddPartOpen(false);
+      showToast({ title: editingPart ? "Part updated" : "Part added", body: part.mpn, tone: "success" });
+    } catch (saveError) {
+      showToast({ title: "Could not save part", body: errorMessage(saveError) });
+    } finally {
+      setSavingPart(false);
+    }
   }
 
   return (
@@ -248,7 +302,11 @@ export function MyParts() {
           <h1 className="page-title">My Parts</h1>
           <p className="page-subtitle">Manage existing parts and search for new parts to procure.</p>
         </div>
-        <button type="button" className="button button--primary" onClick={() => setAddPartOpen(true)}>
+        <button type="button" className="button button--primary" onClick={() => {
+          setEditingPart(null);
+          setManualForm(emptyManualPartForm);
+          setAddPartOpen(true);
+        }}>
           <Plus size={16} />
           Add Part
         </button>
@@ -309,23 +367,26 @@ export function MyParts() {
         </div>
       )}
 
-      {loading ? (
+      {projectsLoading || partsLoading ? (
         <Spinner message="Loading parts..." />
-      ) : error ? (
-        <ErrorMessage message={error} />
+      ) : projectsError || partsError ? (
+        <ErrorMessage message={projectsError ?? partsError ?? "Could not load parts"} />
       ) : (
         <DataTable
           columns={myPartsColumns}
           rows={myRows}
           getRowId={(row) => row.id}
           onRowClick={(row) => {
-            if (!row.id.startsWith("manual-")) navigate(`/parts/${row.id}`);
+            if (row.source === "project") navigate(`/parts/${row.id}`);
           }}
           emptyState={<EmptyState title="No parts yet" body="Upload a BOM or add a part manually to start building your inventory." />}
         />
       )}
 
-      <Modal open={addPartOpen} title="Add Part" onClose={() => setAddPartOpen(false)}>
+      <Modal open={addPartOpen} title={editingPart ? "Edit Part" : "Add Part"} onClose={() => {
+        setAddPartOpen(false);
+        setEditingPart(null);
+      }}>
         <form className="part-form" onSubmit={submitManualPart}>
           <label className="field-label">
             MPN
@@ -392,11 +453,14 @@ export function MyParts() {
             />
           </label>
           <div className="part-form__actions">
-            <button type="button" className="button" onClick={() => setAddPartOpen(false)}>
+            <button type="button" className="button" onClick={() => {
+              setAddPartOpen(false);
+              setEditingPart(null);
+            }}>
               Cancel
             </button>
-            <button type="submit" className="button button--primary">
-              Add Part
+            <button type="submit" className="button button--primary" disabled={savingPart}>
+              {savingPart ? "Saving..." : editingPart ? "Save Changes" : "Add Part"}
             </button>
           </div>
         </form>

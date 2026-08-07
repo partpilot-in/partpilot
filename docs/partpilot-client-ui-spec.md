@@ -145,22 +145,21 @@ Rules for building these:
 ```
 ┌───────────────────────────────────────────────────────────┐
 │  Good afternoon                                            │
-│  [ 🔍  Search any part or project...                    ]  │  ← prominent, Google-homepage-
-├───────────────────────────────────────────────────────────┤     style entry point
-│  ┌ Watchlist risk ┐  ┌ Recent projects ┐  ┌ Needs review ┐│
-│  │ ● 2 Critical    │  │ Amp-v3   ● 82   │  │ 5 parts       ││
-│  │ ● 4 High        │  │ Sensor…  ● 91   │  │ risk↑ since   ││
-│  │ ● 11 Medium     │  │ ...             │  │ last sweep    ││
-│  └────────────────┘  └────────────────┘  └───────────────┘│
+│  Parts risk, market signals, and manufacturer news...      │
 ├───────────────────────────────────────────────────────────┤
-│  Parts needing attention                     [DataTable]   │
-│  (top N watchlist parts by risk band, click → part detail) │
+│  ┌ Parts 42 ┐ ┌ Need attention 5 ┐ ┌ Lowest score 58 ┐ ... │
+├───────────────────────────────────────────────────────────┤
+│  ┌ Parts needing attention ┐ ┌ LME prices                 ┐│
+│  │ card grid: important,   │ │ manufacturer news below    ││
+│  │ part, score             │ │                            ││
+│  └─────────────────────────┘ └────────────────────────────┘│
 └───────────────────────────────────────────────────────────┘
 ```
 
-- The search bar routes to Part Search with the query pre-filled (`?q=`), not a separate search implementation.
-- "Parts needing attention" reuses `DataTable` with columns: MPN, Manufacturer, `LifecycleBadge`, `ScoreRing`.
-- Card contents are the only page-specific data hooks: `useWatchlistSummary()`, `useRecentProjects()`.
+- The dashboard does not include a search bar; search lives in My Parts.
+- Summary cards show the label on the left and the number on the right.
+- "Parts needing attention" is a card containing a compact card grid. Each item shows Important, Part, and `ScoreRing`, and clicks through to part detail.
+- The right column shows LME-style electronics metals pricing above manufacturer-related news.
 
 ### 3.2 Part Search (`pages/PartSearch.tsx`)
 
@@ -252,11 +251,10 @@ export function useProject(id: string)                              { /* GET /v1
 export function useUploadBom()                                      { /* POST /v1/boms */ }
 export function useCompareBoms(a: string, b: string)                { /* GET /v1/boms/:id/compare?with= — NEW, see below */ }
 
-// client/src/api/hooks/watchlist.ts
-export function useWatchlist()          { /* GET /v1/watchlist */ }
-export function useWatchlistSummary()    { /* derived client-side from useWatchlist(), or a future dedicated endpoint */ }
-export function useAddToWatchlist()      { /* POST /v1/watchlist */ }
-export function useRemoveFromWatchlist() { /* DELETE /v1/watchlist/:part_id */ }
+// client/src/api/hooks/importantParts.ts
+export function useImportantParts()          { /* GET /v1/important-parts */ }
+export function useAddImportantPart()        { /* POST /v1/important-parts */ }
+export function useRemoveImportantPart()     { /* DELETE /v1/important-parts/:part_id */ }
 ```
 
 During UI-first development, back each hook with an MSW (Mock Service Worker) handler matching the same response shape the real route will return — flip a single `USE_MOCKS` env flag to point React Query at MSW vs. the live `VITE_API_BASE_URL`. This is what makes "integrate the backend later" actually a later step rather than a rewrite.

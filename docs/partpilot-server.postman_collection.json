@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "PartPilot API — partpilot-server",
-    "description": "Component obsolescence intelligence API. Public read endpoints, Supabase-session user endpoints, and an API-key endpoint for the KiCad plugin.",
+    "description": "Component obsolescence intelligence API. Public read endpoints, Supabase-session BOM and Important-parts endpoints, and an API-key endpoint for the KiCad plugin.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "b6f0b6d0-2a2a-4f0a-8a0e-partpilot0001"
   },
@@ -234,6 +234,22 @@
       "name": "User (Supabase session)",
       "item": [
         {
+          "name": "List BOM projects",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/v1/boms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "boms"
+              ]
+            }
+          }
+        },
+        {
           "name": "Upload BOM",
           "request": {
             "method": "POST",
@@ -270,7 +286,7 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/v1/boms/{{bom_id}}?sort=risk_score&order=desc",
+              "raw": "{{base_url}}/v1/boms/{{bom_id}}?sort=score&order=desc",
               "host": [
                 "{{base_url}}"
               ],
@@ -282,7 +298,7 @@
               "query": [
                 {
                   "key": "sort",
-                  "value": "risk_score",
+                  "value": "score",
                   "description": "line_no|description|manufacturer|country_of_origin|category|qty|unit_price|compliance|lifecycle_stage|score"
                 },
                 {
@@ -319,33 +335,33 @@
           }
         },
         {
-          "name": "Get watchlist",
+          "name": "Get important parts",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/v1/watchlist",
+              "raw": "{{base_url}}/v1/important-parts",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "v1",
-                "watchlist"
+                "important-parts"
               ]
             }
           }
         },
         {
-          "name": "Add to watchlist",
+          "name": "Mark part important",
           "request": {
             "method": "POST",
             "url": {
-              "raw": "{{base_url}}/v1/watchlist",
+              "raw": "{{base_url}}/v1/important-parts",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "v1",
-                "watchlist"
+                "important-parts"
               ]
             },
             "header": [
@@ -361,17 +377,17 @@
           }
         },
         {
-          "name": "Remove from watchlist",
+          "name": "Unmark part important",
           "request": {
             "method": "DELETE",
             "url": {
-              "raw": "{{base_url}}/v1/watchlist/{{part_id}}",
+              "raw": "{{base_url}}/v1/important-parts/{{part_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "v1",
-                "watchlist",
+                "important-parts",
                 "{{part_id}}"
               ]
             }

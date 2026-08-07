@@ -1,20 +1,23 @@
-use partpilot_server::{config::Config, router, telemetry};
+use partpilot_server::{config::Config, router_with_state, state::AppState, telemetry};
 use tokio::net::TcpListener;
 use tracing::info;
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> anyhow::Result<()> {
     telemetry::init();
 
-    let config = Config::from_env();
+    let config = Config::from_env()?;
+    let state = AppState::from_config(&config).await?;
     let addr = config.socket_addr();
     let listener = TcpListener::bind(addr).await?;
 
     info!(%addr, "partpilot-server listening");
 
-    axum::serve(listener, router())
+    axum::serve(listener, router_with_state(state))
         .with_graceful_shutdown(shutdown_signal())
-        .await
+        .await?;
+
+    Ok(())
 }
 
 async fn shutdown_signal() {

@@ -3,36 +3,6 @@ import { parseBomFile } from "../bomParser";
 import type { BomDiffLine, BomLine, Project } from "../types";
 import { useAsync } from "./useAsync";
 
-const LOCAL_PROJECTS_KEY = "partpilot.localProjects";
-
-const localProjects: Project[] = loadLocalProjects();
-
-function upsertLocalProject(project: Project) {
-  const index = localProjects.findIndex((item) => item.id === project.id);
-  if (index >= 0) localProjects[index] = project;
-  else localProjects.unshift(project);
-  saveLocalProjects();
-  return project;
-}
-
-function loadLocalProjects() {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const value = window.sessionStorage.getItem(LOCAL_PROJECTS_KEY);
-    if (!value) return [];
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed.map((project) => normalizeProject(project)) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveLocalProjects() {
-  if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(LOCAL_PROJECTS_KEY, JSON.stringify(localProjects));
-}
-
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
@@ -105,14 +75,15 @@ function normalizeProject(value: unknown, fallback?: { name?: string; lines?: Bo
 }
 
 /**
- * List BOM projects from local/session data.
- *
- * The backend does not currently expose `GET /v1/boms`, so do not call it.
- * With no local user-created/uploaded BOMs, widgets should render empty.
+ * List the signed-in user's persisted BOM projects.
  */
 export function useProjects() {
   return useAsync<Project[]>(
-    () => Promise.resolve(localProjects),
+    () => api.get("/v1/boms").then((res) => {
+      const payload = asRecord(res.data);
+      const projects = Array.isArray(payload.data) ? payload.data : [];
+      return projects.map((project) => normalizeProject(project));
+    }),
     [],
   );
 }
@@ -124,11 +95,9 @@ export function useProject(id: string | undefined) {
   return useAsync<Project>(
     id
       ? async () => {
-        const local = localProjects.find((project) => project.id === id);
-        if (local) return local;
         return api
           .get(`/v1/boms/${id}`, { params: { sort: "risk_score", order: "desc" } })
-          .then((res) => upsertLocalProject(normalizeProject(res.data)));
+          .then((res) => normalizeProject(res.data));
       }
       : null,
     [id],
@@ -144,15 +113,11 @@ export function useUploadBom() {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("name", name?.trim() || parsed.name);
-
-    try {
-      const res = await api.post("/v1/boms", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      return upsertLocalProject(normalizeProject(res.data, parsed));
-    } catch {
-      return upsertLocalProject(normalizeProject({}, parsed));
-    }
+    formData.append("lines", JSON.stringify(parsed.lines));
+    const res = await api.post("/v1/boms", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return normalizeProject(res.data, parsed);
   }
 
   return { uploadBom };
@@ -161,68 +126,41 @@ export function useUploadBom() {
 /**
  * Create a BOM from manually entered lines.
  * Sends as JSON to `POST /v1/boms` with a JSON body.
- * Falls back to local-only creation if the server doesn't support it.
- * This preserves user-entered data, but does not seed sample/mock data.
+ * The project and all lines are persisted atomically by the server.
  */
 export function useCreateBom() {
   async function createBom({ name, lines }: { name: string; lines: BomLine[] }): Promise<Project> {
-    try {
-      const res = await api.post("/v1/boms", { name, lines });
-      return upsertLocalProject(normalizeProject(res.data, { name, lines }));
-    } catch {
-      // Fallback: construct a local project object
-      return upsertLocalProject(normalizeProject({
-        id: `bom-manual-${Date.now()}`,
-        name: name.trim() || "Manual BOM",
-        uploaded_at: new Date().toISOString().slice(0, 10),
-        owner: "You",
-        lines,
-      }));
-    }
+    const res = await api.post("/v1/boms", { name, lines });
+    return normalizeProject(res.data, { name, lines });
   }
 
   return { createBom };
 }
 
 /**
- * Update BOM lines. No PATCH endpoint exists in the collection,
- * so this remains a local-only operation.
+ * Update a project's name and/or BOM lines.
  */
 export function useUpdateBom() {
-  function updateBom(projectId: string, lines: BomLine[]): Project | undefined {
-    const existing = localProjects.find((project) => project.id === projectId);
-    if (!existing) return undefined;
-    return upsertLocalProject({
-      ...existing,
-      part_count: lines.length,
-      lowest_score: lines.length ? Math.min(...lines.map((line) => line.score)) : 0,
-      lines,
-    });
+  async function updateBom(projectId: string, input: { name?: string; lines?: BomLine[] }): Promise<Project> {
+    const res = await api.patch(`/v1/boms/${projectId}`, input);
+    return normalizeProject(res.data, input);
   }
 
   return { updateBom };
 }
 
 export function useRenameBom() {
-  function renameBom(projectId: string, name: string): Project | undefined {
-    const existing = localProjects.find((project) => project.id === projectId);
-    if (!existing) return undefined;
-    return upsertLocalProject({
-      ...existing,
-      name: name.trim() || "Untitled",
-    });
+  async function renameBom(projectId: string, name: string): Promise<Project> {
+    const res = await api.patch(`/v1/boms/${projectId}`, { name });
+    return normalizeProject(res.data);
   }
 
   return { renameBom };
 }
 
 export function useDeleteBom() {
-  function deleteBom(projectId: string): boolean {
-    const index = localProjects.findIndex((project) => project.id === projectId);
-    if (index < 0) return false;
-    localProjects.splice(index, 1);
-    saveLocalProjects();
-    void api.delete(`/v1/boms/${projectId}`).catch(() => undefined);
+  async function deleteBom(projectId: string): Promise<boolean> {
+    await api.delete(`/v1/boms/${projectId}`);
     return true;
   }
 

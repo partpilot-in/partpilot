@@ -1,9 +1,9 @@
 use axum::{
+    Router,
     http::{HeaderName, HeaderValue},
     middleware,
     response::Response,
-    routing::{delete, get, post},
-    Router,
+    routing::{delete, get},
 };
 use tower_http::{compression::CompressionLayer, cors::CorsLayer, trace::TraceLayer};
 use uuid::Uuid;
@@ -12,24 +12,29 @@ use crate::state::AppState;
 
 pub mod boms;
 pub mod health;
+pub mod important_parts;
 pub mod kicad;
+pub mod my_parts;
 pub mod parts;
-pub mod watchlist;
 
 const REQUEST_ID_HEADER: &str = "x-request-id";
 
 pub fn router() -> Router {
+    router_with_state(AppState::placeholder())
+}
+
+pub fn router_with_state(state: AppState) -> Router {
     Router::new()
         .route("/healthz", get(health::healthz))
-        .nest("/v1", v1_routes())
-        .with_state(AppState::placeholder())
+        .nest("/v1", v1_routes(state.clone()))
+        .with_state(state)
         .layer(middleware::map_response(add_request_id))
         .layer(CompressionLayer::new())
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
 }
 
-fn v1_routes() -> Router<AppState> {
+fn v1_routes(state: AppState) -> Router<AppState> {
     Router::new()
         .route("/parts/search", get(parts::search))
         .route("/parts/compare", get(parts::compare))
@@ -40,20 +45,50 @@ fn v1_routes() -> Router<AppState> {
         .nest(
             "/boms",
             Router::new()
-                .route("/", post(boms::create))
-                .route("/:id", get(boms::detail))
+                .route("/", get(boms::list).post(boms::create))
+                .route(
+                    "/:id",
+                    get(boms::detail).patch(boms::update).delete(boms::remove),
+                )
                 .route("/:id/compare", get(boms::compare))
-                .layer(middleware::from_fn(
-                    crate::auth::placeholder_supabase_session,
+                .layer(middleware::from_fn_with_state(
+                    state.clone(),
+                    crate::auth::require_supabase_session,
+                )),
+        )
+        .nest(
+            "/my-parts",
+            Router::new()
+                .route("/", get(my_parts::list).post(my_parts::create))
+                .route(
+                    "/:id",
+                    get(my_parts::detail)
+                        .patch(my_parts::update)
+                        .delete(my_parts::remove),
+                )
+                .layer(middleware::from_fn_with_state(
+                    state.clone(),
+                    crate::auth::require_supabase_session,
+                )),
+        )
+        .nest(
+            "/important-parts",
+            Router::new()
+                .route("/", get(important_parts::list).post(important_parts::add))
+                .route("/:part_id", delete(important_parts::remove))
+                .layer(middleware::from_fn_with_state(
+                    state.clone(),
+                    crate::auth::require_supabase_session,
                 )),
         )
         .nest(
             "/watchlist",
             Router::new()
-                .route("/", get(watchlist::list).post(watchlist::add))
-                .route("/:part_id", delete(watchlist::remove))
-                .layer(middleware::from_fn(
-                    crate::auth::placeholder_supabase_session,
+                .route("/", get(important_parts::list).post(important_parts::add))
+                .route("/:part_id", delete(important_parts::remove))
+                .layer(middleware::from_fn_with_state(
+                    state,
+                    crate::auth::require_supabase_session,
                 )),
         )
         .nest(

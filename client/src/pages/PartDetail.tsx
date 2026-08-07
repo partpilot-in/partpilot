@@ -2,6 +2,7 @@ import { Fragment, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Plus, Star } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
+import { useMyParts, useMyPartsMutations } from "../api/hooks/myParts";
 import { usePart, usePartAlternates, useProjectParts } from "../api/hooks/parts";
 import type { Part } from "../api/types";
 import {
@@ -17,7 +18,6 @@ import {
   type Column,
 } from "../components/ui";
 import { currencyFormatter } from "../lib/format";
-import { readManualParts, saveManualParts, type StoredMyPart } from "../lib/myPartsStorage";
 import { useImportantParts } from "../lib/useImportantParts";
 
 const recentSearchesStorageKey = "partpilot.recentPartSearches";
@@ -43,13 +43,14 @@ export function PartDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: projects, loading: projectsLoading } = useProjects();
+  const { data: manualParts, loading: manualPartsLoading, refetch: refetchMyParts } = useMyParts();
+  const { createMyPart } = useMyPartsMutations();
   const projectParts = useProjectParts(projects);
-  const manualParts = useMemo(() => readManualParts(), []);
   const { parts: importantParts, isImportant, toggleImportant } = useImportantParts();
   const localPart = useMemo(
     () =>
       [
-        ...manualParts,
+        ...(manualParts ?? []),
         ...projectParts.map((row) => ({ ...row, source: "project" as const })),
         ...importantParts.map((row) => ({
           ...row,
@@ -102,10 +103,9 @@ export function PartDetail() {
     });
   }
 
-  function addToMyParts() {
+  async function addToMyParts() {
     if (!part) return;
-    const stored = readManualParts();
-    const exists = stored.some(
+    const exists = (manualParts ?? []).some(
       (item) => item.id === part.id || item.mpn.trim().toLowerCase() === part.mpn.trim().toLowerCase(),
     ) || !!localPart;
 
@@ -114,21 +114,20 @@ export function PartDetail() {
       return;
     }
 
-    saveManualParts([
-      {
-        ...part,
-        project_count: 0,
-        project_names: "Added from catalog",
-        total_qty: 1,
-        source: "manual",
-      },
-      ...stored,
-    ]);
-    removeRecentSearch(part);
-    showToast({ title: "Added to My Parts", body: part.mpn, tone: "success" });
+    try {
+      await createMyPart({ ...part, total_qty: 1 });
+      refetchMyParts();
+      removeRecentSearch(part);
+      showToast({ title: "Added to My Parts", body: part.mpn, tone: "success" });
+    } catch (addError) {
+      showToast({
+        title: "Could not add part",
+        body: addError instanceof Error ? addError.message : "Please try again.",
+      });
+    }
   }
 
-  if (!localPart && (loading || projectsLoading)) {
+  if (!localPart && (loading || projectsLoading || manualPartsLoading)) {
     return <Spinner message="Loading part details..." />;
   }
 

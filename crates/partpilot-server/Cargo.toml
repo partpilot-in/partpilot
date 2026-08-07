@@ -4,14 +4,20 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1"
 axum = { version = "0.7", features = ["multipart"] }
+chrono = { version = "0.4", features = ["serde"] }
+csv = "1"
+jsonwebtoken = "9"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "macros"] }
 tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal"] }
 tower-http = { version = "0.5", features = ["compression-full", "cors", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-uuid = { version = "1", features = ["v4"] }
+uuid = { version = "1", features = ["serde", "v4"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

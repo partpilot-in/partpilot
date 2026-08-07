@@ -49,7 +49,7 @@ partpilot/
 │   │           ├── mod.rs
 │   │           ├── parts.rs
 │   │           ├── boms.rs
-│   │           ├── watchlist.rs
+│   │           ├── important_parts.rs
 │   │           ├── kicad.rs
 │   │           └── health.rs
 │   │
@@ -91,7 +91,7 @@ partpilot/
 │   │   ├── api/
 │   │   │   ├── client.ts           # fetch wrapper, attaches Supabase bearer token
 │   │   │   └── types.ts            # DTOs mirroring server response shapes
-│   │   ├── pages/{Search,PartDetail,BomUpload,Watchlist}.tsx
+│   │   ├── pages/{Dashboard,MyParts,PartDetail,BomUpload,Projects}.tsx
 │   │   ├── components/
 │   │   ├── hooks/                  # React Query hooks per endpoint
 │   │   └── lib/supabase.ts
@@ -276,9 +276,9 @@ pub trait PartRepository: Send + Sync {
     async fn latest_statuses(&self, part_id: &PartId) -> Result<Vec<LifecycleStatus>, RepoError>;
     async fn upsert_alternate(&self, alt: &AlternatePart) -> Result<(), RepoError>;
     async fn alternates_for(&self, part_id: &PartId) -> Result<Vec<AlternatePart>, RepoError>;
-    async fn watchlist_parts_for_user(&self, user_id: uuid::Uuid) -> Result<Vec<Part>, RepoError>;
-    async fn add_to_watchlist(&self, user_id: uuid::Uuid, part_id: &PartId) -> Result<(), RepoError>;
-    async fn remove_from_watchlist(&self, user_id: uuid::Uuid, part_id: &PartId) -> Result<(), RepoError>;
+    async fn important_parts_for_user(&self, user_id: uuid::Uuid) -> Result<Vec<Part>, RepoError>;
+    async fn add_important_part(&self, user_id: uuid::Uuid, part_id: &PartId) -> Result<(), RepoError>;
+    async fn remove_important_part(&self, user_id: uuid::Uuid, part_id: &PartId) -> Result<(), RepoError>;
     async fn all_parts_paginated(&self, cursor: Option<PartId>, limit: u32) -> Result<Vec<Part>, RepoError>;
 }
 
@@ -709,11 +709,20 @@ Fail fast at startup — missing/malformed env vars should panic before the proc
 | `GET` | `/v1/parts/:id` | none | Part detail + reconciled status + risk score |
 | `GET` | `/v1/parts/:id/history` | none | Raw per-source statuses, for audit/debugging |
 | `GET` | `/v1/parts/:id/alternates` | none | Ranked alternate suggestions |
-| `POST` | `/v1/boms` | Supabase session | Upload a BOM (CSV/Excel), returns risk report |
+| `GET` | `/v1/boms` | Supabase session | Current user's BOM projects |
+| `POST` | `/v1/boms` | Supabase session | Upload a BOM (CSV/Excel), returns project risk report |
 | `GET` | `/v1/boms/:id` | Supabase session, owner-only | Fetch a stored BOM risk report |
-| `GET` | `/v1/watchlist` | Supabase session | Current user's watched parts |
-| `POST` | `/v1/watchlist` | Supabase session | Add a part to watchlist |
-| `DELETE` | `/v1/watchlist/:part_id` | Supabase session | Remove from watchlist |
+| `PATCH` | `/v1/boms/:id` | Supabase session, owner-only | Rename a project and/or replace its BOM lines |
+| `DELETE` | `/v1/boms/:id` | Supabase session, owner-only | Delete a project and its BOM lines |
+| `GET` | `/v1/boms/:id/compare?with=:otherId` | Supabase session, owner-only | Line-level BOM diff |
+| `GET` | `/v1/my-parts` | Supabase session | Current user's manually managed parts |
+| `POST` | `/v1/my-parts` | Supabase session | Add a manually managed part |
+| `GET` | `/v1/my-parts/:id` | Supabase session, owner-only | Fetch a manually managed part |
+| `PATCH` | `/v1/my-parts/:id` | Supabase session, owner-only | Update a manually managed part |
+| `DELETE` | `/v1/my-parts/:id` | Supabase session, owner-only | Remove a manually managed part |
+| `GET` | `/v1/important-parts` | Supabase session | Current user's important parts |
+| `POST` | `/v1/important-parts` | Supabase session | Mark a part important |
+| `DELETE` | `/v1/important-parts/:part_id` | Supabase session | Remove important mark |
 | `GET` | `/v1/kicad/lookup?mpn=&manufacturer=` | API key | Slim single-part lookup for the KiCad plugin |
 | `GET` | `/healthz` | none | Liveness for Railway healthchecks |
 
@@ -908,7 +917,7 @@ create table alternates (
     primary key (original_id, alternate_id)
 );
 
-create table watchlist (
+create table important_parts (
     user_id uuid not null references auth.users(id) on delete cascade,
     part_id uuid not null references parts(id) on delete cascade,
     created_at timestamptz not null default now(),
@@ -948,12 +957,12 @@ create table source_health (
 
 ```sql
 -- 0003_rls_policies.sql
-alter table watchlist enable row level security;
+alter table important_parts enable row level security;
 alter table boms enable row level security;
 alter table bom_lines enable row level security;
 alter table api_keys enable row level security;
 
-create policy "users manage own watchlist" on watchlist
+create policy "users manage own important parts" on important_parts
     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "users manage own boms" on boms
@@ -986,14 +995,14 @@ Migrations run via the Supabase CLI from files checked into `supabase/migrations
 
 ## 8. `partpilot-client`
 
-- **Auth**: Supabase JS client handles login/session/token refresh only. All part/BOM/watchlist data goes through the axum API.
+- **Auth**: Supabase JS client handles login/session/token refresh only. All part/BOM/Important-parts data goes through the axum API.
 - **API layer** (`src/api/client.ts`): thin `fetch` wrapper that reads the current Supabase session, attaches `Authorization: Bearer <access_token>`, and normalizes error responses into a typed `ApiError`.
-- **State**: React Query for all server state — part search results, BOM reports, watchlist. Caching matters here specifically because lifecycle data changes slowly (daily sweep cadence), so aggressive refetch-on-navigation would be wasted requests; a `staleTime` of several hours is reasonable for part detail queries.
+- **State**: React Query for all server state — part search results, BOM reports, Important parts. Caching matters here specifically because lifecycle data changes slowly (daily sweep cadence), so aggressive refetch-on-navigation would be wasted requests; a `staleTime` of several hours is reasonable for part detail queries.
 - **Pages**:
   - `Search.tsx` — MPN/description search, debounced input against `/v1/parts/search`.
   - `PartDetail.tsx` — reconciled status, risk badge, per-source history table (collapsed by default), alternates list.
   - `BomUpload.tsx` — CSV/Excel drop zone, POST to `/v1/boms`, then a sortable-by-risk-band results table.
-  - `Watchlist.tsx` — dashboard of watched parts with current risk band, add/remove controls.
+  - `MyParts.tsx` — inventory list with Important-star controls and search.
 - Reuse the `ThemedIcon.jsx` pattern and existing sky-blue Material theme for visual consistency with prior work.
 
 ---

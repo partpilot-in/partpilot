@@ -106,15 +106,18 @@ export function ProjectDetail() {
     showToast({ title: "CSV exported", body: `${project.name} downloaded.`, tone: "success" });
   }
 
-  function saveProjectName(event: FormEvent) {
+  async function saveProjectName(event: FormEvent) {
     event.preventDefault();
     if (!project) return;
-    const renamed = renameBom(project.id, projectName);
-    if (!renamed) return;
-    setRenaming(false);
-    setProjectName(renamed.name);
-    refetch();
-    showToast({ title: "Project renamed", body: renamed.name, tone: "success" });
+    try {
+      const renamed = await renameBom(project.id, projectName);
+      setRenaming(false);
+      setProjectName(renamed.name);
+      refetch();
+      showToast({ title: "Project renamed", body: renamed.name, tone: "success" });
+    } catch (renameError) {
+      showToast({ title: "Could not rename project", body: renameError instanceof Error ? renameError.message : "Please try again." });
+    }
   }
 
   function cancelRename() {
@@ -122,13 +125,16 @@ export function ProjectDetail() {
     setRenaming(false);
   }
 
-  function confirmDeleteProject() {
+  async function confirmDeleteProject() {
     if (!project) return;
-    const deleted = deleteBom(project.id);
-    setDeleteOpen(false);
-    if (!deleted) return;
-    showToast({ title: "Project deleted", body: `${project.name} was removed.`, tone: "success" });
-    navigate("/projects");
+    try {
+      await deleteBom(project.id);
+      setDeleteOpen(false);
+      showToast({ title: "Project deleted", body: `${project.name} was removed.`, tone: "success" });
+      navigate("/projects");
+    } catch (deleteError) {
+      showToast({ title: "Could not delete project", body: deleteError instanceof Error ? deleteError.message : "Please try again." });
+    }
   }
 
   if (loading) {
