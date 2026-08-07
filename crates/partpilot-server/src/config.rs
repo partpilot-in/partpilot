@@ -11,6 +11,7 @@ pub struct Config {
 
 impl Config {
     pub fn from_env() -> anyhow::Result<Self> {
+        dotenvy::dotenv().ok();
         let host = std::env::var("HOST")
             .ok()
             .and_then(|value| value.parse().ok())
@@ -19,8 +20,21 @@ impl Config {
             .ok()
             .and_then(|value| value.parse().ok())
             .unwrap_or(8080);
-        let database_url = required_env("DATABASE_URL")?;
-        let supabase_jwks_url = required_env("SUPABASE_JWKS_URL")?;
+        let database_url = required_env_any(&["DATABASE_URL", "SUPABASE_DB_URL"])?;
+        let supabase_jwks_url = std::env::var("SUPABASE_JWKS_URL")
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .or_else(|| {
+                optional_env_any(&["SUPABASE_URL", "VITE_SUPABASE_URL"]).map(|url| {
+                    format!(
+                        "{}/auth/v1/.well-known/jwks.json",
+                        url.trim_end_matches('/')
+                    )
+                })
+            })
+            .ok_or_else(|| {
+                anyhow::anyhow!("missing SUPABASE_JWKS_URL (or SUPABASE_URL/VITE_SUPABASE_URL)")
+            })?;
         let db_max_connections = std::env::var("DB_MAX_CONNECTIONS")
             .ok()
             .and_then(|value| value.parse().ok())
@@ -40,6 +54,19 @@ impl Config {
     }
 }
 
-fn required_env(name: &str) -> anyhow::Result<String> {
-    std::env::var(name).map_err(|_| anyhow::anyhow!("missing required environment variable {name}"))
+fn optional_env_any(names: &[&str]) -> Option<String> {
+    names.iter().find_map(|name| {
+        std::env::var(name)
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+    })
+}
+
+fn required_env_any(names: &[&str]) -> anyhow::Result<String> {
+    optional_env_any(names).ok_or_else(|| {
+        anyhow::anyhow!(
+            "missing required environment variable ({})",
+            names.join(" or ")
+        )
+    })
 }

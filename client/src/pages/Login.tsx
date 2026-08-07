@@ -22,7 +22,7 @@ export function Login() {
     setNotice(null);
 
     if (!isConfigured) {
-      setError("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to client/.env.");
+      setError("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to the deployment environment or repository .env file.");
       return;
     }
 

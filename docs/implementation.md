@@ -1059,11 +1059,11 @@ jobs:
 
 | Service | Source dir | Trigger | Key env vars |
 |---|---|---|---|
-| `partpilot-server` | `/` (bin: `partpilot-server`) | always-on, auto-deploy on push to `main` | `DATABASE_URL` (pooled), `REDIS_URL`, `SUPABASE_JWKS_URL`, `NOTIFY_API_KEY`, `CORS_ALLOWED_ORIGIN` |
+| `partpilot-server` | `/` (bin: `partpilot-server`) | always-on, auto-deploy on push to `main` | `DATABASE_URL` or `SUPABASE_DB_URL` (pooled), plus `SUPABASE_JWKS_URL` or `SUPABASE_URL`; Railway's `PORT` is read automatically |
 | `partpilot-worker-sweep` | `/` (bin: `partpilot-worker --mode sweep`) | Railway Cron, daily 03:00 UTC | `DATABASE_URL` (direct), `REDIS_URL`, `DIGIKEY_CLIENT_ID/SECRET`, `MOUSER_API_KEY`, `OCTOPART_API_TOKEN`, `NOTIFY_API_KEY` |
 | Redis | Railway Redis plugin | n/a | in-memory, no persistence needed — every key is re-derivable from adapter calls |
 | Supabase project | external | n/a | Postgres, Auth, Storage — not hosted on Railway |
-| Client | `client/` | static host (Vercel/Netlify/Cloudflare Pages), separate from Railway | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_BASE_URL` |
+| Client | `client/` | Railway static service | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` (Railway service variables are read at build time; repository-root `.env` is the local fallback) |
 
 Both `partpilot-server` and `partpilot-worker-sweep` point `REDIS_URL` at the same Railway Redis instance — the cache is shared deliberately, not per-service, so a sweep-populated key is available to a same-day enrich-mode lookup and vice versa.
 
