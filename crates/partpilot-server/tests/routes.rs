@@ -71,6 +71,7 @@ async fn my_parts_support_full_crud() {
     let created: Value =
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     let id = created["id"].as_str().unwrap();
+    assert_eq!(created["score"], partpilot_engine::base_rating());
 
     let list = app
         .clone()
@@ -110,7 +111,7 @@ async fn projects_support_full_crud() {
     let app = router();
     let create = json!({ "name": "Controller v1", "lines": [{
         "mpn": "LM317T", "manufacturer": "Texas Instruments", "description": "Regulator",
-        "category": "Regulator", "qty": 4, "unit_price": 0.42, "score": 92,
+        "category": "Regulator", "qty": 4, "unit_price": 0.42,
         "lifecycle_stage": "active"
     }]});
     let response = app
@@ -122,6 +123,10 @@ async fn projects_support_full_crud() {
     let created: Value =
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     let id = created["id"].as_str().unwrap();
+    assert_eq!(
+        created["lines"][0]["score"],
+        partpilot_engine::base_rating()
+    );
 
     let list = app
         .clone()

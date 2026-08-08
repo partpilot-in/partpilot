@@ -138,7 +138,7 @@ mod tests {
 
     use chrono::{Duration, Utc};
 
-    use super::{reconcile, ReconcilePolicy};
+    use super::{ReconcilePolicy, reconcile};
     use crate::domain::{Confidence, LifecycleStage, LifecycleStatus, PartId, SourceId};
 
     const MANUFACTURER: SourceId = SourceId(1);

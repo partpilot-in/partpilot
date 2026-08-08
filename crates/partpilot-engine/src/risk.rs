@@ -1,6 +1,8 @@
 pub use crate::config::RiskWeights;
 use crate::domain::{LifecycleStage, LifecycleStatus, RiskBand, RiskScore};
 
+const BASE_RISK_VALUE: f32 = 0.28;
+
 pub struct RiskInputs<'a> {
     pub reconciled_status: &'a LifecycleStatus,
     pub source_count: usize,
@@ -23,10 +25,10 @@ pub fn score_risk(inputs: RiskInputs<'_>, weights: &RiskWeights) -> RiskScore {
     if inputs.alternates_available == 0 {
         value += weights.no_alternates_penalty;
     }
-    if let Some(days) = inputs.days_to_last_time_buy {
-        if days < weights.imminent_ltb_days {
-            value += weights.imminent_ltb_penalty;
-        }
+    if let Some(days) = inputs.days_to_last_time_buy
+        && days < weights.imminent_ltb_days
+    {
+        value += weights.imminent_ltb_penalty;
     }
 
     let value = value.clamp(0.0, 1.0);
@@ -45,11 +47,26 @@ pub fn band_for(value: f32) -> RiskBand {
     }
 }
 
+/// Convert engine risk (higher is worse) to the public PartPilot rating
+/// (higher is better).
+pub fn rating_from_risk(risk: &RiskScore) -> i32 {
+    ((1.0 - risk.value.clamp(0.0, 1.0)) * 100.0).round() as i32
+}
+
+/// Return the baseline rating used until adapter data can produce a risk score.
+pub fn base_rating() -> i32 {
+    let risk = RiskScore {
+        value: BASE_RISK_VALUE,
+        band: band_for(BASE_RISK_VALUE),
+    };
+    rating_from_risk(&risk)
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
 
-    use super::{band_for, score_risk, RiskInputs, RiskWeights};
+    use super::{RiskInputs, RiskWeights, band_for, base_rating, rating_from_risk, score_risk};
     use crate::domain::{Confidence, LifecycleStage, LifecycleStatus, PartId, RiskBand, SourceId};
 
     fn status(stage: LifecycleStage) -> LifecycleStatus {
@@ -129,5 +146,28 @@ mod tests {
         assert_eq!(band_for(0.3), RiskBand::Medium);
         assert_eq!(band_for(0.6), RiskBand::High);
         assert_eq!(band_for(0.85), RiskBand::Critical);
+    }
+
+    #[test]
+    fn partpilot_rating_inverts_and_scales_risk() {
+        assert_eq!(
+            rating_from_risk(&crate::domain::RiskScore {
+                value: 0.08,
+                band: RiskBand::Low,
+            }),
+            92
+        );
+        assert_eq!(
+            rating_from_risk(&crate::domain::RiskScore {
+                value: 1.5,
+                band: RiskBand::Critical,
+            }),
+            0
+        );
+    }
+
+    #[test]
+    fn base_rating_is_available_without_adapter_inputs() {
+        assert_eq!(base_rating(), 72);
     }
 }

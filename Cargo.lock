@@ -1248,10 +1248,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "partpilot-cache"
-version = "0.1.0"
-
-[[package]]
 name = "partpilot-engine"
 version = "0.1.0"
 dependencies = [
@@ -1271,6 +1267,7 @@ dependencies = [
  "csv",
  "dotenvy",
  "jsonwebtoken",
+ "partpilot-engine",
  "reqwest",
  "serde",
  "serde_json",

@@ -524,7 +524,7 @@ fn parse_csv_lines(bytes: &[u8]) -> Result<Vec<BomLineInput>, AppError> {
             unit_price: value(price).parse().unwrap_or(0.0),
             compliance: crate::models::default_compliance(),
             lifecycle_stage: "unknown".into(),
-            score: 72,
+            score: partpilot_engine::base_rating(),
         });
     }
     Ok(lines)

@@ -65,7 +65,7 @@ fn canonicalize_alias_key(raw: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{normalize_manufacturer, normalize_mpn, AliasTable};
+    use super::{AliasTable, normalize_manufacturer, normalize_mpn};
 
     #[test]
     fn normalizes_mpn_for_matching() {

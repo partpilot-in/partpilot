@@ -12,3 +12,4 @@ pub use domain::{
     NormalizedManufacturer, NormalizedMpn, ParamValue, Part, PartId, PartParameters, RiskBand,
     RiskScore, SourceId,
 };
+pub use risk::{base_rating, rating_from_risk};

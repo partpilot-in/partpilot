@@ -67,7 +67,7 @@ pub struct BomLineInput {
     pub compliance: Value,
     #[serde(default = "default_lifecycle")]
     pub lifecycle_stage: String,
-    #[serde(default = "default_score")]
+    #[serde(default = "partpilot_engine::base_rating")]
     pub score: i32,
 }
 
@@ -115,7 +115,7 @@ pub struct MyPartInput {
     pub category: String,
     #[serde(default = "default_lifecycle")]
     pub lifecycle_stage: String,
-    #[serde(default = "default_score")]
+    #[serde(default = "partpilot_engine::base_rating")]
     pub score: i32,
     #[serde(default)]
     pub country_of_origin: String,
@@ -131,9 +131,6 @@ pub struct MyPartInput {
 
 pub fn default_qty() -> i32 {
     1
-}
-pub fn default_score() -> i32 {
-    72
 }
 pub fn default_lifecycle() -> String {
     "unknown".into()
