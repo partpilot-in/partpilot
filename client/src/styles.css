@@ -1188,12 +1188,14 @@ a:hover {
 }
 
 .settings-page {
-  max-width: 1040px;
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
 }
 
 .settings-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(260px, 0.8fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 16px;
 }
