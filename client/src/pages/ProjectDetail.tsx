@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Download, GitCompareArrows, MoreVertical, Pencil, Trash2, X } from "lucide-react";
+import { Check, Download, GitCompareArrows, MoreVertical, Pencil, Trash2, X } from "lucide-react";
 import { useDeleteBom, useProject, useProjects, useRenameBom } from "../api/hooks/boms";
 import type { BomLine } from "../api/types";
 import { exportBomCsv } from "../components/BomEditor";
@@ -165,8 +165,8 @@ export function ProjectDetail() {
 
   return (
     <div className="stack">
-      <div className="page-header">
-        <div>
+      <div className="page-header detail-page-header">
+        <div className="detail-page-heading">
           {renaming ? (
             <form className="project-title-edit" onSubmit={saveProjectName}>
               <input
@@ -204,24 +204,20 @@ export function ProjectDetail() {
             </p>
           )}
         </div>
-        <div className="inline-stack">
-          <Link className="button" to="/projects">
-            <ArrowLeft size={16} />
-            Projects
-          </Link>
-          <div className="account-menu project-actions-menu" ref={actionsMenuRef}>
+        <div className="account-menu detail-actions-menu" ref={actionsMenuRef}>
             <button
               type="button"
-              className="button"
+              className="button detail-actions-button"
+              aria-label="Project actions"
               aria-haspopup="menu"
               aria-expanded={actionsOpen}
               onClick={() => setActionsOpen((open) => !open)}
             >
               <MoreVertical size={16} />
-              Actions
+              <span className="detail-action-label">Actions</span>
             </button>
             {actionsOpen && (
-              <div className="account-menu__panel project-actions-menu__panel" role="menu">
+              <div className="account-menu__panel detail-actions-menu__panel" role="menu">
                 <button
                   type="button"
                   className="account-menu__item"
@@ -272,7 +268,6 @@ export function ProjectDetail() {
                 </button>
               </div>
             )}
-          </div>
         </div>
       </div>
 

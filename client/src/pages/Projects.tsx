@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FilePlus2, GitCompareArrows, Upload, X } from "lucide-react";
+import { FilePlus2, GitCompareArrows, MoreVertical, Upload, X } from "lucide-react";
 import { useProjects, useUploadBom } from "../api/hooks/boms";
 import { Card, EmptyState, ErrorMessage, FileDropzone, Modal, ScoreRing, Spinner, useToast } from "../components/ui";
 import { formatDate } from "../lib/format";
@@ -12,6 +12,28 @@ export function Projects() {
   const { showToast } = useToast();
   const [selectedIds, setSelectedIds] = useState(new Set<string>());
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function closeActionsMenu(event: MouseEvent) {
+      if (!actionsMenuRef.current?.contains(event.target as Node)) {
+        setActionsOpen(false);
+      }
+    }
+
+    function closeActionsMenuOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setActionsOpen(false);
+    }
+
+    document.addEventListener("mousedown", closeActionsMenu);
+    document.addEventListener("keydown", closeActionsMenuOnEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", closeActionsMenu);
+      document.removeEventListener("keydown", closeActionsMenuOnEscape);
+    };
+  }, []);
 
   function toggleProject(id: string) {
     const next = new Set(selectedIds);
@@ -33,20 +55,43 @@ export function Projects() {
 
   return (
     <div className="stack">
-      <div className="page-header">
-        <div>
+      <div className="page-header detail-page-header">
+        <div className="detail-page-heading">
           <h1 className="page-title">Projects</h1>
           <p className="page-subtitle">Review uploaded BOMs and compare lifecycle changes across revisions.</p>
         </div>
-        <div className="inline-stack">
-          <Link className="button" to="/projects/upload">
-            <FilePlus2 size={16} />
-            Create BOM
-          </Link>
-          <button type="button" className="button button--primary" onClick={() => setUploadOpen(true)}>
-            <Upload size={16} />
-            Upload BOM
+        <div className="account-menu detail-actions-menu" ref={actionsMenuRef}>
+          <button
+            type="button"
+            className="button detail-actions-button"
+            aria-label="Project actions"
+            aria-haspopup="menu"
+            aria-expanded={actionsOpen}
+            onClick={() => setActionsOpen((open) => !open)}
+          >
+            <MoreVertical size={16} />
+            <span className="detail-action-label">Actions</span>
           </button>
+          {actionsOpen && (
+            <div className="account-menu__panel detail-actions-menu__panel" role="menu">
+              <Link className="account-menu__item" role="menuitem" to="/projects/upload" onClick={() => setActionsOpen(false)}>
+                <FilePlus2 size={18} />
+                <span>Create BOM</span>
+              </Link>
+              <button
+                type="button"
+                className="account-menu__item"
+                role="menuitem"
+                onClick={() => {
+                  setActionsOpen(false);
+                  setUploadOpen(true);
+                }}
+              >
+                <Upload size={18} />
+                <span>Upload BOM</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

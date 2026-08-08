@@ -1,6 +1,6 @@
-import { Fragment, useMemo } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, Star } from "lucide-react";
+import { MoreVertical, Plus, Star } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
 import { useMyParts, useMyPartsMutations } from "../api/hooks/myParts";
 import { usePart, usePartAlternates, useProjectParts } from "../api/hooks/parts";
@@ -66,6 +66,28 @@ export function PartDetail() {
   const part = localPart ?? catalogPart;
   const { data: alternates, loading: altLoading } = usePartAlternates(localPart ? undefined : id);
   const { showToast } = useToast();
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function closeActionsMenu(event: MouseEvent) {
+      if (!actionsMenuRef.current?.contains(event.target as Node)) {
+        setActionsOpen(false);
+      }
+    }
+
+    function closeActionsMenuOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setActionsOpen(false);
+    }
+
+    document.addEventListener("mousedown", closeActionsMenu);
+    document.addEventListener("keydown", closeActionsMenuOnEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", closeActionsMenu);
+      document.removeEventListener("keydown", closeActionsMenuOnEscape);
+    };
+  }, []);
 
   const columns: Column<Part>[] = [
     { key: "mpn", header: "MPN", sortable: true },
@@ -149,32 +171,61 @@ export function PartDetail() {
     );
   }
 
+  const parameterEntries = Object.entries(part.parameters ?? {});
+
   return (
     <div className="stack">
-      <div className="page-header">
-        <div>
+      <div className="page-header detail-page-header">
+        <div className="detail-page-heading">
           <h1 className="page-title">{part.mpn}</h1>
           <p className="page-subtitle">
             {part.manufacturer} – {part.description}
           </p>
         </div>
-        <div className="inline-stack">
-          <Link className="button" to="/my-parts">
-            <ArrowLeft size={16} />
-            Back
-          </Link>
-          <button type="button" className="button button--primary" onClick={addToMyParts}>
-            <Plus size={16} />
-            Add to My Parts
+        <div className="account-menu detail-actions-menu" ref={actionsMenuRef}>
+          <button
+            type="button"
+            className="button detail-actions-button"
+            aria-label="Part actions"
+            aria-haspopup="menu"
+            aria-expanded={actionsOpen}
+            onClick={() => setActionsOpen((open) => !open)}
+          >
+            <MoreVertical size={16} />
+            <span className="detail-action-label">Actions</span>
           </button>
-          <button type="button" className="button" onClick={markImportant}>
-            <Star size={16} fill={isImportant(part.id) ? "currentColor" : "none"} />
-            {isImportant(part.id) ? "Important" : "Mark Important"}
-          </button>
+          {actionsOpen && (
+            <div className="account-menu__panel detail-actions-menu__panel" role="menu">
+              <button
+                type="button"
+                className="account-menu__item"
+                role="menuitem"
+                onClick={() => {
+                  setActionsOpen(false);
+                  void addToMyParts();
+                }}
+              >
+                <Plus size={18} />
+                <span>Add to My Parts</span>
+              </button>
+              <button
+                type="button"
+                className="account-menu__item"
+                role="menuitem"
+                onClick={() => {
+                  setActionsOpen(false);
+                  markImportant();
+                }}
+              >
+                <Star size={18} fill={isImportant(part.id) ? "currentColor" : "none"} />
+                <span>{isImportant(part.id) ? "Remove Important" : "Mark Important"}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <section className="detail-grid">
+      <section className={`detail-grid${parameterEntries.length ? "" : " detail-grid--single"}`}>
         <Card title="Lifecycle summary">
           <div className="part-summary">
             <ScoreRing value={part.score} size="lg" showLabel />
@@ -196,16 +247,18 @@ export function PartDetail() {
             </dl>
           </div>
         </Card>
-        <Card title="Parameters">
-          <dl className="property-list">
-            {Object.entries(part.parameters).map(([key, value]) => (
-              <Fragment key={key}>
-                <dt>{key}</dt>
-                <dd>{String(value)}</dd>
-              </Fragment>
-            ))}
-          </dl>
-        </Card>
+        {parameterEntries.length > 0 && (
+          <Card title="Parameters">
+            <dl className="property-list">
+              {parameterEntries.map(([key, value]) => (
+                <Fragment key={key}>
+                  <dt>{key}</dt>
+                  <dd>{String(value)}</dd>
+                </Fragment>
+              ))}
+            </dl>
+          </Card>
+        )}
       </section>
 
       <section className="stack alternates-section">

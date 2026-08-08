@@ -1,6 +1,6 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
 import { useMyParts, useMyPartsMutations, type MyPartInput } from "../api/hooks/myParts";
 import { useProjectParts, useSearchParts, type ProjectPartRow } from "../api/hooks/parts";
@@ -99,10 +99,32 @@ export function MyParts() {
   const [editingPart, setEditingPart] = useState<MyPartRow | null>(null);
   const [savingPart, setSavingPart] = useState(false);
   const [manualForm, setManualForm] = useState<ManualPartForm>(emptyManualPartForm);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setQuery(searchParams.get("q") ?? "");
   }, [searchParams]);
+
+  useEffect(() => {
+    function closeActionsMenu(event: MouseEvent) {
+      if (!actionsMenuRef.current?.contains(event.target as Node)) {
+        setActionsOpen(false);
+      }
+    }
+
+    function closeActionsMenuOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setActionsOpen(false);
+    }
+
+    document.addEventListener("mousedown", closeActionsMenu);
+    document.addEventListener("keydown", closeActionsMenuOnEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", closeActionsMenu);
+      document.removeEventListener("keydown", closeActionsMenuOnEscape);
+    };
+  }, []);
 
   const activeQuery = searchParams.get("q")?.trim() ?? "";
   const { data: searchRows, loading: searchLoading, error: searchError } = useSearchParts(activeQuery, {});
@@ -260,6 +282,12 @@ export function MyParts() {
     setManualForm((current) => ({ ...current, [key]: value }));
   }
 
+  function openAddPart() {
+    setEditingPart(null);
+    setManualForm(emptyManualPartForm);
+    setAddPartOpen(true);
+  }
+
   async function submitManualPart(event: FormEvent) {
     event.preventDefault();
     const qty = Number(manualForm.qty);
@@ -297,19 +325,40 @@ export function MyParts() {
 
   return (
     <div className="stack">
-      <section className="page-header">
-        <div>
+      <section className="page-header detail-page-header">
+        <div className="detail-page-heading">
           <h1 className="page-title">My Parts</h1>
           <p className="page-subtitle">Manage existing parts and search for new parts to procure.</p>
         </div>
-        <button type="button" className="button button--primary" onClick={() => {
-          setEditingPart(null);
-          setManualForm(emptyManualPartForm);
-          setAddPartOpen(true);
-        }}>
-          <Plus size={16} />
-          Add Part
-        </button>
+        <div className="account-menu detail-actions-menu" ref={actionsMenuRef}>
+          <button
+            type="button"
+            className="button detail-actions-button"
+            aria-label="My Parts actions"
+            aria-haspopup="menu"
+            aria-expanded={actionsOpen}
+            onClick={() => setActionsOpen((open) => !open)}
+          >
+            <MoreVertical size={16} />
+            <span className="detail-action-label">Actions</span>
+          </button>
+          {actionsOpen && (
+            <div className="account-menu__panel detail-actions-menu__panel" role="menu">
+              <button
+                type="button"
+                className="account-menu__item"
+                role="menuitem"
+                onClick={() => {
+                  setActionsOpen(false);
+                  openAddPart();
+                }}
+              >
+                <Plus size={18} />
+                <span>Add Part</span>
+              </button>
+            </div>
+          )}
+        </div>
       </section>
 
       <div className="part-search">
