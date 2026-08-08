@@ -196,6 +196,12 @@ It runs as an independent Railway service so that slow, rate-limited, or failure
 
 ## Documentation
 
-- [Implementation plan](docs/implementation.md)
-- [ADR-001: Monorepo over polyrepo](docs/architecture-decisions/001-monorepo-over-polyrepo.md)
-- [ADR-002: Supabase over plain Postgres on Railway](docs/architecture-decisions/002-supabase-over-plain-postgres-on-railway.md)
+- [Implementation Plan](docs/implementation.md)
+- [PostgreSQL](docs/PostgreSQL.md)
+- [API Documentation](docs/partpilot-api-doc.md)
+- [Client UI Specification](docs/partpilot-client-ui-spec.md)
+- [Component Protocols](docs/partpilot-component-protocols.md)
+- [PartPilot Engine](docs/partpilot-engine.md)
+- [Feature Proposal](docs/partpilot-feature-proposal.md)
+- [Postman Collection](docs/partpilot-server.postman_collection.json)
+ 
