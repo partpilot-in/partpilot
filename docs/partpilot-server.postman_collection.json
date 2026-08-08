@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "PartPilot API — partpilot-server",
-    "description": "Component obsolescence intelligence API. Public read endpoints, Supabase-session BOM and Important-parts endpoints, and an API-key endpoint for the KiCad plugin.",
+    "description": "Component obsolescence intelligence API. Public read endpoints, Supabase-session BOM, Important-parts, and Settings endpoints, and an API-key endpoint for the KiCad plugin.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "b6f0b6d0-2a2a-4f0a-8a0e-partpilot0001"
   },
@@ -389,6 +389,77 @@
                 "v1",
                 "important-parts",
                 "{{part_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get profile settings",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/v1/settings/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "settings",
+                "profile"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update profile settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.com\",\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Doe\",\n  \"job\": \"Hardware Engineer\",\n  \"company\": \"PartPilot\",\n  \"linkedin\": \"https://www.linkedin.com/in/jane-doe\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/settings/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "settings",
+                "profile"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Request password reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"redirect_to\": \"http://localhost:5173/settings\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/settings/reset-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "settings",
+                "reset-password"
               ]
             }
           }

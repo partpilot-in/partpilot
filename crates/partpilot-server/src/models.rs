@@ -129,6 +129,49 @@ pub struct MyPartInput {
     pub total_qty: i32,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::FromRow)]
+pub struct ProfileDto {
+    pub email: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub job: String,
+    pub company: String,
+    pub linkedin: String,
+}
+
+impl ProfileDto {
+    pub fn empty(email: impl Into<String>) -> Self {
+        Self {
+            email: email.into(),
+            first_name: String::new(),
+            last_name: String::new(),
+            job: String::new(),
+            company: String::new(),
+            linkedin: String::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct UpdateProfileInput {
+    pub email: String,
+    #[serde(default)]
+    pub first_name: String,
+    #[serde(default)]
+    pub last_name: String,
+    #[serde(default)]
+    pub job: String,
+    #[serde(default)]
+    pub company: String,
+    #[serde(default)]
+    pub linkedin: String,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct ResetPasswordInput {
+    pub redirect_to: Option<String>,
+}
+
 pub fn default_qty() -> i32 {
     1
 }

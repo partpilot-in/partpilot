@@ -13,6 +13,7 @@ import { ProjectDetail } from "./pages/ProjectDetail";
 import { BomCompare } from "./pages/BomCompare";
 import { BomEdit } from "./pages/BomEdit";
 import { BomUpload } from "./pages/BomUpload";
+import { SettingsPage } from "./pages/Settings";
 
 const tabs = [
   { key: "dashboard", label: "Dashboard", to: "/dashboard", icon: <LayoutDashboard size={22} /> },
@@ -21,6 +22,7 @@ const tabs = [
 ];
 
 function activeTabForPath(pathname: string) {
+  if (pathname.startsWith("/settings")) return "settings";
   if (pathname.startsWith("/my-parts") || pathname.startsWith("/search") || pathname.startsWith("/parts")) return "my-parts";
   if (pathname.startsWith("/projects")) return "projects";
   return "dashboard";
@@ -73,6 +75,7 @@ function AuthenticatedRoutes() {
         <Route path="/projects/compare" element={<BomCompare />} />
         <Route path="/projects/:id/edit" element={<BomEdit />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

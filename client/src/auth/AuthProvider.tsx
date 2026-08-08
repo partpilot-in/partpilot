@@ -19,6 +19,7 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (input: SignUpInput) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 interface SignUpInput {
@@ -173,6 +174,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     syncAccessToken(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) throw error;
+    setSession(data.session);
+    syncAccessToken(data.session);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user: session?.user ? getAppUser(session.user) : null,
@@ -182,8 +191,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      refreshUser,
     }),
-    [loading, session, signIn, signOut, signUp],
+    [loading, refreshUser, session, signIn, signOut, signUp],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

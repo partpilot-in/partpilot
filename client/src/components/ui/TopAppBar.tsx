@@ -155,10 +155,10 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
                     </div>
                   )}
                 </div>
-                <button
-                  type="button"
+                <Link
                   className="account-menu__item"
                   role="menuitem"
+                  to="/settings"
                   onMouseEnter={() => setCurrencyMenuOpen(false)}
                   onClick={() => {
                     setCurrencyMenuOpen(false);
@@ -167,7 +167,7 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
                 >
                   <Settings size={18} />
                   <span>Settings</span>
-                </button>
+                </Link>
                 {onSignOut && (
                   <button
                     type="button"

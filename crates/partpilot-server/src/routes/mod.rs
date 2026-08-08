@@ -16,6 +16,7 @@ pub mod important_parts;
 pub mod kicad;
 pub mod my_parts;
 pub mod parts;
+pub mod settings;
 
 const REQUEST_ID_HEADER: &str = "x-request-id";
 
@@ -65,6 +66,22 @@ fn v1_routes(state: AppState) -> Router<AppState> {
                     get(my_parts::detail)
                         .patch(my_parts::update)
                         .delete(my_parts::remove),
+                )
+                .layer(middleware::from_fn_with_state(
+                    state.clone(),
+                    crate::auth::require_supabase_session,
+                )),
+        )
+        .nest(
+            "/settings",
+            Router::new()
+                .route(
+                    "/profile",
+                    get(settings::profile).patch(settings::update_profile),
+                )
+                .route(
+                    "/reset-password",
+                    axum::routing::post(settings::reset_password),
                 )
                 .layer(middleware::from_fn_with_state(
                     state.clone(),

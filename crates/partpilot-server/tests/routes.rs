@@ -165,6 +165,53 @@ async fn projects_support_full_crud() {
     assert_eq!(deleted.status(), StatusCode::NO_CONTENT);
 }
 
+#[tokio::test]
+async fn settings_support_profile_updates_and_password_reset_requests() {
+    let app = router();
+
+    let initial = app
+        .clone()
+        .oneshot(empty_request(Method::GET, "/v1/settings/profile"))
+        .await
+        .unwrap();
+    assert_eq!(initial.status(), StatusCode::OK);
+    let initial: Value =
+        serde_json::from_slice(&to_bytes(initial.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(initial["email"], "test@example.com");
+
+    let profile = json!({
+        "email": "jane@example.com",
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "job": "Hardware Engineer",
+        "company": "PartPilot",
+        "linkedin": "https://www.linkedin.com/in/jane-doe"
+    });
+    let updated = app
+        .clone()
+        .oneshot(json_request(
+            Method::PATCH,
+            "/v1/settings/profile",
+            profile.clone(),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(updated.status(), StatusCode::OK);
+    let updated: Value =
+        serde_json::from_slice(&to_bytes(updated.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(updated, profile);
+
+    let reset = app
+        .oneshot(json_request(
+            Method::POST,
+            "/v1/settings/reset-password",
+            json!({ "redirect_to": "http://localhost:5173/settings" }),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(reset.status(), StatusCode::ACCEPTED);
+}
+
 fn empty_request(method: Method, uri: &str) -> Request<Body> {
     Request::builder()
         .method(method)
