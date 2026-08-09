@@ -17,18 +17,7 @@ export function BomUpload() {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [bomName, setBomName] = useState("Untitled");
-  const [rows, setRows] = useState<EditableBomLine[]>([
-    {
-      ...createEditableBomLine(1),
-      mpn: "LM317T",
-      description: "Adjustable voltage regulator",
-      manufacturer: "Texas Instruments",
-      country_of_origin: "US",
-      category: "Regulator",
-      qty: 4,
-      unit_price: 0.42,
-    },
-  ]);
+  const [rows, setRows] = useState<EditableBomLine[]>(() => [createEditableBomLine(1)]);
 
   async function onFileSelected(file: File) {
     showToast({ title: "Uploading BOM", body: file.name });

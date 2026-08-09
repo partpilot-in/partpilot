@@ -6,7 +6,6 @@ import { useProjectParts } from "../api/hooks/parts";
 import type { Part } from "../api/types";
 import { EmptyState, ErrorMessage, ScoreRing, Spinner } from "../components/ui";
 import { getGreeting } from "../lib/format";
-import { readManualParts } from "../lib/myPartsStorage";
 import { useImportantParts } from "../lib/useImportantParts";
 
 interface ManufacturerNewsItem {
@@ -115,19 +114,18 @@ function renderNewsArticle(article: ManufacturerNewsItem) {
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { ids: importantIds, parts: importantParts } = useImportantParts();
+  const { ids: importantIds } = useImportantParts();
   const { data: projects, loading: projLoading, error: projError } = useProjects();
   const [selectedManufacturer, setSelectedManufacturer] = useState("");
   const [manufacturerNews, setManufacturerNews] = useState<ManufacturerNewsItem[]>([]);
   const [manufacturerNewsLoading, setManufacturerNewsLoading] = useState(true);
   const [manufacturerNewsError, setManufacturerNewsError] = useState<string>();
   const projectParts = useProjectParts(projects);
-  const manualParts = useMemo(() => readManualParts(), []);
   const parts = useMemo(() => {
     const rows = new Map<string, Part>();
-    [...projectParts, ...manualParts, ...importantParts].forEach((part) => rows.set(part.id, part));
+    projectParts.forEach((part) => rows.set(part.id, part));
     return Array.from(rows.values());
-  }, [importantParts, manualParts, projectParts]);
+  }, [projectParts]);
   const flaggedAttentionParts = useMemo(
     () =>
       parts.filter(

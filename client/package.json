@@ -9,18 +9,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.111.0",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@supabase/supabase-js": "^2.112.2",
+    "@vitejs/plugin-react": "^6.0.5",
     "axios": "^1.19.0",
-    "lucide-react": "^0.468.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-router-dom": "^7.1.1",
-    "typescript": "^5.7.3",
-    "vite": "^6.0.11"
+    "lucide-react": "^1.31.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1"
   },
   "devDependencies": {
-    "@types/react": "^19.0.2",
-    "@types/react-dom": "^19.0.2"
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4"
   }
 }
