@@ -98,6 +98,21 @@ function newsMatchesManufacturer(item: ManufacturerNewsItem, manufacturer: strin
   return [item.title, item.source].some((value) => value.toLowerCase().includes(normalizedManufacturer));
 }
 
+function renderNewsArticle(article: ManufacturerNewsItem) {
+  return (
+    <li key={article.title}>
+      {article.link ? (
+        <a className="news-list__title" href={article.link} target="_blank" rel="noreferrer">
+          {article.title}
+        </a>
+      ) : (
+        <span className="news-list__title">{article.title}</span>
+      )}
+      <small>{[article.source, formatNewsTime(article.publishedAt)].join(" - ")}</small>
+    </li>
+  );
+}
+
 export function Dashboard() {
   const navigate = useNavigate();
   const { ids: importantIds, parts: importantParts } = useImportantParts();
@@ -286,7 +301,6 @@ export function Dashboard() {
               <p className="manufacturer-news__subtitle">Latest coverage tied to manufacturers in My Parts.</p>
             </div>
             {manufacturers.length ? (
-              <>
                 <div className="news-tabs" role="tablist" aria-label="Manufacturer news tabs">
                   {manufacturers.map((item) => (
                     <button
@@ -302,31 +316,15 @@ export function Dashboard() {
                     </button>
                   ))}
                 </div>
-                {manufacturerNewsLoading ? (
-                  <Spinner message="Loading manufacturer news..." />
-                ) : manufacturerNewsError ? (
-                  <ErrorMessage message={manufacturerNewsError} />
-                ) : newsItems.length ? (
-                  <ul className="news-list">
-                    {newsItems.map((article) => (
-                      <li key={article.title}>
-                        {article.link ? (
-                          <a className="news-list__title" href={article.link} target="_blank" rel="noreferrer">
-                            {article.title}
-                          </a>
-                        ) : (
-                          <span className="news-list__title">{article.title}</span>
-                        )}
-                        <small>{[article.source, formatNewsTime(article.publishedAt)].join(" - ")}</small>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="manufacturer-news__empty">No recent feed items found.</p>
-                )}
-              </>
+            ) : null}
+            {manufacturerNewsLoading ? (
+              <Spinner message="Loading manufacturer news..." />
+            ) : manufacturerNewsError ? (
+              <ErrorMessage message={manufacturerNewsError} />
+            ) : newsItems.length ? (
+              <ul className="news-list">{newsItems.map(renderNewsArticle)}</ul>
             ) : (
-              <p className="manufacturer-news__empty">Add parts with manufacturer names to see related news.</p>
+              <p className="manufacturer-news__empty">No recent feed items found.</p>
             )}
           </aside>
         </section>
