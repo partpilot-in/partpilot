@@ -8,7 +8,7 @@ use anyhow::Context;
 use axum::{
     Json, Router,
     extract::{Query, State},
-    http::StatusCode,
+    http::{HeaderValue, Method, StatusCode, header},
     response::{IntoResponse, Response},
     routing::get,
 };
@@ -17,6 +17,7 @@ use reqwest::Client;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
 use tokio::{net::TcpListener, task::JoinSet};
+use tower_http::cors::{Any, CorsLayer};
 use tracing::{info, warn};
 
 const RSS_ENV_KEYS: &[&str] = &[
@@ -35,23 +36,46 @@ async fn main() -> anyhow::Result<()> {
     let config = Config::from_env()?;
     let addr = config.socket_addr();
     let state = AppState::new(config.rss_urls);
+    let cors_layer = cors_layer(config.cors_allowed_origins)?;
     let listener = TcpListener::bind(addr).await?;
 
     info!(%addr, "partpilot-feed listening");
 
-    axum::serve(listener, router(state))
+    axum::serve(listener, router(state, cors_layer))
         .with_graceful_shutdown(shutdown_signal())
         .await?;
 
     Ok(())
 }
 
-fn router(state: AppState) -> Router {
+fn router(state: AppState, cors_layer: CorsLayer) -> Router {
     Router::new()
         .route("/", get(feed))
         .route("/feed", get(feed))
         .route("/health", get(health))
         .with_state(state)
+        .layer(cors_layer)
+}
+
+fn cors_layer(allowed_origins: Vec<String>) -> anyhow::Result<CorsLayer> {
+    let layer = CorsLayer::new()
+        .allow_methods([Method::GET, Method::OPTIONS])
+        .allow_headers([header::ACCEPT, header::CONTENT_TYPE]);
+
+    if allowed_origins.iter().any(|origin| origin == "*") {
+        return Ok(layer.allow_origin(Any));
+    }
+
+    let origins = allowed_origins
+        .iter()
+        .map(|origin| {
+            origin
+                .parse::<HeaderValue>()
+                .with_context(|| format!("invalid CORS origin {origin}"))
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+
+    Ok(layer.allow_origin(origins))
 }
 
 async fn health() -> Json<HealthResponse> {
@@ -202,6 +226,10 @@ fn non_empty_option(value: Option<&str>) -> Option<&str> {
 }
 
 fn split_rss_urls(value: &str) -> Vec<String> {
+    split_values(value)
+}
+
+fn split_values(value: &str) -> Vec<String> {
     value
         .split(|character: char| character == ',' || character == '\n' || character == ';')
         .map(str::trim)
@@ -287,6 +315,7 @@ struct Config {
     host: IpAddr,
     port: u16,
     rss_urls: Vec<String>,
+    cors_allowed_origins: Vec<String>,
 }
 
 impl Config {
@@ -307,11 +336,18 @@ impl Config {
                     RSS_ENV_KEYS.join(" or ")
                 )
             })?;
+        let cors_allowed_origins =
+            optional_env_any(&["FEED_CORS_ALLOWED_ORIGINS", "CORS_ALLOWED_ORIGINS"])
+                .or_else(|| example_env_any(&["FEED_CORS_ALLOWED_ORIGINS", "CORS_ALLOWED_ORIGINS"]))
+                .map(|value| split_values(&value))
+                .filter(|origins| !origins.is_empty())
+                .unwrap_or_else(|| vec!["https://app.bestpartpilot.com".to_owned()]);
 
         Ok(Self {
             host,
             port,
             rss_urls,
+            cors_allowed_origins,
         })
     }
 
