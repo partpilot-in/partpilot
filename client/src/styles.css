@@ -1046,6 +1046,11 @@ a:hover {
   font-size: 14px;
   font-weight: 500;
   line-height: 1.35;
+  text-decoration: none;
+}
+
+a.news-list__title:hover {
+  color: var(--accent);
 }
 
 .news-list small {

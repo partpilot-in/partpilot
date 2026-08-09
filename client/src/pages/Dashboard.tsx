@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Star } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
@@ -10,9 +10,9 @@ import { readManualParts } from "../lib/myPartsStorage";
 import { useImportantParts } from "../lib/useImportantParts";
 
 interface ManufacturerNewsItem {
-  impact: string;
+  link: string | undefined;
+  publishedAt: string | undefined;
   source: string;
-  time: string;
   title: string;
 }
 
@@ -31,8 +31,71 @@ const metalPrices: MetalPrice[] = [
   { metal: "LME Lead", price: "$2,060/mt", change: "-0.2%" },
 ];
 
+const manufacturerNewsFeedBaseUrl = import.meta.env.VITE_MANUFACTURER_NEWS_FEED_URL;
+const manufacturerNewsLimit = 12;
+
 function normalizeManufacturer(value: string) {
   return value.trim();
+}
+
+function buildManufacturerNewsFeedUrl(limit: number) {
+  if (!manufacturerNewsFeedBaseUrl) return undefined;
+
+  const url = new URL(manufacturerNewsFeedBaseUrl);
+  url.searchParams.set("limit", String(limit));
+  return url.toString();
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function formatNewsTime(value: string | undefined) {
+  if (!value) return "Unknown date";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "Unknown date";
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60_000);
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
+function normalizeFeedItems(payload: unknown): ManufacturerNewsItem[] {
+  const rawItems = Array.isArray(payload) ? payload : isRecord(payload) && Array.isArray(payload.items) ? payload.items : [];
+
+  return rawItems.flatMap((item) => {
+    if (!isRecord(item)) return [];
+
+    const title = readString(item.title);
+    if (!title) return [];
+
+    return [
+      {
+        title,
+        link: readString(item.link),
+        publishedAt: readString(item.published_at) ?? readString(item.publishedAt) ?? readString(item.pubDate),
+        source: readString(item.source_title) ?? readString(item.sourceTitle) ?? readString(item.source) ?? "Manufacturer feed",
+      },
+    ];
+  });
+}
+
+function newsMatchesManufacturer(item: ManufacturerNewsItem, manufacturer: string) {
+  const normalizedManufacturer = manufacturer.toLowerCase();
+  return [item.title, item.source].some((value) => value.toLowerCase().includes(normalizedManufacturer));
 }
 
 export function Dashboard() {
@@ -40,6 +103,9 @@ export function Dashboard() {
   const { ids: importantIds, parts: importantParts } = useImportantParts();
   const { data: projects, loading: projLoading, error: projError } = useProjects();
   const [selectedManufacturer, setSelectedManufacturer] = useState("");
+  const [manufacturerNews, setManufacturerNews] = useState<ManufacturerNewsItem[]>([]);
+  const [manufacturerNewsLoading, setManufacturerNewsLoading] = useState(true);
+  const [manufacturerNewsError, setManufacturerNewsError] = useState<string>();
   const projectParts = useProjectParts(projects);
   const manualParts = useMemo(() => readManualParts(), []);
   const parts = useMemo(() => {
@@ -90,37 +156,57 @@ export function Dashboard() {
   );
   const activeManufacturer =
     manufacturers.find((item) => item.manufacturer === selectedManufacturer)?.manufacturer ?? manufacturers[0]?.manufacturer ?? "";
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadManufacturerNews() {
+      const feedUrl = buildManufacturerNewsFeedUrl(manufacturerNewsLimit);
+      if (!feedUrl) {
+        setManufacturerNews([]);
+        setManufacturerNewsLoading(false);
+        setManufacturerNewsError("Manufacturer news feed URL is not configured.");
+        return;
+      }
+
+      setManufacturerNewsLoading(true);
+      setManufacturerNewsError(undefined);
+
+      try {
+        const response = await fetch(feedUrl, {
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Feed request failed with ${response.status}`);
+        }
+
+        const payload: unknown = await response.json();
+        setManufacturerNews(normalizeFeedItems(payload));
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setManufacturerNews([]);
+        setManufacturerNewsError(error instanceof Error ? error.message : "Unable to load manufacturer news");
+      } finally {
+        if (!controller.signal.aborted) {
+          setManufacturerNewsLoading(false);
+        }
+      }
+    }
+
+    loadManufacturerNews();
+
+    return () => controller.abort();
+  }, []);
   const newsItems = useMemo<ManufacturerNewsItem[]>(
-    () =>
-      activeManufacturer
-        ? [
-            {
-              title: `Strait of Hormuz blockage raises freight risk for ${activeManufacturer} supply lanes`,
-              source: "Global Supply Desk",
-              time: "2h ago",
-              impact: "Watch logistics lead times",
-            },
-            {
-              title: `${activeManufacturer} distributors flag allocation pressure on high-volume components`,
-              source: "Electronics Market Wire",
-              time: "5h ago",
-              impact: "Review reorder points",
-            },
-            {
-              title: `Port congestion adds two-week variance to semiconductor shipments tied to ${activeManufacturer}`,
-              source: "Component Brief",
-              time: "Yesterday",
-              impact: "Check alternates",
-            },
-            {
-              title: `Copper and air freight costs lift near-term pricing assumptions for ${activeManufacturer} parts`,
-              source: "Procurement Monitor",
-              time: "Yesterday",
-              impact: "Reprice active BOMs",
-            },
-          ]
-        : [],
-    [activeManufacturer],
+    () => {
+      const matchingItems = activeManufacturer
+        ? manufacturerNews.filter((article) => newsMatchesManufacturer(article, activeManufacturer))
+        : [];
+
+      return (matchingItems.length ? matchingItems : manufacturerNews).slice(0, 4);
+    },
+    [activeManufacturer, manufacturerNews],
   );
 
   return (
@@ -216,17 +302,27 @@ export function Dashboard() {
                     </button>
                   ))}
                 </div>
-                {newsItems.length ? (
+                {manufacturerNewsLoading ? (
+                  <Spinner message="Loading manufacturer news..." />
+                ) : manufacturerNewsError ? (
+                  <ErrorMessage message={manufacturerNewsError} />
+                ) : newsItems.length ? (
                   <ul className="news-list">
                     {newsItems.map((article) => (
                       <li key={article.title}>
-                        <span className="news-list__title">{article.title}</span>
-                        <small>{[article.source, article.time, article.impact].join(" - ")}</small>
+                        {article.link ? (
+                          <a className="news-list__title" href={article.link} target="_blank" rel="noreferrer">
+                            {article.title}
+                          </a>
+                        ) : (
+                          <span className="news-list__title">{article.title}</span>
+                        )}
+                        <small>{[article.source, formatNewsTime(article.publishedAt)].join(" - ")}</small>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="manufacturer-news__empty">No recent news found for {activeManufacturer}.</p>
+                  <p className="manufacturer-news__empty">No recent feed items found.</p>
                 )}
               </>
             ) : (
