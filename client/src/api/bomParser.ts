@@ -1,11 +1,11 @@
 import type { BomLine } from "./types";
 
-interface ParsedBom {
+export interface ParsedBom {
   name: string;
   lines: BomLine[];
 }
 
-type CellValue = string | number | boolean;
+export type BomCellValue = string | number | boolean;
 
 const ZIP_LOCAL_FILE_HEADER = 0x04034b50;
 const ZIP_CENTRAL_DIRECTORY_HEADER = 0x02014b50;
@@ -13,6 +13,7 @@ const ZIP_END_OF_CENTRAL_DIRECTORY = 0x06054b50;
 
 const FIELD_ALIASES = {
   line_no: ["#", "line", "line no", "line number", "item", "item no", "item number"],
+  designator: ["designator", "designators", "reference", "references", "reference designator", "reference designators", "refdes", "ref des", "ref"],
   mpn: [
     "mpn",
     "mfg pn",
@@ -24,16 +25,70 @@ const FIELD_ALIASES = {
     "part number",
     "part no",
     "part",
+    "vendor pn",
+    "vendor part number",
+    "supplier pn",
+    "supplier part number",
+    "component number",
+    "ordering code",
+    "order code",
+    "material number",
   ],
-  description: ["description", "desc", "designator", "reference", "reference designator", "refdes", "assembly instructions"],
-  manufacturer: ["manufacturer", "mfg", "mfr", "vendor"],
-  country_of_origin: ["country", "country of origin", "coo", "made in", "origin"],
-  category: ["category", "type", "part type", "package", "footprint"],
-  qty: ["qty", "quantity", "unit qty", "unit quantity", "count"],
-  unit_price: ["unit price", "price", "unit cost", "cost"],
+  description: ["description", "desc", "assembly instructions", "item description", "component description"],
+  manufacturer: ["manufacturer", "mfg", "mfr", "vendor", "supplier", "brand", "maker"],
+  country_of_origin: ["country", "country of origin", "origin country", "coo", "made in", "origin"],
+  category: ["category", "type", "part type", "component type", "package", "footprint"],
+  qty: ["qty", "quantity", "unit qty", "unit quantity", "bom qty", "usage", "amount", "count"],
+  unit_price: ["unit price", "price", "unit cost", "cost", "price each", "cost each"],
 } as const;
 
-type BomField = keyof typeof FIELD_ALIASES;
+export type BomField = keyof typeof FIELD_ALIASES;
+
+export const BOM_FIELD_OPTIONS: { value: BomField; label: string }[] = [
+  { value: "line_no", label: "Line number" },
+  { value: "designator", label: "Designator" },
+  { value: "mpn", label: "MPN" },
+  { value: "description", label: "Description" },
+  { value: "manufacturer", label: "Manufacturer" },
+  { value: "country_of_origin", label: "Country of origin" },
+  { value: "category", label: "Category" },
+  { value: "qty", label: "Quantity" },
+  { value: "unit_price", label: "Unit price" },
+];
+
+export const REQUIRED_BOM_FIELDS: BomField[] = ["designator", "mpn"];
+export const RECOMMENDED_BOM_FIELDS: BomField[] = ["manufacturer", "description", "qty"];
+
+export type BomFieldMapping = Record<number, BomField | undefined>;
+
+export interface BomImportColumn {
+  index: number;
+  header: string;
+  samples: string[];
+  suggestedField?: BomField;
+  confidence: "high" | "medium" | "low";
+}
+
+export interface BomImportPreview {
+  name: string;
+  rows: BomCellValue[][];
+  headerIndex: number;
+  dataRowCount: number;
+  columns: BomImportColumn[];
+  suggestedMapping: BomFieldMapping;
+}
+
+export interface BomMappingIssue {
+  field: BomField;
+  label: string;
+  missingRows: number;
+  mappingMissing: boolean;
+}
+
+export interface BomMappingValidation {
+  errors: BomMappingIssue[];
+  warnings: BomMappingIssue[];
+}
 
 const DEFAULT_COMPLIANCE = [
   { standard: "RoHS", status: "unknown" as const },
@@ -78,15 +133,101 @@ const DESIGNATOR_CATEGORIES: Record<string, string> = {
 const DESIGNATOR_PREFIXES = Object.keys(DESIGNATOR_CATEGORIES).sort((a, b) => b.length - a.length);
 
 export async function parseBomFile(file: File): Promise<ParsedBom> {
-  const extension = file.name.split(".").pop()?.toLowerCase();
-  const rows = extension === "xlsx" ? await readXlsxRows(file) : parseCsv(await file.text());
-  const lines = rowsToBomLines(rows, filenameToBomName(file.name));
+  const preview = await inspectBomFile(file);
+  const lines = buildBomLines(preview, preview.suggestedMapping);
 
   if (!lines.length) {
     throw new Error("No BOM lines were found in the selected file.");
   }
 
-  return { name: filenameToBomName(file.name), lines };
+  return { name: preview.name, lines };
+}
+
+export async function inspectBomFile(file: File): Promise<BomImportPreview> {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const rows = extension === "xlsx" ? await readXlsxRows(file) : parseCsv(await file.text());
+  const headerIndex = findHeaderIndex(rows);
+  const headerRow = rows[headerIndex] ?? [];
+  const columnCount = Math.max(headerRow.length, ...rows.slice(headerIndex + 1, headerIndex + 6).map((row) => row.length));
+  const candidates = Array.from({ length: columnCount }, (_, index) => {
+    const header = cleanText(headerRow[index]) || `Column ${index + 1}`;
+    const match = bestFieldMatch(header);
+    return {
+      index,
+      header,
+      samples: rows
+        .slice(headerIndex + 1)
+        .map((row) => cleanText(row[index]))
+        .filter(Boolean)
+        .slice(0, 2),
+      match,
+    };
+  });
+  const suggestedMapping: BomFieldMapping = {};
+  const usedFields = new Set<BomField>();
+
+  [...candidates]
+    .sort((left, right) => right.match.score - left.match.score)
+    .forEach(({ index, match }) => {
+      if (match.field && match.score >= 0.42 && !usedFields.has(match.field)) {
+        suggestedMapping[index] = match.field;
+        usedFields.add(match.field);
+      }
+    });
+
+  const columns = candidates.map<BomImportColumn>(({ index, header, samples, match }) => ({
+    index,
+    header,
+    samples,
+    suggestedField: suggestedMapping[index],
+    confidence: match.score >= 0.88 ? "high" : match.score >= 0.58 ? "medium" : "low",
+  }));
+
+  if (!columns.length || rows.length <= headerIndex + 1) {
+    throw new Error("The selected file does not contain a header and BOM data rows.");
+  }
+
+  return {
+    name: filenameToBomName(file.name),
+    rows,
+    headerIndex,
+    dataRowCount: rows.slice(headerIndex + 1).filter((row) => row.some((cell) => cleanText(cell))).length,
+    columns,
+    suggestedMapping,
+  };
+}
+
+export function buildBomLines(preview: BomImportPreview, mapping: BomFieldMapping): BomLine[] {
+  const fieldIndexes: Partial<Record<BomField, number>> = {};
+  Object.entries(mapping).forEach(([columnIndex, field]) => {
+    if (field) fieldIndexes[field] = Number(columnIndex);
+  });
+
+  return rowsToBomLines(preview.rows, preview.name, preview.headerIndex, fieldIndexes);
+}
+
+export function validateBomMapping(preview: BomImportPreview, mapping: BomFieldMapping): BomMappingValidation {
+  const dataRows = preview.rows
+    .slice(preview.headerIndex + 1)
+    .filter((row) => row.some((cell) => cleanText(cell)));
+  const mappedIndexes = new Map<BomField, number>();
+  Object.entries(mapping).forEach(([columnIndex, field]) => {
+    if (field) mappedIndexes.set(field, Number(columnIndex));
+  });
+
+  const issuesFor = (fields: BomField[]) => fields.flatMap<BomMappingIssue>((field) => {
+    const columnIndex = mappedIndexes.get(field);
+    const label = BOM_FIELD_OPTIONS.find((option) => option.value === field)?.label ?? field;
+    if (columnIndex === undefined) return [{ field, label, missingRows: dataRows.length, mappingMissing: true }];
+
+    const missingRows = dataRows.filter((row) => !cleanText(row[columnIndex])).length;
+    return missingRows ? [{ field, label, missingRows, mappingMissing: false }] : [];
+  });
+
+  return {
+    errors: issuesFor(REQUIRED_BOM_FIELDS),
+    warnings: issuesFor(RECOMMENDED_BOM_FIELDS),
+  };
 }
 
 function filenameToBomName(filename: string) {
@@ -136,7 +277,7 @@ function parseCsv(text: string): string[][] {
   return rows.filter((cells) => cells.some((cell) => cell.trim()));
 }
 
-async function readXlsxRows(file: File): Promise<CellValue[][]> {
+async function readXlsxRows(file: File): Promise<BomCellValue[][]> {
   const entries = await readZipEntries(await file.arrayBuffer());
   const sharedStrings = parseSharedStrings(entries.get("xl/sharedStrings.xml"));
   const worksheetPath = findFirstWorksheetPath(entries);
@@ -262,10 +403,10 @@ function parseSharedStrings(xmlBytes: Uint8Array | undefined) {
 
 function parseWorksheet(xml: string, sharedStrings: string[]) {
   const doc = parseXml(xml);
-  const rows: CellValue[][] = [];
+  const rows: BomCellValue[][] = [];
 
   Array.from(doc.getElementsByTagName("row")).forEach((rowNode) => {
-    const cells: CellValue[] = [];
+    const cells: BomCellValue[] = [];
 
     Array.from(rowNode.getElementsByTagName("c")).forEach((cellNode) => {
       const ref = cellNode.getAttribute("r");
@@ -279,7 +420,7 @@ function parseWorksheet(xml: string, sharedStrings: string[]) {
   return rows;
 }
 
-function readCellValue(cellNode: Element, sharedStrings: string[]): CellValue {
+function readCellValue(cellNode: Element, sharedStrings: string[]): BomCellValue {
   const type = cellNode.getAttribute("t");
   const raw = cellNode.getElementsByTagName("v")[0]?.textContent ?? "";
 
@@ -298,10 +439,12 @@ function columnNameToIndex(columnName: string) {
     .reduce((total, char) => total * 26 + char.charCodeAt(0) - 64, 0) - 1;
 }
 
-function rowsToBomLines(rows: CellValue[][], bomName: string): BomLine[] {
-  const headerIndex = findHeaderIndex(rows);
-  const headers = (rows[headerIndex] ?? []).map(normalizeHeader);
-  const fieldIndexes = buildFieldIndexes(headers);
+function rowsToBomLines(
+  rows: BomCellValue[][],
+  bomName: string,
+  headerIndex = findHeaderIndex(rows),
+  fieldIndexes = buildFieldIndexes((rows[headerIndex] ?? []).map(normalizeHeader)),
+): BomLine[] {
   const prefix = sanitizeId(bomName);
 
   return rows
@@ -310,15 +453,14 @@ function rowsToBomLines(rows: CellValue[][], bomName: string): BomLine[] {
     .filter((line): line is BomLine => !!line);
 }
 
-function findHeaderIndex(rows: CellValue[][]) {
+function findHeaderIndex(rows: BomCellValue[][]) {
   let bestIndex = 0;
   let bestScore = -1;
 
   rows.slice(0, 10).forEach((row, index) => {
-    const headers = row.map(normalizeHeader);
-    const score = (Object.keys(FIELD_ALIASES) as BomField[]).filter((field) =>
-      headers.some((header) => (FIELD_ALIASES[field] as readonly string[]).includes(header)),
-    ).length;
+    const matches = row.map((header) => bestFieldMatch(cleanText(header)));
+    const distinctFields = new Set(matches.filter((match) => match.score >= 0.42).map((match) => match.field));
+    const score = distinctFields.size * 2 + matches.reduce((total, match) => total + match.score, 0);
 
     if (score > bestScore) {
       bestScore = score;
@@ -343,18 +485,53 @@ function buildFieldIndexes(headers: string[]) {
   return indexes;
 }
 
+function bestFieldMatch(header: string): { field?: BomField; score: number } {
+  const normalized = normalizeHeader(header);
+  if (!normalized) return { score: 0 };
+
+  let best: { field?: BomField; score: number } = { score: 0 };
+  (Object.keys(FIELD_ALIASES) as BomField[]).forEach((field) => {
+    const aliases = [...FIELD_ALIASES[field], BOM_FIELD_OPTIONS.find((option) => option.value === field)?.label ?? ""];
+    aliases.forEach((alias) => {
+      const normalizedAlias = normalizeHeader(alias);
+      const score = headerSimilarity(normalized, normalizedAlias);
+      if (score > best.score) best = { field, score };
+    });
+  });
+
+  return best;
+}
+
+function headerSimilarity(header: string, alias: string) {
+  if (!header || !alias) return 0;
+  if (header === alias) return 1;
+
+  const compactHeader = header.replace(/\s/g, "");
+  const compactAlias = alias.replace(/\s/g, "");
+  if (compactHeader === compactAlias) return 0.96;
+  if (Math.min(header.length, alias.length) >= 3 && (header.includes(alias) || alias.includes(header))) return 0.76;
+
+  const headerTokens = new Set(header.split(" ").filter((token) => token.length > 1));
+  const aliasTokens = new Set(alias.split(" ").filter((token) => token.length > 1));
+  const overlap = [...headerTokens].filter((token) => aliasTokens.has(token)).length;
+  if (!overlap) return 0;
+  return (overlap / Math.max(headerTokens.size, aliasTokens.size)) * 0.68;
+}
+
 function rowToBomLine(
-  row: CellValue[],
+  row: BomCellValue[],
   index: number,
   fields: Partial<Record<BomField, number>>,
   prefix: string,
 ): BomLine | undefined {
   const lineNo = parseInteger(cellAt(row, fields.line_no)) || index + 1;
+  const designator = cleanText(cellAt(row, fields.designator));
   const mpn = cleanText(cellAt(row, fields.mpn));
-  const description = cleanText(cellAt(row, fields.description)) || mpn || `BOM line ${lineNo}`;
+  const mappedDescription = cleanText(cellAt(row, fields.description));
 
-  if (!mpn && !description) return undefined;
+  if (!mpn || !designator) return undefined;
 
+  const description = mappedDescription ? `${designator} — ${mappedDescription}` : designator;
   const category = cleanText(cellAt(row, fields.category)) || inferCategory(description);
   const id = `${prefix}-line-${lineNo}`;
 
@@ -375,15 +552,15 @@ function rowToBomLine(
   };
 }
 
-function cellAt(row: CellValue[], index: number | undefined) {
+function cellAt(row: BomCellValue[], index: number | undefined) {
   return index === undefined ? "" : row[index];
 }
 
-function cleanText(value: CellValue | undefined) {
+function cleanText(value: BomCellValue | undefined) {
   return String(value ?? "").trim();
 }
 
-function normalizeHeader(value: CellValue | undefined) {
+function normalizeHeader(value: BomCellValue | undefined) {
   return cleanText(value)
     .toLowerCase()
     .replace(/\([^)]*\)/g, "")
@@ -393,18 +570,18 @@ function normalizeHeader(value: CellValue | undefined) {
     .trim();
 }
 
-function parseNumber(value: CellValue | undefined) {
-  const number = Number(cleanText(value).replace(/[$,]/g, ""));
+function parseNumber(value: BomCellValue | undefined) {
+  const number = Number(cleanText(value).replace(/[^0-9.,+-]/g, "").replace(/,/g, ""));
   return Number.isFinite(number) && number >= 0 ? number : 0;
 }
 
-function parseInteger(value: CellValue | undefined) {
+function parseInteger(value: BomCellValue | undefined) {
   const number = parseNumber(value);
   return number > 0 ? Math.floor(number) : 0;
 }
 
 function inferCategory(description: string) {
-  const token = description.trim().match(/^[A-Za-z]+/)?.[0].toUpperCase();
+  const token = description.trim().match(/^([A-Za-z]+)\d/)?.[1].toUpperCase();
   if (!token) return "";
 
   const prefix = DESIGNATOR_PREFIXES.find((candidate) => token.startsWith(candidate));

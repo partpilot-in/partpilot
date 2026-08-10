@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { CurrencyCode } from "./format";
 
 interface ExchangeRateState {
+  currency: CurrencyCode;
   date: string | undefined;
   error: string | undefined;
   loading: boolean;
@@ -50,6 +51,7 @@ function writeCachedRate(currency: CurrencyCode, rate: CachedRate) {
 
 export function useUsdExchangeRate(currency: CurrencyCode): ExchangeRateState {
   const [state, setState] = useState<ExchangeRateState>({
+    currency,
     date: undefined,
     error: undefined,
     loading: currency !== "USD",
@@ -58,18 +60,18 @@ export function useUsdExchangeRate(currency: CurrencyCode): ExchangeRateState {
 
   useEffect(() => {
     if (currency === "USD") {
-      setState({ date: undefined, error: undefined, loading: false, rate: 1 });
+      setState({ currency, date: undefined, error: undefined, loading: false, rate: 1 });
       return;
     }
 
     const cached = readCachedRate(currency);
     if (cached) {
-      setState({ date: cached.date, error: undefined, loading: false, rate: cached.rate });
+      setState({ currency, date: cached.date, error: undefined, loading: false, rate: cached.rate });
       return;
     }
 
     const controller = new AbortController();
-    setState((current) => ({ ...current, error: undefined, loading: true }));
+    setState((current) => ({ ...current, currency, error: undefined, loading: true }));
 
     fetch(`https://api.frankfurter.dev/v2/rate/USD/${currency}`, { signal: controller.signal })
       .then((response) => {
@@ -83,11 +85,11 @@ export function useUsdExchangeRate(currency: CurrencyCode): ExchangeRateState {
 
         const nextRate = { date: payload.date, fetchedAt: Date.now(), rate: payload.rate };
         writeCachedRate(currency, nextRate);
-        setState({ date: payload.date, error: undefined, loading: false, rate: payload.rate });
+        setState({ currency, date: payload.date, error: undefined, loading: false, rate: payload.rate });
       })
       .catch((error) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
-        setState({ date: undefined, error: "Live exchange rate unavailable", loading: false, rate: 1 });
+        setState({ currency, date: undefined, error: "Live exchange rate unavailable", loading: false, rate: 1 });
       });
 
     return () => controller.abort();

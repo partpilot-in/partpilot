@@ -108,11 +108,13 @@ export function useProject(id: string | undefined) {
  * Upload a BOM file via `POST /v1/boms` (multipart/form-data).
  */
 export function useUploadBom() {
-  async function uploadBom(file: File, name?: string): Promise<Project> {
-    const parsed = await parseBomFile(file);
+  async function uploadBom(file: File, options?: { name?: string; lines?: BomLine[] }): Promise<Project> {
+    const parsed = options?.lines
+      ? { name: options.name?.trim() || file.name.replace(/\.[^.]+$/, "") || "Uploaded BOM", lines: options.lines }
+      : await parseBomFile(file);
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("name", name?.trim() || parsed.name);
+    formData.append("name", options?.name?.trim() || parsed.name);
     formData.append("lines", JSON.stringify(parsed.lines));
     const res = await api.post("/v1/boms", formData, {
       headers: { "Content-Type": "multipart/form-data" },

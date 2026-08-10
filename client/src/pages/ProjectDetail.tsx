@@ -30,8 +30,9 @@ export function ProjectDetail() {
   const { showToast } = useToast();
   const { currency } = useCurrencyPreference();
   const exchangeRate = useUsdExchangeRate(currency);
-  const displayCurrency = exchangeRate.loading || exchangeRate.error ? "USD" : currency;
-  const displayRate = exchangeRate.loading || exchangeRate.error ? 1 : exchangeRate.rate;
+  const exchangeRateReady = exchangeRate.currency === currency && !exchangeRate.loading && !exchangeRate.error;
+  const displayCurrency = exchangeRateReady ? currency : "USD";
+  const displayRate = exchangeRateReady ? exchangeRate.rate : 1;
   const bomCurrencyFormatter = createCurrencyFormatter(displayCurrency);
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareTarget, setCompareTarget] = useState<string>("");
@@ -196,7 +197,7 @@ export function ProjectDetail() {
           </p>
           {currency !== "USD" && (
             <p className="page-subtitle currency-note">
-              {exchangeRate.loading
+              {exchangeRate.currency !== currency || exchangeRate.loading
                 ? `Loading live USD to ${currency} rate...`
                 : exchangeRate.error
                   ? `${exchangeRate.error}; showing stored USD values.`

@@ -1,31 +1,19 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { FilePlus2, GitCompareArrows, Upload, X } from "lucide-react";
-import { useProjects, useUploadBom } from "../api/hooks/boms";
-import { Card, EmptyState, ErrorMessage, FileDropzone, Modal, ScoreRing, Spinner, useToast } from "../components/ui";
+import { useProjects } from "../api/hooks/boms";
+import { Card, EmptyState, ErrorMessage, ScoreRing, Spinner } from "../components/ui";
 import { formatDate } from "../lib/format";
 
 export function Projects() {
   const { data: projects, loading, error } = useProjects();
-  const navigate = useNavigate();
-  const { uploadBom } = useUploadBom();
-  const { showToast } = useToast();
   const [selectedIds, setSelectedIds] = useState(new Set<string>());
-  const [uploadOpen, setUploadOpen] = useState(false);
 
   function toggleProject(id: string) {
     const next = new Set(selectedIds);
     if (next.has(id)) next.delete(id);
     else next.add(id);
     setSelectedIds(next);
-  }
-
-  async function onFileSelected(file: File) {
-    showToast({ title: "Uploading BOM", body: file.name });
-    const project = await uploadBom(file);
-    showToast({ title: "BOM uploaded", body: `${project.name} is ready to review.`, tone: "success" });
-    setUploadOpen(false);
-    navigate(`/projects/${project.id}`);
   }
 
   const compareIds = Array.from(selectedIds);
@@ -43,14 +31,10 @@ export function Projects() {
             <FilePlus2 size={16} />
             Create BOM
           </Link>
-          <button
-            type="button"
-            className="button"
-            onClick={() => setUploadOpen(true)}
-          >
+          <Link className="button" to="/projects/upload?mode=upload">
             <Upload size={16} />
             Upload BOM
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -115,10 +99,6 @@ export function Projects() {
           </div>
         </div>
       )}
-
-      <Modal open={uploadOpen} title="Upload BOM" onClose={() => setUploadOpen(false)}>
-        <FileDropzone accept={[".csv", ".xlsx"]} onFileSelected={onFileSelected} />
-      </Modal>
     </div>
   );
 }
