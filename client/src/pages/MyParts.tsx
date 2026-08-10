@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { MoreVertical, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
+import { Download, FileSpreadsheet, MoreVertical, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
 import { useMyParts, useMyPartsMutations, type MyPartInput } from "../api/hooks/myParts";
 import { useProjectParts, useSearchParts, type ProjectPartRow } from "../api/hooks/parts";
@@ -18,9 +18,25 @@ import {
   type Column,
 } from "../components/ui";
 import { useImportantParts } from "../lib/useImportantParts";
+import { exportTableCsv, exportTableXlsx, type ExportCell } from "../lib/exportTable";
 
 const recentSearchesStorageKey = "partpilot.recentPartSearches";
 const maxRecentSearches = 8;
+const exportHeaders = [
+  "MPN",
+  "Manufacturer",
+  "Category",
+  "Description",
+  "Projects",
+  "Project Count",
+  "Total Qty",
+  "Unit Price",
+  "Country of Origin",
+  "Lifecycle",
+  "PartPilot Score",
+  "Source",
+  "Important",
+];
 
 interface ManualPartForm {
   mpn: string;
@@ -288,6 +304,43 @@ export function MyParts() {
     setAddPartOpen(true);
   }
 
+  function exportRows() {
+    return myRows.map<ExportCell[]>((row) => [
+      row.mpn,
+      row.manufacturer,
+      row.category,
+      row.description,
+      row.project_names,
+      row.project_count,
+      row.total_qty,
+      row.unit_price,
+      row.country_of_origin,
+      row.lifecycle_stage.replace(/_/g, " "),
+      row.score,
+      row.source === "manual" ? "Manual" : "Project",
+      importantIds.has(row.id) ? "Yes" : "No",
+    ]);
+  }
+
+  function exportParts(format: "csv" | "xlsx") {
+    if (!myRows.length) {
+      showToast({ title: "No parts to export", body: "Add a part or upload a BOM first." });
+      return;
+    }
+
+    const filename = `my-parts-${new Date().toISOString().slice(0, 10)}`;
+    const rows = exportRows();
+    if (format === "csv") exportTableCsv(filename, exportHeaders, rows);
+    else exportTableXlsx(filename, "My Parts", exportHeaders, rows);
+
+    setActionsOpen(false);
+    showToast({
+      title: `${format.toUpperCase()} exported`,
+      body: `${myRows.length} ${myRows.length === 1 ? "part" : "parts"} downloaded.`,
+      tone: "success",
+    });
+  }
+
   async function submitManualPart(event: FormEvent) {
     event.preventDefault();
     const qty = Number(manualForm.qty);
@@ -355,6 +408,14 @@ export function MyParts() {
               >
                 <Plus size={18} />
                 <span>Add Part</span>
+              </button>
+              <button type="button" className="account-menu__item" role="menuitem" onClick={() => exportParts("csv")}>
+                <Download size={18} />
+                <span>Export CSV</span>
+              </button>
+              <button type="button" className="account-menu__item" role="menuitem" onClick={() => exportParts("xlsx")}>
+                <FileSpreadsheet size={18} />
+                <span>Export XLSX</span>
               </button>
             </div>
           )}
