@@ -126,83 +126,87 @@ export function BomEditor({ rows, onRowsChange }: BomEditorProps) {
 
   return (
     <div className="bom-editor">
-      <div className="bom-editor__scroll">
-        <table className="bom-editor__table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>MPN</th>
-              <th>Description</th>
-              <th>Manufacturer</th>
-              <th>Made In</th>
-              <th>Category</th>
-              <th>Qty</th>
-              <th>Unit Price</th>
-              <th>Remove</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr key={row.id}>
-                <td>{index + 1}</td>
-                <td>
-                  <input value={row.mpn} onChange={(event) => updateRow(row.id, "mpn", event.target.value)} />
-                </td>
-                <td>
-                  <input
-                    value={row.description}
-                    onChange={(event) => updateRow(row.id, "description", event.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    value={row.manufacturer}
-                    onChange={(event) => updateRow(row.id, "manufacturer", event.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    value={row.country_of_origin}
-                    onChange={(event) => updateRow(row.id, "country_of_origin", event.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    value={row.category}
-                    onChange={(event) => updateRow(row.id, "category", event.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    min="1"
-                    value={row.qty}
-                    onChange={(event) => updateRow(row.id, "qty", event.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={row.unit_price}
-                    onChange={(event) => updateRow(row.id, "unit_price", event.target.value)}
-                  />
-                </td>
-                <td>
-                  <button type="button" className="icon-button" aria-label={`Remove line ${index + 1}`} onClick={() => removeRow(row.id)}>
-                    <Trash2 size={16} />
-                  </button>
-                </td>
+      <div className="bom-editor__table-shell">
+        <div className="bom-editor__scroll">
+          <table className="bom-editor__table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>MPN</th>
+                <th>Description</th>
+                <th>Manufacturer</th>
+                <th>Made In</th>
+                <th>Category</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Remove</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={row.id}>
+                  <td>{index + 1}</td>
+                  <td>
+                    <input value={row.mpn} onChange={(event) => updateRow(row.id, "mpn", event.target.value)} />
+                  </td>
+                  <td>
+                    <input
+                      value={row.description}
+                      onChange={(event) => updateRow(row.id, "description", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      value={row.manufacturer}
+                      onChange={(event) => updateRow(row.id, "manufacturer", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      value={row.country_of_origin}
+                      onChange={(event) => updateRow(row.id, "country_of_origin", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      value={row.category}
+                      onChange={(event) => updateRow(row.id, "category", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="1"
+                      value={row.qty}
+                      onChange={(event) => updateRow(row.id, "qty", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={row.unit_price}
+                      onChange={(event) => updateRow(row.id, "unit_price", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <button type="button" className="icon-button" aria-label={`Remove line ${index + 1}`} onClick={() => removeRow(row.id)}>
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button type="button" className="bom-editor__insert-row" onClick={addRow}>
+          <span className="bom-editor__insert-row-icon" aria-hidden="true">
+            <Plus size={15} />
+          </span>
+          Insert row below
+        </button>
       </div>
-      <button type="button" className="button" onClick={addRow}>
-        <Plus size={16} />
-        Add line
-      </button>
     </div>
   );
 }

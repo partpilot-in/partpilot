@@ -559,6 +559,12 @@ a:hover {
   grid-row: 1;
 }
 
+.projects-page-actions {
+  grid-column: 2;
+  grid-row: 1;
+  flex-wrap: nowrap;
+}
+
 .page-title {
   margin: 0;
   font-size: 24px;
@@ -1236,17 +1242,22 @@ a.news-list__title:hover {
 
 .bom-editor {
   display: grid;
-  gap: 12px;
   min-width: 0;
+}
+
+.bom-editor__table-shell {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
 }
 
 .bom-editor__scroll {
   width: 100%;
   min-width: 0;
   overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
   -webkit-overflow-scrolling: touch;
 }
 
@@ -1299,6 +1310,44 @@ a.news-list__title:hover {
 .bom-editor__table th:last-child,
 .bom-editor__table td:last-child {
   width: 72px;
+}
+
+.bom-editor__insert-row {
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.bom-editor__insert-row:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.bom-editor__insert-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.bom-editor__insert-row-icon {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
 }
 
 .data-table-wrap {
@@ -2031,6 +2080,24 @@ a.news-list__title:hover {
     top: calc(100% + 8px);
     right: 0;
     width: min(220px, calc(100vw - 32px));
+  }
+
+  .projects-page-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .projects-page-actions {
+    display: grid;
+    width: 100%;
+    grid-column: 1;
+    grid-row: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 8px;
+  }
+
+  .projects-page-actions .button {
+    width: 100%;
+    min-width: 0;
   }
 
   .page-title {

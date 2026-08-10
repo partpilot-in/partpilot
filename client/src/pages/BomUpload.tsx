@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Save } from "lucide-react";
-import { useCreateBom, useUploadBom } from "../api/hooks/boms";
+import { ArrowLeft, Check, Download, Pencil, Save, X } from "lucide-react";
+import { useCreateBom } from "../api/hooks/boms";
 import {
   BomEditor,
   createEditableBomLine,
@@ -9,22 +9,16 @@ import {
   exportBomCsv,
   type EditableBomLine,
 } from "../components/BomEditor";
-import { Card, FileDropzone, useToast } from "../components/ui";
+import { useToast } from "../components/ui";
 
 export function BomUpload() {
-  const { uploadBom } = useUploadBom();
   const { createBom } = useCreateBom();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [bomName, setBomName] = useState("Untitled");
+  const [nameDraft, setNameDraft] = useState("Untitled");
+  const [renaming, setRenaming] = useState(false);
   const [rows, setRows] = useState<EditableBomLine[]>(() => [createEditableBomLine(1)]);
-
-  async function onFileSelected(file: File) {
-    showToast({ title: "Uploading BOM", body: file.name });
-    const project = await uploadBom(file);
-    showToast({ title: "BOM uploaded", body: `${project.name} is ready to review.`, tone: "success" });
-    navigate(`/projects/${project.id}`);
-  }
 
   function buildManualLines() {
     return editableToBomLines(rows, `manual-${Date.now()}`);
@@ -47,45 +41,73 @@ export function BomUpload() {
     showToast({ title: "CSV exported", body: `${bomName || "BOM"} downloaded.`, tone: "success" });
   }
 
+  function saveBomName(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextName = nameDraft.trim() || "Untitled";
+    setBomName(nextName);
+    setNameDraft(nextName);
+    setRenaming(false);
+  }
+
+  function cancelRename() {
+    setNameDraft(bomName);
+    setRenaming(false);
+  }
+
   return (
     <div className="stack">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Create BOM</h1>
-          <p className="page-subtitle">Upload a file or build a BOM directly in PartPilot.</p>
+          {renaming ? (
+            <form className="project-title-edit" onSubmit={saveBomName}>
+              <input
+                className="form-control project-title-input"
+                value={nameDraft}
+                onChange={(event) => setNameDraft(event.target.value)}
+                aria-label="BOM name"
+                autoFocus
+              />
+              <button type="submit" className="icon-button" aria-label="Save BOM name">
+                <Check size={18} />
+              </button>
+              <button type="button" className="icon-button" aria-label="Cancel BOM name edit" onClick={cancelRename}>
+                <X size={18} />
+              </button>
+            </form>
+          ) : (
+            <div className="project-title-row">
+              <h1 className="page-title">{bomName}</h1>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Edit BOM name"
+                onClick={() => {
+                  setNameDraft(bomName);
+                  setRenaming(true);
+                }}
+              >
+                <Pencil size={18} />
+              </button>
+            </div>
+          )}
+          <p className="page-subtitle">Build a BOM directly in PartPilot.</p>
         </div>
-        <Link className="button" to="/projects">
-          <ArrowLeft size={16} />
-          Back
-        </Link>
+        <div className="inline-stack">
+          <Link className="button" to="/projects">
+            <ArrowLeft size={16} />
+            Back
+          </Link>
+          <button type="button" className="button" onClick={exportManualBom}>
+            <Download size={16} />
+            Export CSV
+          </button>
+          <button type="button" className="button button--primary" onClick={saveManualBom}>
+            <Save size={16} />
+            Save BOM
+          </button>
+        </div>
       </div>
-      <Card title="Upload BOM">
-        <FileDropzone accept={[".csv", ".xlsx"]} onFileSelected={onFileSelected} />
-      </Card>
-
-      <Card
-        title="Create in app"
-        action={
-          <div className="inline-stack">
-            <button type="button" className="button" onClick={exportManualBom}>
-              <Download size={16} />
-              Export CSV
-            </button>
-            <button type="button" className="button button--primary" onClick={saveManualBom}>
-              <Save size={16} />
-              Save BOM
-            </button>
-          </div>
-        }
-      >
-        <div className="stack" style={{ gap: 16 }}>
-          <label className="field-label">
-            BOM name
-            <input className="form-control" value={bomName} onChange={(event) => setBomName(event.target.value)} />
-          </label>
-          <BomEditor rows={rows} onRowsChange={setRows} />
-        </div>
-      </Card>
+      <BomEditor rows={rows} onRowsChange={setRows} />
     </div>
   );
 }
