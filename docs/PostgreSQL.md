@@ -2,8 +2,8 @@
 
 This document describes the PartPilot tables and API-facing views in the
 `public` schema, plus the Supabase migration ledger. It is derived from
-`supabase/migrations/0001` through `0008` and was checked against the deployed
-Supabase catalog on 2026-08-08.
+`supabase/migrations/0001` through `0010` and the note additions were reviewed
+on 2026-08-11.
 
 ## Conventions
 
@@ -26,6 +26,7 @@ flowchart LR
     users["auth.users"] --> boms
     users --> user_parts
     users --> important_parts
+    users --> part_notes
     users --> watchlist
     users --> api_keys
 
@@ -42,6 +43,7 @@ flowchart LR
     alternates --> parts
     parts --> important_parts
     parts --> watchlist
+    part_notes -. "application part id; no FK" .-> parts
 ```
 
 ## Access model
@@ -49,7 +51,7 @@ flowchart LR
 | Category | Objects | Access behavior |
 |---|---|---|
 | Public reference data | `sources`, `parts`, `lifecycle_statuses`, `alternates`, `part_compliance`, `community_insights`, `community_insight_citations` | RLS is enabled with a public `SELECT` policy. Writes are expected to come from trusted server or worker roles. |
-| User-owned data | `boms`, `bom_lines`, `api_keys`, `important_parts`, `user_parts`, `watchlist` | RLS restricts rows to `auth.uid()`. `bom_lines` derives ownership through its parent `boms` row. |
+| User-owned data | `boms`, `bom_lines`, `api_keys`, `important_parts`, `part_notes`, `profiles`, `user_parts`, `watchlist` | RLS restricts rows to `auth.uid()`. `bom_lines` derives ownership through its parent `boms` row. |
 | Service-internal data | `source_health` | RLS is enabled with no client policy, so normal anonymous and authenticated roles cannot access rows. |
 | Migration metadata | `public.schema_migrations`, `supabase_migrations.schema_migrations` | Administrative metadata; neither deployed ledger has RLS enabled. Do not expose these through application APIs. |
 
@@ -215,6 +217,29 @@ new standards do not require new columns.
 
 - Primary key: (`part_id`, `standard`).
 - RLS: public read via `public read part_compliance`.
+
+### `part_notes`
+
+Stores one user-owned note per application part identifier. The identifier can
+belong to a catalog part, a manually entered `user_parts` row, or an unmatched
+BOM part, so `part_id` deliberately has no foreign key to the shared `parts`
+table.
+
+| Column | Type | Required | Default | Description |
+|---|---|---:|---|---|
+| `user_id` | `uuid` | Yes | — | Note owner; FK to `auth.users.id`, cascade delete. |
+| `part_id` | `uuid` | Yes | — | Application part identifier in any supported part namespace. |
+| `user_note` | `text` | Yes | Empty string | User-editable note text. |
+| `partpilot_points` | `jsonb` | Yes | `[]` | Reserved array of future PartPilot-generated insights. Client note updates do not overwrite it. |
+| `created_at` | `timestamptz` | Yes | `now()` | Creation time. |
+| `updated_at` | `timestamptz` | Yes | `now()` | Last user-note update time. |
+
+- Primary key: (`user_id`, `part_id`).
+- Check constraint: `partpilot_points` must be a JSON array.
+- RLS: users manage rows where `auth.uid() = user_id`.
+- The authenticated role is granted `SELECT`, `INSERT`, `UPDATE`, and `DELETE`.
+- Future engine/adapter integration should update only `partpilot_points` using
+  a trusted server or service-role path.
 
 ### `parts`
 
@@ -462,3 +487,5 @@ effective RLS behavior.
 | `0006_community_insights.sql` | Community insights and citations. |
 | `0007_frontend_contract_views.sql` | Frontend fields, important parts, and four API views. |
 | `0008_user_parts_crud.sql` | Server-backed manual inventory in `user_parts`. |
+| `0009_user_profiles.sql` | User profile fields managed from Settings. |
+| `0010_part_notes.sql` | User-owned part notes and reserved PartPilot insight points. |

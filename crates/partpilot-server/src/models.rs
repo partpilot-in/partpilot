@@ -129,6 +129,29 @@ pub struct MyPartInput {
     pub total_qty: i32,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, sqlx::FromRow)]
+pub struct PartNoteDto {
+    pub part_id: Uuid,
+    pub note: String,
+    pub partpilot_points: Value,
+}
+
+impl PartNoteDto {
+    pub fn empty(part_id: Uuid) -> Self {
+        Self {
+            part_id,
+            note: String::new(),
+            partpilot_points: json!([]),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct UpdatePartNoteInput {
+    #[serde(default)]
+    pub note: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::FromRow)]
 pub struct ProfileDto {
     pub email: String,

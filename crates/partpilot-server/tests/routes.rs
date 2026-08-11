@@ -166,6 +166,53 @@ async fn projects_support_full_crud() {
 }
 
 #[tokio::test]
+async fn part_notes_are_user_editable_and_preserve_partpilot_points() {
+    let app = router();
+    let initial = app
+        .clone()
+        .oneshot(empty_request(
+            Method::GET,
+            &format!("/v1/part-notes/{PART_ID}"),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(initial.status(), StatusCode::OK);
+    let initial: Value =
+        serde_json::from_slice(&to_bytes(initial.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(initial["note"], "");
+    assert_eq!(initial["partpilot_points"], json!([]));
+
+    let updated = app
+        .clone()
+        .oneshot(json_request(
+            Method::PATCH,
+            &format!("/v1/part-notes/{PART_ID}"),
+            json!({ "note": "Check the alternate footprint before release." }),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(updated.status(), StatusCode::OK);
+    let updated: Value =
+        serde_json::from_slice(&to_bytes(updated.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(
+        updated["note"],
+        "Check the alternate footprint before release."
+    );
+    assert_eq!(updated["partpilot_points"], json!([]));
+
+    let fetched = app
+        .oneshot(empty_request(
+            Method::GET,
+            &format!("/v1/part-notes/{PART_ID}"),
+        ))
+        .await
+        .unwrap();
+    let fetched: Value =
+        serde_json::from_slice(&to_bytes(fetched.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(fetched, updated);
+}
+
+#[tokio::test]
 async fn settings_support_profile_updates_and_password_reset_requests() {
     let app = router();
 

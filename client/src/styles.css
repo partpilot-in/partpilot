@@ -1172,6 +1172,56 @@ a.news-list__title:hover {
   resize: vertical;
 }
 
+.part-note-button {
+  color: var(--text-secondary);
+}
+
+.part-note-button:hover {
+  color: var(--accent);
+}
+
+.part-note-form {
+  display: grid;
+  gap: 12px;
+}
+
+.part-note-form__textarea {
+  min-height: 180px;
+  line-height: 1.5;
+}
+
+.part-note-form__count {
+  margin-top: -8px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-align: right;
+}
+
+.part-note-form__insights {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.part-note-form__insights h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.part-note-form__insights ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-secondary);
+}
+
+.part-note-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
 .field-label {
   display: grid;
   gap: 6px;
@@ -1196,6 +1246,10 @@ a.news-list__title:hover {
   justify-content: flex-end;
   gap: 8px;
   padding-top: 4px;
+}
+
+.part-form__delete {
+  margin-right: auto;
 }
 
 .settings-page {
@@ -1454,6 +1508,35 @@ a.news-list__title:hover {
 .data-table__empty {
   padding: 40px 16px;
   text-align: center;
+}
+
+@media (min-width: 901px) {
+  .my-parts-table .data-table {
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  .my-parts-table .data-table th,
+  .my-parts-table .data-table td {
+    padding-inline: 6px;
+  }
+
+  .my-parts-table .data-table th:first-child,
+  .my-parts-table .data-table td:first-child {
+    width: 44px;
+    padding-inline: 4px;
+  }
+
+  .my-parts-table .data-table th:last-child,
+  .my-parts-table .data-table td:last-child {
+    width: 48px;
+    padding-inline: 4px;
+  }
+
+  .my-parts-table .data-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .data-table-row {

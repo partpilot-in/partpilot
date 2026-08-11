@@ -11,14 +11,27 @@ import {
   ErrorMessage,
   LifecycleBadge,
   Modal,
+  PartNoteButton,
+  PartNoteModal,
   ScoreRing,
   Spinner,
   useToast,
   type Column,
+  type NoteTarget,
 } from "../components/ui";
 import { createCurrencyFormatter, formatDate } from "../lib/format";
 import { useCurrencyPreference } from "../lib/useCurrencyPreference";
 import { useUsdExchangeRate } from "../lib/useExchangeRate";
+
+function splitBomDescription(description: string) {
+  const separator = " — ";
+  const separatorIndex = description.indexOf(separator);
+  if (separatorIndex <= 0) return { designator: "—", description };
+  return {
+    designator: description.slice(0, separatorIndex),
+    description: description.slice(separatorIndex + separator.length),
+  };
+}
 
 export function ProjectDetail() {
   const { id } = useParams();
@@ -40,6 +53,7 @@ export function ProjectDetail() {
   const [projectName, setProjectName] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,10 +82,19 @@ export function ProjectDetail() {
 
   const columns: Column<BomLine>[] = [
     { key: "line_no", header: "#", sortable: true, numeric: true },
-    { key: "description", header: "Description", sortable: true },
-    { key: "manufacturer", header: "Manufacturer", sortable: true },
-    { key: "country_of_origin", header: "Made In", sortable: true },
+    {
+      key: "designator",
+      header: "Designator",
+      render: (row) => splitBomDescription(row.description).designator,
+    },
+    { key: "mpn", header: "MPN", sortable: true },
     { key: "category", header: "Category", sortable: true },
+    {
+      key: "description",
+      header: "Description",
+      sortable: true,
+      render: (row) => splitBomDescription(row.description).description,
+    },
     { key: "qty", header: "Qty", sortable: true, numeric: true },
     {
       key: "unit_price",
@@ -98,6 +121,16 @@ export function ProjectDetail() {
       sortable: true,
       numeric: true,
       render: (row) => <ScoreRing value={row.score} size="sm" />,
+    },
+    {
+      key: "note",
+      header: "Note",
+      render: (row) => (
+        <PartNoteButton
+          part={{ id: row.part_id, label: row.mpn }}
+          onOpen={setNoteTarget}
+        />
+      ),
     },
   ];
 
@@ -291,9 +324,12 @@ export function ProjectDetail() {
             <td />
             <td />
             <td />
+            <td />
           </tr>
         }
       />
+
+      <PartNoteModal part={noteTarget} onClose={() => setNoteTarget(null)} />
 
       <Modal open={compareOpen} title="Compare with another BOM" onClose={() => setCompareOpen(false)}>
         <div className="stack" style={{ gap: 16 }}>

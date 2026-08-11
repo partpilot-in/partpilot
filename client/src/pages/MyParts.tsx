@@ -1,21 +1,25 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Download, FileSpreadsheet, MoreVertical, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
+import { Download, FileSpreadsheet, MoreVertical, Plus, Search, Star, Trash2 } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
 import { useMyParts, useMyPartsMutations, type MyPartInput } from "../api/hooks/myParts";
 import { useProjectParts, useSearchParts, type ProjectPartRow } from "../api/hooks/parts";
 import type { Part } from "../api/types";
 import {
+  ComplianceBadge,
   DataTable,
   EmptyState,
   ErrorMessage,
   FilterChip,
   LifecycleBadge,
   Modal,
+  PartNoteButton,
+  PartNoteModal,
   ScoreRing,
   Spinner,
   useToast,
   type Column,
+  type NoteTarget,
 } from "../components/ui";
 import { useImportantParts } from "../lib/useImportantParts";
 import { exportTableCsv, exportTableXlsx, type ExportCell } from "../lib/exportTable";
@@ -100,6 +104,12 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Please try again.";
 }
 
+function descriptionWithoutDesignator(description: string) {
+  const separator = " — ";
+  const separatorIndex = description.indexOf(separator);
+  return separatorIndex > 0 ? description.slice(separatorIndex + separator.length) : description;
+}
+
 export function MyParts() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -116,6 +126,7 @@ export function MyParts() {
   const [savingPart, setSavingPart] = useState(false);
   const [manualForm, setManualForm] = useState<ManualPartForm>(emptyManualPartForm);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -164,7 +175,7 @@ export function MyParts() {
   const myPartsColumns: Column<MyPartRow>[] = [
     {
       key: "important",
-      header: "Important",
+      header: "",
       render: (row) => {
         const important = importantIds.has(row.id);
         return (
@@ -189,10 +200,20 @@ export function MyParts() {
     },
     { key: "mpn", header: "MPN", sortable: true },
     { key: "manufacturer", header: "Manufacturer", sortable: true },
+    { key: "country_of_origin", header: "Made In", sortable: true },
     { key: "category", header: "Category", sortable: true },
+    {
+      key: "description",
+      header: "Description",
+      sortable: true,
+      render: (row) => descriptionWithoutDesignator(row.description),
+    },
     { key: "project_names", header: "Projects", sortable: true },
-    { key: "project_count", header: "Project Count", sortable: true, numeric: true },
-    { key: "total_qty", header: "Total Qty", sortable: true, numeric: true },
+    {
+      key: "compliance",
+      header: "Compliance",
+      render: (row) => <ComplianceBadge statuses={row.compliance} />,
+    },
     {
       key: "lifecycle_stage",
       header: "Lifecycle",
@@ -207,51 +228,14 @@ export function MyParts() {
       render: (row) => <ScoreRing value={row.score} size="sm" />,
     },
     {
-      key: "actions",
-      header: "Actions",
-      render: (row) => row.source === "manual" ? (
-        <div className="inline-stack">
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={`Edit ${row.mpn}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              setEditingPart(row);
-              setManualForm({
-                mpn: row.mpn,
-                manufacturer: row.manufacturer,
-                category: row.category,
-                description: row.description,
-                qty: String(row.total_qty),
-                unit_price: String(row.unit_price),
-                country_of_origin: row.country_of_origin,
-              });
-              setAddPartOpen(true);
-            }}
-          >
-            <Pencil size={16} />
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={`Delete ${row.mpn}`}
-            onClick={async (event) => {
-              event.stopPropagation();
-              if (!window.confirm(`Remove ${row.mpn} from My Parts?`)) return;
-              try {
-                await deleteMyPart(row.id);
-                refetchParts();
-                showToast({ title: "Part removed", body: row.mpn, tone: "success" });
-              } catch (deleteError) {
-                showToast({ title: "Could not remove part", body: errorMessage(deleteError) });
-              }
-            }}
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      ) : null,
+      key: "note",
+      header: "Note",
+      render: (row) => (
+        <PartNoteButton
+          part={{ id: row.id, label: row.mpn }}
+          onOpen={setNoteTarget}
+        />
+      ),
     },
   ];
 
@@ -302,6 +286,36 @@ export function MyParts() {
     setEditingPart(null);
     setManualForm(emptyManualPartForm);
     setAddPartOpen(true);
+  }
+
+  function openEditPart(row: MyPartRow) {
+    setEditingPart(row);
+    setManualForm({
+      mpn: row.mpn,
+      manufacturer: row.manufacturer,
+      category: row.category,
+      description: row.description,
+      qty: String(row.total_qty),
+      unit_price: String(row.unit_price),
+      country_of_origin: row.country_of_origin,
+    });
+    setAddPartOpen(true);
+  }
+
+  async function removeEditingPart() {
+    if (!editingPart || !window.confirm(`Remove ${editingPart.mpn} from My Parts?`)) return;
+    setSavingPart(true);
+    try {
+      await deleteMyPart(editingPart.id);
+      refetchParts();
+      setAddPartOpen(false);
+      setEditingPart(null);
+      showToast({ title: "Part removed", body: editingPart.mpn, tone: "success" });
+    } catch (deleteError) {
+      showToast({ title: "Could not remove part", body: errorMessage(deleteError) });
+    } finally {
+      setSavingPart(false);
+    }
   }
 
   function exportRows() {
@@ -482,16 +496,21 @@ export function MyParts() {
       ) : projectsError || partsError ? (
         <ErrorMessage message={projectsError ?? partsError ?? "Could not load parts"} />
       ) : (
-        <DataTable
-          columns={myPartsColumns}
-          rows={myRows}
-          getRowId={(row) => row.id}
-          onRowClick={(row) => {
-            if (row.source === "project") navigate(`/parts/${row.id}`);
-          }}
-          emptyState={<EmptyState title="No parts yet" body="Upload a BOM or add a part manually to start building your inventory." />}
-        />
+        <div className="my-parts-table">
+          <DataTable
+            columns={myPartsColumns}
+            rows={myRows}
+            getRowId={(row) => row.id}
+            onRowClick={(row) => {
+              if (row.source === "manual") openEditPart(row);
+              else navigate(`/parts/${row.id}`);
+            }}
+            emptyState={<EmptyState title="No parts yet" body="Upload a BOM or add a part manually to start building your inventory." />}
+          />
+        </div>
       )}
+
+      <PartNoteModal part={noteTarget} onClose={() => setNoteTarget(null)} />
 
       <Modal open={addPartOpen} title={editingPart ? "Edit Part" : "Add Part"} onClose={() => {
         setAddPartOpen(false);
@@ -563,6 +582,17 @@ export function MyParts() {
             />
           </label>
           <div className="part-form__actions">
+            {editingPart && (
+              <button
+                type="button"
+                className="button button--danger part-form__delete"
+                onClick={removeEditingPart}
+                disabled={savingPart}
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
+            )}
             <button type="button" className="button" onClick={() => {
               setAddPartOpen(false);
               setEditingPart(null);

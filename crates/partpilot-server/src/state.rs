@@ -8,7 +8,7 @@ use uuid::Uuid;
 use crate::{
     auth::AuthVerifier,
     config::Config,
-    models::{MyPartDto, PartDto, ProfileDto, ProjectDto},
+    models::{MyPartDto, PartDto, PartNoteDto, ProfileDto, ProjectDto},
 };
 
 pub const TEST_USER_ID: Uuid = Uuid::from_u128(1);
@@ -18,6 +18,7 @@ pub struct MemoryStore {
     pub parts: HashMap<Uuid, PartDto>,
     pub projects: HashMap<Uuid, (Uuid, ProjectDto)>,
     pub my_parts: HashMap<Uuid, (Uuid, MyPartDto)>,
+    pub part_notes: HashMap<(Uuid, Uuid), PartNoteDto>,
     pub profiles: HashMap<Uuid, ProfileDto>,
 }
 

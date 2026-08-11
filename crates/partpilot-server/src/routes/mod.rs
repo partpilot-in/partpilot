@@ -15,6 +15,7 @@ pub mod health;
 pub mod important_parts;
 pub mod kicad;
 pub mod my_parts;
+pub mod part_notes;
 pub mod parts;
 pub mod settings;
 
@@ -66,6 +67,18 @@ fn v1_routes(state: AppState) -> Router<AppState> {
                     get(my_parts::detail)
                         .patch(my_parts::update)
                         .delete(my_parts::remove),
+                )
+                .layer(middleware::from_fn_with_state(
+                    state.clone(),
+                    crate::auth::require_supabase_session,
+                )),
+        )
+        .nest(
+            "/part-notes",
+            Router::new()
+                .route(
+                    "/:part_id",
+                    get(part_notes::detail).patch(part_notes::update),
                 )
                 .layer(middleware::from_fn_with_state(
                     state.clone(),

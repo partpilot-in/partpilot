@@ -13,7 +13,7 @@ Three tiers, matched to the route table in §3:
 | Scheme | Header | Used for |
 |---|---|---|
 | None | — | Public read endpoints (parts, search) |
-| Supabase session | `Authorization: Bearer <supabase_access_token>` | User-scoped endpoints (BOMs, Important parts) |
+| Supabase session | `Authorization: Bearer <supabase_access_token>` | User-scoped endpoints (BOMs, Important parts, part notes) |
 | API key | `X-API-Key: <key>` | KiCad plugin endpoint |
 
 Supabase tokens are obtained client-side via the Supabase Auth SDK, not from this API. API keys are generated from the client's account settings page and map to a `user_id` server-side via the `api_keys` table.
@@ -280,7 +280,50 @@ Side-by-side parameter comparison for the Part Search "Compare" flow.
 
 ---
 
-### 3.7 `GET /v1/boms`
+### 3.7 `GET /v1/part-notes/:part_id`
+
+Fetch the current user's note for any catalog, manual, or BOM-only part. A
+missing record returns an empty note instead of `404`.
+
+**Auth**: Supabase session
+
+**Response** `200`
+
+```json
+{
+  "part_id": "8e4c1a20-1f3a-4b8e-9e2a-0a1b2c3d4e5f",
+  "note": "Check the alternate footprint before release.",
+  "partpilot_points": []
+}
+```
+
+`note` belongs to the signed-in user. `partpilot_points` is read-only client
+data reserved for future insights supplied through adapters and the
+PartPilot engine.
+
+---
+
+### 3.8 `PATCH /v1/part-notes/:part_id`
+
+Create or replace the current user's note text without changing any
+PartPilot-generated points.
+
+**Auth**: Supabase session
+
+**Request**
+
+```json
+{
+  "note": "Check the alternate footprint before release."
+}
+```
+
+**Response** `200`: the complete note resource in the same shape as section
+3.7. Note text is trimmed and limited to 20,000 characters.
+
+---
+
+### 3.9 `GET /v1/boms`
 
 List the current user's BOM projects for the Projects page and dashboard aggregations.
 
@@ -306,7 +349,7 @@ List the current user's BOM projects for the Projects page and dashboard aggrega
 
 ---
 
-### 3.8 `POST /v1/boms`
+### 3.10 `POST /v1/boms`
 
 Upload a BOM (CSV or XLSX) and generate a risk report.
 
@@ -353,7 +396,7 @@ Upload a BOM (CSV or XLSX) and generate a risk report.
 
 ---
 
-### 3.9 `GET /v1/boms/:id`
+### 3.11 `GET /v1/boms/:id`
 
 Fetch a stored BOM's risk report.
 
@@ -410,7 +453,7 @@ Fetch a stored BOM's risk report.
 
 ---
 
-### 3.10 `GET /v1/boms/:id/compare`
+### 3.12 `GET /v1/boms/:id/compare`
 
 Line-by-line diff against another BOM (e.g. two revisions of a project).
 
@@ -481,7 +524,7 @@ Line-by-line diff against another BOM (e.g. two revisions of a project).
 
 ---
 
-### 3.11 `GET /v1/important-parts`
+### 3.13 `GET /v1/important-parts`
 
 Current user's important parts.
 
@@ -512,7 +555,7 @@ Current user's important parts.
 
 ---
 
-### 3.12 `POST /v1/important-parts`
+### 3.14 `POST /v1/important-parts`
 
 Mark a part as important for the current user.
 
@@ -534,7 +577,7 @@ Mark a part as important for the current user.
 
 ---
 
-### 3.13 `DELETE /v1/important-parts/:part_id`
+### 3.15 `DELETE /v1/important-parts/:part_id`
 
 Remove the important mark from a part.
 
@@ -544,7 +587,7 @@ Remove the important mark from a part.
 
 ---
 
-### 3.14 `GET /v1/kicad/lookup`
+### 3.16 `GET /v1/kicad/lookup`
 
 Slim single-part lookup for the KiCad plugin.
 
@@ -573,7 +616,7 @@ Slim single-part lookup for the KiCad plugin.
 
 ---
 
-### 3.15 `GET /healthz`
+### 3.17 `GET /healthz`
 
 Liveness/readiness check (used by Railway).
 

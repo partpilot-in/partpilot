@@ -11,6 +11,12 @@ export interface PartParameters {
   [key: string]: string | number | boolean;
 }
 
+export interface PartNote {
+  part_id: string;
+  note: string;
+  partpilot_points: string[];
+}
+
 export interface Part {
   id: string;
   mpn: string;

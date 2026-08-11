@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useCompareBoms, useProject } from "../api/hooks/boms";
@@ -9,9 +10,12 @@ import {
   EmptyState,
   ErrorMessage,
   LifecycleBadge,
+  PartNoteButton,
+  PartNoteModal,
   ScoreRing,
   Spinner,
   type Column,
+  type NoteTarget,
 } from "../components/ui";
 import { currencyFormatter } from "../lib/format";
 
@@ -22,6 +26,7 @@ export function BomCompare() {
   const { data: left } = useProject(a ?? undefined);
   const { data: right } = useProject(b ?? undefined);
   const { data: rows, loading, error } = useCompareBoms(a, b);
+  const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
 
   const columns: Column<BomDiffLine>[] = [
     {
@@ -60,6 +65,16 @@ export function BomCompare() {
       numeric: true,
       render: (row) => <ScoreRing value={row.score} size="sm" />,
     },
+    {
+      key: "note",
+      header: "Note",
+      render: (row) => (
+        <PartNoteButton
+          part={{ id: row.part_id, label: row.mpn }}
+          onOpen={setNoteTarget}
+        />
+      ),
+    },
     { key: "change_summary", header: "Change", sortable: true },
   ];
 
@@ -93,6 +108,7 @@ export function BomCompare() {
           />
         )}
       </Card>
+      <PartNoteModal part={noteTarget} onClose={() => setNoteTarget(null)} />
     </div>
   );
 }

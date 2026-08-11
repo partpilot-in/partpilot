@@ -12,10 +12,13 @@ import {
   EmptyState,
   ErrorMessage,
   LifecycleBadge,
+  PartNoteButton,
+  PartNoteModal,
   ScoreRing,
   Spinner,
   useToast,
   type Column,
+  type NoteTarget,
 } from "../components/ui";
 import { currencyFormatter } from "../lib/format";
 import { useImportantParts } from "../lib/useImportantParts";
@@ -67,6 +70,7 @@ export function PartDetail() {
   const { data: alternates, loading: altLoading } = usePartAlternates(localPart ? undefined : id);
   const { showToast } = useToast();
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -112,6 +116,16 @@ export function PartDetail() {
       sortable: true,
       numeric: true,
       render: (row) => <ScoreRing value={row.score} size="sm" />,
+    },
+    {
+      key: "note",
+      header: "Note",
+      render: (row) => (
+        <PartNoteButton
+          part={{ id: row.id, label: row.mpn }}
+          onOpen={setNoteTarget}
+        />
+      ),
     },
   ];
 
@@ -177,7 +191,13 @@ export function PartDetail() {
     <div className="stack">
       <div className="page-header detail-page-header">
         <div className="detail-page-heading">
-          <h1 className="page-title">{part.mpn}</h1>
+          <div className="project-title-row">
+            <h1 className="page-title">{part.mpn}</h1>
+            <PartNoteButton
+              part={{ id: part.id, label: part.mpn }}
+              onOpen={setNoteTarget}
+            />
+          </div>
           <p className="page-subtitle">
             {part.manufacturer} – {part.description}
           </p>
@@ -274,6 +294,8 @@ export function PartDetail() {
           />
         )}
       </section>
+
+      <PartNoteModal part={noteTarget} onClose={() => setNoteTarget(null)} />
     </div>
   );
 }
