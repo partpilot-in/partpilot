@@ -1,0 +1,853 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bestpartpilot.com/schemas/component-cdd.schema.json",
+  "title": "Component",
+  "description": "Electronic component data model inspired by the IEC Common Data Dictionary (IEC 61360 / IEC 61987 property representation: value, unit, definition, condition of applicability) and IEC 61346 / IPC-2612 reference-designator conventions.",
+  "type": "object",
+  "required": [
+    "identification"
+  ],
+  "properties": {
+    "identification": {
+      "$ref": "#/$defs/Identification"
+    },
+    "electrical": {
+      "$ref": "#/$defs/Electrical"
+    },
+    "mechanical": {
+      "$ref": "#/$defs/Mechanical"
+    },
+    "thermal": {
+      "$ref": "#/$defs/Thermal"
+    },
+    "material": {
+      "$ref": "#/$defs/Material"
+    },
+    "environmental": {
+      "$ref": "#/$defs/Environmental"
+    },
+    "reliability": {
+      "$ref": "#/$defs/Reliability"
+    },
+    "regulatory": {
+      "$ref": "#/$defs/Regulatory"
+    },
+    "manufacturing": {
+      "$ref": "#/$defs/Manufacturing"
+    },
+    "commercial": {
+      "$ref": "#/$defs/Commercial"
+    },
+    "packaging": {
+      "$ref": "#/$defs/Packaging"
+    },
+    "documentation": {
+      "$ref": "#/$defs/Documentation"
+    }
+  },
+  "additionalProperties": false,
+  "$comment": "Every leaf property in the class $defs below follows the IEC 61360 / CDD pattern: {value, unit, dataType, definition, conditionOfApplication, source}. 'Property' is the reusable wrapper; scalar shortcuts are used where a bare value is more practical for downstream tooling.",
+  "$defs": {
+    "Property": {
+      "type": "object",
+      "description": "IEC 61360-style property representation: a value bound to a unit, a semantic definition, and the reference/condition under which it applies.",
+      "properties": {
+        "value": {
+          "description": "The property value. Type depends on the property (number, string, boolean, or array for ranges/tables)."
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measure, preferably UN/CEFACT or IEC 61360 unit code (e.g. 'V', 'A', 'Ohm', 'degC', 'ppm/degC')."
+        },
+        "dataType": {
+          "type": "string",
+          "enum": [
+            "INTEGER_MEASURE",
+            "REAL_MEASURE",
+            "STRING",
+            "BOOLEAN",
+            "ENUM",
+            "RANGE",
+            "RATIONAL_MEASURE",
+            "INTEGER_COUNT"
+          ],
+          "description": "IEC 61360 data type classifier."
+        },
+        "conditionOfApplication": {
+          "type": "string",
+          "description": "Test/operating condition under which the value holds, e.g. '25 degC, Vcc=5V'."
+        },
+        "tolerance": {
+          "type": "string",
+          "description": "Tolerance or accuracy band, e.g. '±5%', '+0.1/-0.05 mm'."
+        },
+        "minValue": {
+          "type": "number"
+        },
+        "typValue": {
+          "type": "number"
+        },
+        "maxValue": {
+          "type": "number"
+        },
+        "definition": {
+          "type": "string",
+          "description": "Human-readable semantic definition of the property (CDD 'Definition' field)."
+        },
+        "irdi": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{4}#[0-9]{2}-[A-Z0-9]+#[0-9]+$",
+          "description": "International Registration Data Identifier referencing the IEC CDD element, if applicable."
+        },
+        "source": {
+          "type": "string",
+          "description": "Origin of the value: 'datasheet', 'test-report', 'measured', 'derived', 'manufacturer-declared'."
+        }
+      },
+      "additionalProperties": false
+    },
+    "DesignatorCategory": {
+      "type": "string",
+      "description": "Reference designator prefix per IEC 61346 / IPC-2612 / ASME Y14.44 convention.",
+      "enum": [
+        "A",
+        "AE",
+        "BT",
+        "C",
+        "D",
+        "DS",
+        "F",
+        "FB",
+        "FD",
+        "FL",
+        "H",
+        "J",
+        "JP",
+        "K",
+        "L",
+        "LS",
+        "M",
+        "MK",
+        "P",
+        "Q",
+        "R",
+        "RN",
+        "RT",
+        "RV",
+        "SW",
+        "T",
+        "TC",
+        "TJ",
+        "TP",
+        "U",
+        "Y",
+        "Z"
+      ]
+    },
+    "Identification": {
+      "type": "object",
+      "description": "Unique identity and classification of the component instance.",
+      "required": [
+        "referenceDesignator",
+        "designatorCategory"
+      ],
+      "properties": {
+        "referenceDesignator": {
+          "type": "string",
+          "pattern": "^(A|AE|BT|C|D|DS|F|FB|FD|FL|H|J|JP|K|L|LS|M|MK|P|Q|R|RN|RT|RV|SW|T|TC|TJ|TP|U|Y|Z)[0-9]+[A-Za-z]?$",
+          "description": "Schematic reference designator, e.g. 'C104', 'U3', 'RN2'."
+        },
+        "designatorCategory": {
+          "$ref": "#/$defs/DesignatorCategory"
+        },
+        "designatorCategoryLabel": {
+          "type": "string",
+          "description": "Human-readable category name resolved from DESIGNATOR_CATEGORIES, e.g. 'Capacitor'."
+        },
+        "manufacturerPartNumber": {
+          "type": "string"
+        },
+        "manufacturer": {
+          "type": "string"
+        },
+        "internalPartNumber": {
+          "type": "string",
+          "description": "Organization-internal part / SKU number."
+        },
+        "genericPartFamily": {
+          "type": "string",
+          "description": "IEC-CDD-style class name, e.g. '0173-1#01-AAA002#010' or a plain-text family such as 'MLCC'."
+        },
+        "irdiClassId": {
+          "type": "string",
+          "description": "IRDI of the IEC CDD class this component instantiates."
+        },
+        "description": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "alternatePartNumbers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "eccnClassification": {
+          "type": "string",
+          "description": "Export control classification number (also cross-referenced under Regulatory)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Electrical": {
+      "type": "object",
+      "description": "Electrical ratings and characteristics.",
+      "properties": {
+        "voltageRating": {
+          "$ref": "#/$defs/Property"
+        },
+        "currentRating": {
+          "$ref": "#/$defs/Property"
+        },
+        "powerRating": {
+          "$ref": "#/$defs/Property"
+        },
+        "resistance": {
+          "$ref": "#/$defs/Property"
+        },
+        "capacitance": {
+          "$ref": "#/$defs/Property"
+        },
+        "inductance": {
+          "$ref": "#/$defs/Property"
+        },
+        "impedance": {
+          "$ref": "#/$defs/Property"
+        },
+        "frequencyRange": {
+          "$ref": "#/$defs/Property"
+        },
+        "tolerance": {
+          "$ref": "#/$defs/Property"
+        },
+        "temperatureCoefficient": {
+          "$ref": "#/$defs/Property"
+        },
+        "dielectricType": {
+          "type": "string",
+          "description": "e.g. C0G/NP0, X7R, Y5V for capacitors."
+        },
+        "polarized": {
+          "type": "boolean"
+        },
+        "pinCount": {
+          "type": "integer"
+        },
+        "logicFamily": {
+          "type": "string"
+        },
+        "switchingCharacteristics": {
+          "$ref": "#/$defs/Property"
+        },
+        "insulationResistance": {
+          "$ref": "#/$defs/Property"
+        },
+        "dielectricWithstandingVoltage": {
+          "$ref": "#/$defs/Property"
+        },
+        "esdRating": {
+          "$ref": "#/$defs/Property"
+        },
+        "additionalProperties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Property"
+          },
+          "description": "Extension point for component-specific electrical properties not enumerated above."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Mechanical": {
+      "type": "object",
+      "description": "Physical form, dimensions, and mounting characteristics.",
+      "properties": {
+        "packageType": {
+          "type": "string",
+          "description": "e.g. '0402', 'SOIC-8', 'TO-220', 'QFN-32'."
+        },
+        "footprint": {
+          "type": "string",
+          "description": "IPC-7351 land pattern name or reference."
+        },
+        "dimensions": {
+          "type": "object",
+          "properties": {
+            "length": {
+              "$ref": "#/$defs/Property"
+            },
+            "width": {
+              "$ref": "#/$defs/Property"
+            },
+            "height": {
+              "$ref": "#/$defs/Property"
+            },
+            "diameter": {
+              "$ref": "#/$defs/Property"
+            },
+            "leadPitch": {
+              "$ref": "#/$defs/Property"
+            }
+          },
+          "additionalProperties": false
+        },
+        "mass": {
+          "$ref": "#/$defs/Property"
+        },
+        "mountingType": {
+          "type": "string",
+          "enum": [
+            "SMT",
+            "THT",
+            "Press-fit",
+            "Panel-mount",
+            "Chassis-mount",
+            "Free-standing",
+            "Other"
+          ]
+        },
+        "terminationStyle": {
+          "type": "string",
+          "description": "e.g. 'gull-wing', 'J-lead', 'BGA ball', 'axial', 'radial'."
+        },
+        "mechanicalTolerance": {
+          "$ref": "#/$defs/Property"
+        },
+        "connectorGender": {
+          "type": "string",
+          "enum": [
+            "Male",
+            "Female",
+            "N/A"
+          ]
+        },
+        "keying": {
+          "type": "string"
+        },
+        "actuationForce": {
+          "$ref": "#/$defs/Property",
+          "description": "For switches/connectors."
+        },
+        "vibrationResistance": {
+          "$ref": "#/$defs/Property"
+        },
+        "shockResistance": {
+          "$ref": "#/$defs/Property"
+        },
+        "cadModelRef": {
+          "type": "string",
+          "description": "Pointer to a CAD/STEP model; full detail lives under Documentation."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Thermal": {
+      "type": "object",
+      "description": "Temperature ratings and thermal transfer characteristics.",
+      "properties": {
+        "operatingTemperatureRange": {
+          "$ref": "#/$defs/Property"
+        },
+        "storageTemperatureRange": {
+          "$ref": "#/$defs/Property"
+        },
+        "thermalResistanceJunctionAmbient": {
+          "$ref": "#/$defs/Property",
+          "description": "Rth(j-a)."
+        },
+        "thermalResistanceJunctionCase": {
+          "$ref": "#/$defs/Property",
+          "description": "Rth(j-c)."
+        },
+        "maxJunctionTemperature": {
+          "$ref": "#/$defs/Property"
+        },
+        "derating": {
+          "$ref": "#/$defs/Property",
+          "description": "Derating curve or rule, e.g. '% rated power per degC above 70degC'."
+        },
+        "thermalConductivity": {
+          "$ref": "#/$defs/Property"
+        },
+        "reflowProfileCompatibility": {
+          "type": "string",
+          "description": "Reference to J-STD-020 reflow classification."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Material": {
+      "type": "object",
+      "description": "Bulk material, plating, and construction composition.",
+      "properties": {
+        "bodyMaterial": {
+          "type": "string"
+        },
+        "terminationFinish": {
+          "type": "string",
+          "description": "e.g. 'matte tin', 'gold', 'NiPdAu'."
+        },
+        "substrateMaterial": {
+          "type": "string"
+        },
+        "encapsulantMaterial": {
+          "type": "string"
+        },
+        "flammabilityRating": {
+          "type": "string",
+          "description": "UL 94 classification, e.g. 'V-0'."
+        },
+        "moistureSensitivityLevel": {
+          "type": "string",
+          "description": "J-STD-020 MSL rating, e.g. 'MSL 3'."
+        },
+        "colorFinish": {
+          "type": "string"
+        },
+        "magneticProperties": {
+          "type": "string"
+        },
+        "materialComposition": {
+          "type": "array",
+          "description": "Bill of substances, for compliance/traceability purposes.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "substance": {
+                "type": "string"
+              },
+              "casNumber": {
+                "type": "string"
+              },
+              "massFraction": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Environmental": {
+      "type": "object",
+      "description": "Environmental compliance and operating-environment tolerance.",
+      "properties": {
+        "rohsCompliant": {
+          "type": "boolean"
+        },
+        "rohsVersion": {
+          "type": "string",
+          "description": "e.g. 'RoHS 3 (EU 2015/863)'."
+        },
+        "reachCompliant": {
+          "type": "boolean"
+        },
+        "reachSvhcListDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "halogenFree": {
+          "type": "boolean"
+        },
+        "conflictMineralsStatus": {
+          "type": "string",
+          "enum": [
+            "DRC Conflict-Free",
+            "Not Conflict-Free",
+            "Not Assessed"
+          ]
+        },
+        "ingressProtectionRating": {
+          "type": "string",
+          "description": "IP code, e.g. 'IP67'."
+        },
+        "humidityRating": {
+          "$ref": "#/$defs/Property"
+        },
+        "altitudeRating": {
+          "$ref": "#/$defs/Property"
+        },
+        "chemicalResistance": {
+          "type": "string"
+        },
+        "uvResistance": {
+          "type": "boolean"
+        },
+        "californiaProp65": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Reliability": {
+      "type": "object",
+      "description": "Lifetime, failure-rate, and qualification data.",
+      "properties": {
+        "mtbf": {
+          "$ref": "#/$defs/Property",
+          "description": "Mean time between failures."
+        },
+        "failureRate": {
+          "$ref": "#/$defs/Property",
+          "description": "FIT rate (failures per 1e9 device-hours)."
+        },
+        "ratedLifetime": {
+          "$ref": "#/$defs/Property"
+        },
+        "qualificationStandard": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "e.g. ['AEC-Q200', 'MIL-STD-883']."
+        },
+        "gradeLevel": {
+          "type": "string",
+          "description": "e.g. 'Automotive Grade 1', 'Industrial', 'Consumer', 'Military'."
+        },
+        "burnInTested": {
+          "type": "boolean"
+        },
+        "predictedFailureModes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "endurance": {
+          "type": "object",
+          "properties": {
+            "cycleCount": {
+              "$ref": "#/$defs/Property"
+            },
+            "testMethod": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "Regulatory": {
+      "type": "object",
+      "description": "Certifications, export control, and legal/regulatory identifiers.",
+      "properties": {
+        "certifications": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "e.g. ['UL', 'CE', 'FCC Part 15', 'CSA', 'CCC']."
+        },
+        "certificateNumbers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "eccn": {
+          "type": "string",
+          "description": "Export Control Classification Number."
+        },
+        "htsCode": {
+          "type": "string",
+          "description": "Harmonized Tariff Schedule code."
+        },
+        "countryOfOrigin": {
+          "type": "string"
+        },
+        "exportLicenseRequired": {
+          "type": "boolean"
+        },
+        "ituCompliance": {
+          "type": "string"
+        },
+        "iecStandardRef": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Governing IEC standard(s), e.g. ['IEC 60384-1']."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Manufacturing": {
+      "type": "object",
+      "description": "Process, assembly, and production characteristics.",
+      "properties": {
+        "assemblyProcess": {
+          "type": "string",
+          "enum": [
+            "SMT-Reflow",
+            "THT-Wave",
+            "THT-Selective",
+            "Manual",
+            "Press-fit",
+            "Other"
+          ]
+        },
+        "solderReflowProfile": {
+          "type": "string"
+        },
+        "leadFreeProcessCompatible": {
+          "type": "boolean"
+        },
+        "peakReflowTemperature": {
+          "$ref": "#/$defs/Property"
+        },
+        "solderabilityStandard": {
+          "type": "string",
+          "description": "e.g. 'J-STD-002'."
+        },
+        "placementOrientation": {
+          "type": "string"
+        },
+        "testCoverage": {
+          "type": "string",
+          "description": "e.g. 'AOI + ICT', 'Functional test 100%'."
+        },
+        "yieldRate": {
+          "$ref": "#/$defs/Property"
+        },
+        "processCapabilityIndex": {
+          "$ref": "#/$defs/Property",
+          "description": "Cpk."
+        },
+        "traceabilityMethod": {
+          "type": "string",
+          "description": "e.g. 'Lot-code marking', 'Date-code + serial'."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Commercial": {
+      "type": "object",
+      "description": "Sourcing, pricing, and lifecycle-status data.",
+      "properties": {
+        "lifecycleStatus": {
+          "type": "string",
+          "enum": [
+            "Active",
+            "NRND",
+            "EOL",
+            "Obsolete",
+            "Preview",
+            "Unknown"
+          ]
+        },
+        "lastTimeBuyDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "endOfLifeDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "leadTimeWeeks": {
+          "type": "number"
+        },
+        "minimumOrderQuantity": {
+          "type": "integer"
+        },
+        "standardPackQuantity": {
+          "type": "integer"
+        },
+        "priceBreaks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "quantity": {
+                "type": "integer"
+              },
+              "unitPrice": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "distributors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "sku": {
+                "type": "string"
+              },
+              "stockQuantity": {
+                "type": "integer"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "alternateSources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Cross/second-source part numbers."
+        },
+        "obsolescenceRiskScore": {
+          "type": "number",
+          "description": "PartPilot-derived risk score, if computed."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Packaging": {
+      "type": "object",
+      "description": "Shipping/handling unit packaging (distinct from Mechanical, which describes the component body).",
+      "properties": {
+        "packingMethod": {
+          "type": "string",
+          "enum": [
+            "Tape and Reel",
+            "Tube",
+            "Tray",
+            "Bulk",
+            "Cut Tape",
+            "Bag"
+          ]
+        },
+        "reelSize": {
+          "type": "string",
+          "description": "e.g. '7in', '13in'."
+        },
+        "quantityPerReel": {
+          "type": "integer"
+        },
+        "tapeWidth": {
+          "$ref": "#/$defs/Property"
+        },
+        "tapePitch": {
+          "$ref": "#/$defs/Property"
+        },
+        "orientation": {
+          "type": "string",
+          "description": "Pin-1 / component orientation within the carrier tape per EIA-481."
+        },
+        "dryPackRequired": {
+          "type": "boolean"
+        },
+        "packagingMaterial": {
+          "type": "string"
+        },
+        "labelingStandard": {
+          "type": "string",
+          "description": "e.g. 'IPC-1782', 'ANSI MH10.8.2'."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Documentation": {
+      "type": "object",
+      "description": "Reference documents and design artifacts.",
+      "properties": {
+        "datasheetUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "datasheetRevision": {
+          "type": "string"
+        },
+        "applicationNotes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "cadModels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "format": {
+                "type": "string",
+                "enum": [
+                  "STEP",
+                  "IGES",
+                  "KiCad",
+                  "Altium",
+                  "Eagle",
+                  "Other"
+                ]
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "complianceCertificates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "changeNotifications": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": "PCN (Product Change Notice) links."
+        },
+        "safetyDataSheet": {
+          "type": "string",
+          "format": "uri"
+        },
+        "revisionHistory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "revision": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
