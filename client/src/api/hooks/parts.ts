@@ -89,7 +89,7 @@ export function useComparePartsProperties(ids: string[]) {
  * — there's no dedicated server endpoint.
  */
 export function useProjectParts(
-  projects: { name: string; lines: { part_id: string; qty: number; mpn: string; manufacturer: string; category: string; description: string; lifecycle_stage: Part["lifecycle_stage"]; score: number; country_of_origin: string; unit_price: number; compliance: Part["compliance"]; parameters?: Part["parameters"] }[] }[] | undefined,
+  projects: { name: string; lines: { part_id: string; qty: number; mpn: string; manufacturer: string; category: string; description: string; lifecycle_stage: Part["lifecycle_stage"]; score: number; country_of_origin: string; unit_price: number; compliance: Part["compliance"]; parameters?: Part["parameters"]; component_metadata?: Part["component_metadata"] }[] }[] | undefined,
 ) {
   return useMemo(() => {
     if (!projects) return [];
@@ -123,6 +123,7 @@ export function useProjectParts(
           unit_price: line.unit_price,
           compliance: line.compliance,
           parameters: line.parameters ?? {},
+          component_metadata: line.component_metadata ?? {},
           project_count: 1,
           project_names: project.name,
           total_qty: line.qty,

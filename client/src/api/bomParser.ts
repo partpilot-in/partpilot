@@ -512,6 +512,7 @@ function rowToBomLine(
     compliance: DEFAULT_COMPLIANCE,
     lifecycle_stage: "unknown",
     score: 72,
+    component_metadata: {},
   };
 }
 

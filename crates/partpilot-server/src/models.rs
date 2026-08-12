@@ -16,6 +16,7 @@ pub struct PartDto {
     pub unit_price: f64,
     pub compliance: Value,
     pub parameters: Value,
+    pub component_metadata: Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -33,6 +34,7 @@ pub struct BomLineDto {
     pub compliance: Value,
     pub lifecycle_stage: String,
     pub score: i32,
+    pub component_metadata: Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,6 +71,8 @@ pub struct BomLineInput {
     pub lifecycle_stage: String,
     #[serde(default = "partpilot_engine::base_rating")]
     pub score: i32,
+    #[serde(default = "default_component_metadata")]
+    pub component_metadata: Value,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -99,6 +103,7 @@ pub struct MyPartDto {
     pub unit_price: f64,
     pub compliance: Value,
     pub parameters: Value,
+    pub component_metadata: Value,
     pub project_count: i32,
     pub project_names: String,
     pub total_qty: i32,
@@ -125,6 +130,8 @@ pub struct MyPartInput {
     pub compliance: Value,
     #[serde(default = "default_parameters")]
     pub parameters: Value,
+    #[serde(default = "default_component_metadata")]
+    pub component_metadata: Value,
     #[serde(default = "default_qty", alias = "qty")]
     pub total_qty: i32,
 }
@@ -202,6 +209,9 @@ pub fn default_lifecycle() -> String {
     "unknown".into()
 }
 pub fn default_parameters() -> Value {
+    json!({})
+}
+pub fn default_component_metadata() -> Value {
     json!({})
 }
 pub fn default_compliance() -> Value {

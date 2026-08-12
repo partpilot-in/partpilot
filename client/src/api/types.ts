@@ -1,3 +1,5 @@
+import type { ComponentMetadata } from "./componentMetadata";
+
 export type LifecycleStage = "active" | "nrnd" | "last_time_buy" | "obsolete" | "unknown";
 
 export type ComplianceStatus = "pass" | "fail" | "unknown";
@@ -29,6 +31,7 @@ export interface Part {
   compliance: ComplianceRecord[];
   unit_price: number;
   parameters: PartParameters;
+  component_metadata: ComponentMetadata;
 }
 
 export interface PartFilters {
@@ -51,6 +54,7 @@ export interface BomLine {
   compliance: ComplianceRecord[];
   lifecycle_stage: LifecycleStage;
   score: number;
+  component_metadata: ComponentMetadata;
 }
 
 export interface Project {

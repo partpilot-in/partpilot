@@ -72,6 +72,7 @@ async fn my_parts_support_full_crud() {
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     let id = created["id"].as_str().unwrap();
     assert_eq!(created["score"], partpilot_engine::base_rating());
+    assert_eq!(created["component_metadata"], json!({}));
 
     let list = app
         .clone()
@@ -127,6 +128,7 @@ async fn projects_support_full_crud() {
         created["lines"][0]["score"],
         partpilot_engine::base_rating()
     );
+    assert_eq!(created["lines"][0]["component_metadata"], json!({}));
 
     let list = app
         .clone()
@@ -173,7 +175,12 @@ async fn project_categories_are_inferred_from_designators_on_the_server() {
             "mpn": "RC0603FR-0710KL",
             "manufacturer": "Yageo",
             "description": "R12 — 10 kOhm resistor",
-            "category": ""
+            "category": "",
+            "component_metadata": {
+                "electrical": {
+                    "resistance": { "value": 10, "unit": "kOhm", "source": "datasheet" }
+                }
+            }
         },
         {
             "mpn": "CAT24C32WI-GT3",
@@ -197,6 +204,10 @@ async fn project_categories_are_inferred_from_designators_on_the_server() {
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
 
     assert_eq!(project["lines"][0]["category"], "Resistor");
+    assert_eq!(
+        project["lines"][0]["component_metadata"]["electrical"]["resistance"]["unit"],
+        "kOhm"
+    );
     assert_eq!(project["lines"][1]["category"], "Memory");
     assert_eq!(project["lines"][2]["category"], "Resistor Network");
 }

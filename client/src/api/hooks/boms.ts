@@ -52,6 +52,7 @@ function normalizeBomLine(value: unknown, index: number, projectId: string): Bom
       ? (line.lifecycle_stage as BomLine["lifecycle_stage"])
       : "unknown",
     score: Math.max(0, Math.min(100, asNumber(line.score, 72))),
+    component_metadata: asRecord(line.component_metadata),
   };
 }
 

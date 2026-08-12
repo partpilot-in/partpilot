@@ -371,6 +371,7 @@ export function MyParts() {
       unit_price: Number.isFinite(unitPrice) ? Math.max(0, unitPrice) : 0,
       compliance: [{ standard: "Manual review", status: "unknown" }],
       parameters: {},
+      component_metadata: editingPart?.component_metadata ?? {},
       total_qty: Number.isFinite(qty) ? Math.max(1, qty) : 1,
     };
     setSavingPart(true);

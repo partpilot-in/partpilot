@@ -19,6 +19,7 @@ pub async fn list() -> (StatusCode, Json<Value>) {
                 "unit_price": 0.42,
                 "compliance": [{ "standard": "RoHS", "status": "pass" }],
                 "parameters": { "package": "TO-220" },
+                "component_metadata": {},
                 "created_at": "2026-06-01T00:00:00Z"
             }]
         })),

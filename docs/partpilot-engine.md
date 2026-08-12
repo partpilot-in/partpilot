@@ -53,6 +53,25 @@ When adapters are added, the calling flow becomes:
 All of these calls remain in-process Rust function or trait-method calls. Only
 the adapter implementations perform network I/O.
 
+## Planned component metadata enrichment
+
+Parts now carry a `component_metadata` document shaped by
+[`component-cdd.schema.json`](component-cdd.schema.json). It contains the CDD
+Identification, Electrical, Mechanical, Thermal, Material, Environmental,
+Reliability, Regulatory, Manufacturing, Commercial, Packaging, and
+Documentation sections. The field is currently `{}` because datasheet
+ingestion is not implemented.
+
+The future engine operation will accept the normalized part identity,
+designator category, and evidence-bearing candidates extracted by adapters. It
+will return a schema-valid component document plus rejected candidates and
+diagnostics. The engine will own category applicability, unit normalization,
+min/typ/max handling, test conditions, provenance, and conflict resolution. It
+will not download or parse source-specific documents itself.
+
+The complete planned pipeline and ownership boundaries are documented in
+[`component-metadata-ingestion.md`](component-metadata-ingestion.md).
+
 ## Risk-scoring contract
 
 `score_risk` accepts:

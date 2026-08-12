@@ -54,6 +54,7 @@ impl AppState {
             unit_price: 0.42,
             compliance: json!([{ "standard": "RoHS", "status": "pass" }]),
             parameters: json!({ "package": "TO-220" }),
+            component_metadata: json!({}),
         };
         Self {
             db: None,

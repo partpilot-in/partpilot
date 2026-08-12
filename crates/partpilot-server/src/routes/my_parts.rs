@@ -19,6 +19,7 @@ const SELECT_MY_PART: &str = r#"select id, mpn, manufacturer,
     lifecycle_stage, score,
     coalesce(nullif(country_of_origin, ''), 'Unknown') as country_of_origin,
     unit_price::float8 as unit_price, compliance, parameters,
+    component_metadata,
     0::int as project_count, 'Manual entry'::text as project_names,
     quantity::int as total_qty, 'manual'::text as source
    from user_parts"#;
@@ -59,14 +60,16 @@ pub async fn create(
         sqlx::query_as::<_, MyPartDto>(
             r#"insert into user_parts
                (user_id, mpn, manufacturer, description, category, lifecycle_stage,
-                score, country_of_origin, unit_price, compliance, parameters, quantity)
-               values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                score, country_of_origin, unit_price, compliance, parameters, component_metadata,
+                quantity)
+               values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
                returning id, mpn, manufacturer,
                 coalesce(nullif(description, ''), 'Manually added part') as description,
                 coalesce(nullif(category, ''), 'Uncategorized') as category,
                 lifecycle_stage, score,
                 coalesce(nullif(country_of_origin, ''), 'Unknown') as country_of_origin,
                 unit_price::float8 as unit_price, compliance, parameters,
+                component_metadata,
                 0::int as project_count, 'Manual entry'::text as project_names,
                 quantity::int as total_qty, 'manual'::text as source"#,
         )
@@ -81,6 +84,7 @@ pub async fn create(
         .bind(input.unit_price.max(0.0))
         .bind(&input.compliance)
         .bind(&input.parameters)
+        .bind(&input.component_metadata)
         .bind(input.total_qty.max(1))
         .fetch_one(db)
         .await
@@ -140,7 +144,7 @@ pub async fn update(
             r#"update user_parts set
                 mpn=$3, manufacturer=$4, description=$5, category=$6, lifecycle_stage=$7,
                 score=$8, country_of_origin=$9, unit_price=$10, compliance=$11,
-                parameters=$12, quantity=$13, updated_at=now()
+                parameters=$12, component_metadata=$13, quantity=$14, updated_at=now()
                where id=$1 and user_id=$2
                returning id, mpn, manufacturer,
                 coalesce(nullif(description, ''), 'Manually added part') as description,
@@ -148,6 +152,7 @@ pub async fn update(
                 lifecycle_stage, score,
                 coalesce(nullif(country_of_origin, ''), 'Unknown') as country_of_origin,
                 unit_price::float8 as unit_price, compliance, parameters,
+                component_metadata,
                 0::int as project_count, 'Manual entry'::text as project_names,
                 quantity::int as total_qty, 'manual'::text as source"#,
         )
@@ -163,6 +168,7 @@ pub async fn update(
         .bind(input.unit_price.max(0.0))
         .bind(&input.compliance)
         .bind(&input.parameters)
+        .bind(&input.component_metadata)
         .bind(input.total_qty.max(1))
         .fetch_optional(db)
         .await
@@ -231,6 +237,7 @@ fn from_input(id: Uuid, input: MyPartInput) -> MyPartDto {
         unit_price: input.unit_price.max(0.0),
         compliance: input.compliance,
         parameters: input.parameters,
+        component_metadata: input.component_metadata,
         project_count: 0,
         project_names: "Manual entry".into(),
         total_qty: input.total_qty.max(1),
@@ -244,6 +251,11 @@ fn validate(input: &MyPartInput) -> Result<(), AppError> {
     }
     if input.manufacturer.trim().is_empty() {
         return Err(AppError::bad_request("manufacturer is required"));
+    }
+    if !input.component_metadata.is_object() {
+        return Err(AppError::bad_request(
+            "component_metadata must be a JSON object",
+        ));
     }
     Ok(())
 }

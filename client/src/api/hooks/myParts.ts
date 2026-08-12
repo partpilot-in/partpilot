@@ -19,6 +19,7 @@ export interface MyPartInput {
   score?: number;
   compliance?: Part["compliance"];
   parameters?: Part["parameters"];
+  component_metadata?: Part["component_metadata"];
 }
 
 function responseItems(payload: unknown): MyPart[] {

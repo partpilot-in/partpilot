@@ -149,6 +149,9 @@ Responsibilities include:
 * Risk scoring
 * Alternate part matching
 * Ranking and synthesizing forum mentions into Community Pulse summaries
+* Category-aware mapping, validation, and reconciliation of IEC CDD component
+  metadata extracted from datasheets (planned; the storage/API/UI contract is
+  already present)
 
 partpilot-engine depends on nothing else in the workspace.
 
@@ -201,7 +204,7 @@ It runs as an independent Railway service so that slow, rate-limited, or failure
 - [API Documentation](docs/partpilot-api-doc.md)
 - [Client UI Specification](docs/partpilot-client-ui-spec.md)
 - [Component Protocols](docs/partpilot-component-protocols.md)
+- [Component Metadata and Datasheet Ingestion](docs/component-metadata-ingestion.md)
 - [PartPilot Engine](docs/partpilot-engine.md)
 - [Feature Proposal](docs/partpilot-feature-proposal.md)
 - [Postman Collection](docs/partpilot-server.postman_collection.json)
- 

@@ -65,6 +65,7 @@ export function editableToBomLines(rows: EditableBomLine[], prefix: string): Bom
       ],
       lifecycle_stage: "unknown",
       score: 72,
+      component_metadata: {},
     }));
 }
 

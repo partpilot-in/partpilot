@@ -37,7 +37,8 @@ pub async fn search(
         sqlx::query_as::<_, PartDto>(
             r#"
             select id, mpn, manufacturer, description, category, lifecycle_stage, score,
-                   country_of_origin, unit_price::float8 as unit_price, compliance, parameters
+                   country_of_origin, unit_price::float8 as unit_price, compliance, parameters,
+                   component_metadata
               from partpilot_part_api
              where ($1 = '' or mpn ilike '%' || $1 || '%' or description ilike '%' || $1 || '%')
                and ($2::text[] is null or category = any($2))
@@ -82,7 +83,8 @@ pub async fn detail(
         sqlx::query_as::<_, PartDto>(
             r#"
             select id, mpn, manufacturer, description, category, lifecycle_stage, score,
-                   country_of_origin, unit_price::float8 as unit_price, compliance, parameters
+                   country_of_origin, unit_price::float8 as unit_price, compliance, parameters,
+                   component_metadata
               from partpilot_part_api where id = $1"#,
         )
         .bind(id)
@@ -97,7 +99,8 @@ pub async fn detail(
         "description": part.description, "category": part.category,
         "country_of_origin": part.country_of_origin, "unit_price": part.unit_price,
         "compliance": part.compliance, "lifecycle_stage": part.lifecycle_stage,
-        "parameters": part.parameters, "score": part.score,
+        "parameters": part.parameters, "component_metadata": part.component_metadata,
+        "score": part.score,
         "reconciled_status": null, "risk": null
     })))
 }
@@ -134,6 +137,7 @@ pub async fn alternates() -> (StatusCode, Json<Value>) {
                 "unit_price": 0.37,
                 "compliance": [{ "standard": "RoHS", "status": "pass" }],
                 "parameters": { "package": "TO-220" },
+                "component_metadata": {},
                 "match_kind": "manufacturer_cross_ref",
                 "similarity": 1.0,
                 "score": 88
@@ -177,7 +181,8 @@ pub async fn compare(
         sqlx::query_as::<_, PartDto>(
             r#"
             select id, mpn, manufacturer, description, category, lifecycle_stage, score,
-                   country_of_origin, unit_price::float8 as unit_price, compliance, parameters
+                   country_of_origin, unit_price::float8 as unit_price, compliance, parameters,
+                   component_metadata
               from partpilot_part_api where id = any($1)"#,
         )
         .bind(&ids)
@@ -194,7 +199,8 @@ pub async fn compare(
         .map(|part| {
             json!({
                 "id": part.id, "label": format!("{} - {}", part.mpn, part.manufacturer),
-                "parameters": part.parameters
+                "parameters": part.parameters,
+                "component_metadata": part.component_metadata
             })
         })
         .collect();

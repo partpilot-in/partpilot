@@ -110,6 +110,7 @@ catalog data in the API view.
 | `compliance` | `jsonb` | Yes | `[]` | Line-specific compliance array. An empty array allows the view to fall back to catalog compliance. |
 | `lifecycle_stage` | `text` | No | — | Line-specific lifecycle override. |
 | `score` | `integer` | No | — | Line-specific score override, constrained to 0–100. |
+| `component_metadata` | `jsonb` | No | `null` | Optional CDD line override; empty or null values fall back to matched catalog metadata. |
 
 - Primary key: (`bom_id`, `line_no`); `id` also has a unique index.
 - Index: `matched_part_id` for catalog-match lookups.
@@ -254,6 +255,7 @@ The canonical, shared component catalog. User-specific inventory belongs in
 | `description` | `text` | No | `No description available` | Human-readable description. Existing blank values were normalized by migration 0007. |
 | `category` | `text` | No | `Uncategorized` | Part category. |
 | `parameters` | `jsonb` | Yes | `{}` | Category-agnostic parametric attributes. |
+| `component_metadata` | `jsonb` | Yes | `{}` | IEC CDD component document defined by `component-cdd.schema.json`. |
 | `created_at` | `timestamptz` | Yes | `now()` | Catalog insertion time. |
 | `country_of_origin` | `text` | Yes | `Unknown` | Country of origin. |
 | `unit_price` | `numeric(12,4)` | Yes | `0` | Reference unit price. |
@@ -344,6 +346,7 @@ quantity, compliance, and parameter data.
 | `unit_price` | `numeric(12,4)` | Yes | `0` | Non-negative unit price. |
 | `compliance` | `jsonb` | Yes | `[]` | Compliance records in frontend-compatible array form. |
 | `parameters` | `jsonb` | Yes | `{}` | Category-agnostic parameters. |
+| `component_metadata` | `jsonb` | Yes | `{}` | IEC CDD component document for the user-owned part. |
 | `quantity` | `integer` | Yes | `1` | Inventory quantity; must be greater than zero. |
 | `created_at` | `timestamptz` | Yes | `now()` | Creation time. |
 | `updated_at` | `timestamptz` | Yes | `now()` | Last application-managed update time. There is no database trigger that updates it automatically. |
@@ -396,6 +399,7 @@ compliance.
 | `compliance` | `jsonb` | Nonempty line array, otherwise aggregated catalog compliance, otherwise `[]`. |
 | `lifecycle_stage` | `text` | Line override, latest catalog status, then `unknown`. |
 | `score` | `integer` | Line override, catalog score, then 72. |
+| `component_metadata` | `jsonb` | Nonempty line document, catalog document, then `{}`. |
 
 - Granted to: `authenticated` for `SELECT`.
 - Ownership caution: the view has no `user_id` predicate. Server queries should
@@ -421,6 +425,7 @@ details for each important-part relation.
 | `country_of_origin` | `text` | Normalized country of origin. |
 | `unit_price` | `numeric` | Catalog unit price. |
 | `compliance` | `jsonb` | Aggregated compliance array. |
+| `component_metadata` | `jsonb` | Catalog CDD component document. |
 
 - Granted to: `authenticated` for `SELECT`.
 - Callers must filter by the authenticated `user_id`; the view definition does
@@ -444,6 +449,7 @@ latest lifecycle stage and aggregates compliance rows into JSON.
 | `country_of_origin` | `text` | Nonblank country, otherwise `Unknown`. |
 | `unit_price` | `numeric` | Catalog unit price. |
 | `compliance` | `jsonb` | Compliance rows ordered by standard and aggregated as objects, otherwise `[]`. |
+| `component_metadata` | `jsonb` | CDD component document, otherwise `{}`. |
 
 - Granted to: `anon` and `authenticated` for `SELECT`.
 

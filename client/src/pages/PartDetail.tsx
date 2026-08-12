@@ -4,6 +4,15 @@ import { MoreVertical, Plus, Star } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
 import { useMyParts, useMyPartsMutations } from "../api/hooks/myParts";
 import { usePart, usePartAlternates, useProjectParts } from "../api/hooks/parts";
+import {
+  CDD_SECTION_DEFINITIONS,
+  DESIGNATOR_CATEGORY_LABELS,
+  cddFieldLabel,
+  cddValueAtPath,
+  fieldsForCddSection,
+  formatCddValue,
+  resolveDesignatorCategory,
+} from "../api/componentMetadata";
 import type { Part } from "../api/types";
 import {
   Card,
@@ -186,6 +195,8 @@ export function PartDetail() {
   }
 
   const parameterEntries = Object.entries(part.parameters ?? {});
+  const designatorCategory = resolveDesignatorCategory(part.category, part.description);
+  const componentMetadata = part.component_metadata ?? {};
 
   return (
     <div className="stack">
@@ -279,6 +290,34 @@ export function PartDetail() {
             </dl>
           </Card>
         )}
+      </section>
+
+      <section className="stack component-metadata-section" aria-labelledby="component-metadata-title">
+        <div className="component-metadata-heading">
+          <div>
+            <h2 className="section-title" id="component-metadata-title">Component</h2>
+            <p className="component-metadata-subtitle">IEC CDD metadata</p>
+          </div>
+          {designatorCategory && (
+            <span className="component-category-label">
+              {designatorCategory} · {DESIGNATOR_CATEGORY_LABELS[designatorCategory]}
+            </span>
+          )}
+        </div>
+        <div className="component-metadata-grid">
+          {CDD_SECTION_DEFINITIONS.map((section) => (
+            <Card key={section.key} title={section.title} className="component-metadata-card">
+              <dl className="property-list component-metadata-list">
+                {fieldsForCddSection(section, designatorCategory).map((field) => (
+                  <Fragment key={field}>
+                    <dt>{cddFieldLabel(field)}</dt>
+                    <dd>{formatCddValue(cddValueAtPath(componentMetadata, section.key, field))}</dd>
+                  </Fragment>
+                ))}
+              </dl>
+            </Card>
+          ))}
+        </div>
       </section>
 
       <section className="stack alternates-section">

@@ -85,7 +85,8 @@ Fuzzy search by MPN or description.
       "compliance": [{ "standard": "RoHS", "status": "pass" }],
       "parameters": {
         "package": "TO-220"
-      }
+      },
+      "component_metadata": {}
     }
   ],
   "next_cursor": null,
@@ -122,6 +123,7 @@ Part detail — reconciled lifecycle status and risk/PartPilot score.
     "voltage_min_v": 1.25,
     "voltage_max_v": 37
   },
+  "component_metadata": {},
   "reconciled_status": {
     "stage": "active",
     "last_time_buy_date": null,
@@ -386,7 +388,8 @@ Upload a BOM (CSV or XLSX) and generate a risk report.
       "unit_price": 0.01,
       "compliance": [{ "standard": "RoHS", "status": "pass" }],
       "lifecycle_stage": "active",
-      "score": 97
+      "score": 97,
+      "component_metadata": {}
     }
   ]
 }
@@ -428,7 +431,8 @@ Fetch a stored BOM's risk report.
       "unit_price": 0.01,
       "compliance": [{ "standard": "RoHS", "status": "pass" }],
       "lifecycle_stage": "active",
-      "score": 97
+      "score": 97,
+      "component_metadata": {}
     },
     {
       "id": "line-2",
@@ -443,7 +447,8 @@ Fetch a stored BOM's risk report.
       "unit_price": 0.42,
       "compliance": [{ "standard": "RoHS", "status": "pass" }],
       "lifecycle_stage": "nrnd",
-      "score": 58
+      "score": 58,
+      "component_metadata": {}
     }
   ]
 }
@@ -547,6 +552,7 @@ Current user's important parts.
       "unit_price": 0.42,
       "compliance": [{ "standard": "RoHS", "status": "pass" }],
       "parameters": { "package": "TO-220" },
+      "component_metadata": {},
       "created_at": "2026-06-01T00:00:00Z"
     }
   ]
