@@ -1619,6 +1619,10 @@ a.news-list__title:hover {
   font-size: 16px;
 }
 
+.score-ring--xl .score-ring__number {
+  font-size: 32px;
+}
+
 .score-ring__label {
   color: var(--text-secondary);
   font-family: var(--font-sans);
@@ -2146,10 +2150,64 @@ a.news-list__title:hover {
   grid-template-columns: minmax(0, 640px);
 }
 
-.part-summary {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+.part-detail-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.part-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: inherit;
+}
+
+.part-score-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+}
+
+.part-score-card .card__body {
+  display: grid;
+}
+
+.part-score-summary {
+  display: grid;
+  min-height: 100%;
+  place-items: center;
+}
+
+.part-score-card .score-ring__value {
+  animation: part-score-ring-load 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes part-score-ring-load {
+  from {
+    stroke-dashoffset: var(--score-circumference);
+  }
+
+  to {
+    stroke-dashoffset: var(--score-offset);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .part-score-card .score-ring__value {
+    animation: none;
+  }
+}
+
+.overview-list {
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.overview-list dt {
+  text-align: left;
+}
+
+.overview-list dd {
+  text-align: center;
 }
 
 .property-list {
@@ -2167,54 +2225,73 @@ a.news-list__title:hover {
   margin: 0;
 }
 
-.component-metadata-section {
-  gap: 16px;
-}
-
-.component-metadata-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.component-metadata-heading .section-title {
-  margin-bottom: 0;
-}
-
-.component-metadata-subtitle {
-  margin: 4px 0 0;
-  color: var(--text-secondary);
-  font-size: 13px;
-}
-
 .component-category-label {
   color: var(--text-secondary);
   font-size: 12px;
   text-align: right;
 }
 
-.component-metadata-grid {
-  display: grid;
+.characteristics-card {
+  min-width: 0;
+}
+
+.characteristics-card .card__body {
+  min-width: 0;
+  padding: 0;
+}
+
+.characteristics-tabs {
+  display: flex;
+  min-width: 0;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 8px 10px 0;
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: thin;
+}
+
+.characteristics-tab {
+  flex: 1 0 auto;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.characteristics-tab:hover {
+  color: var(--text-primary);
+}
+
+.characteristics-tab--active {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.characteristics-panel {
+  padding: 16px;
+}
+
+.characteristics-list {
+  width: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: 16px;
+  margin-inline: 0;
+  font-size: 14px;
 }
 
-.component-metadata-card .card__body {
-  padding-block: 14px;
+.characteristics-list dt {
+  text-align: left;
 }
 
-.component-metadata-list {
-  grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1fr);
-  gap: 7px 16px;
-  font-size: 12px;
-}
-
-.component-metadata-list dd {
+.characteristics-list dd {
   min-width: 0;
   overflow-wrap: anywhere;
-  color: var(--text-primary);
+  text-align: center;
 }
 
 @media (max-width: 900px) {
@@ -2834,10 +2911,8 @@ a.news-list__title:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .part-summary {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
+  .part-overview-grid {
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
   }
 
@@ -2851,33 +2926,35 @@ a.news-list__title:hover {
     padding-bottom: 8px;
   }
 
-  .part-summary .property-list {
-    grid-template-columns: max-content minmax(0, 1fr);
-    gap: 6px 12px;
+  .overview-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
   }
 
-  .part-summary .property-list dd {
+  .overview-list dd {
     padding-bottom: 0;
-  }
-
-  .component-metadata-heading {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 6px;
   }
 
   .component-category-label {
     text-align: left;
   }
 
-  .component-metadata-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
+  .characteristics-list {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
   }
 
-  .component-metadata-list {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 3px;
+  .characteristics-list dd {
+    padding-bottom: 0;
+  }
+
+  .characteristics-tabs {
+    padding-inline: 8px;
+  }
+
+  .characteristics-panel {
+    padding: 14px;
   }
 
   .modal-backdrop {

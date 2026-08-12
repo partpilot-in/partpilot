@@ -1,6 +1,6 @@
 interface ScoreRingProps {
   value: number;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   showLabel?: boolean;
 }
 
@@ -8,6 +8,7 @@ const sizeMap = {
   sm: 34,
   md: 44,
   lg: 64,
+  xl: 160,
 };
 
 function scoreColor(value: number) {
@@ -19,7 +20,7 @@ function scoreColor(value: number) {
 
 export function ScoreRing({ value, size = "md", showLabel = false }: ScoreRingProps) {
   const dimension = sizeMap[size];
-  const stroke = size === "lg" ? 5 : 4;
+  const stroke = size === "xl" ? 9 : size === "lg" ? 5 : 4;
   const radius = (dimension - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const normalized = Math.max(0, Math.min(100, Math.round(value)));
@@ -28,7 +29,11 @@ export function ScoreRing({ value, size = "md", showLabel = false }: ScoreRingPr
   return (
     <span
       className={`score-ring score-ring--${size}`}
-      style={{ "--score-color": scoreColor(normalized) } as React.CSSProperties}
+      style={{
+        "--score-color": scoreColor(normalized),
+        "--score-circumference": circumference,
+        "--score-offset": dashOffset,
+      } as React.CSSProperties}
       aria-label={`PartPilot score ${normalized} out of 100`}
     >
       <span className="score-ring__figure" style={{ width: dimension, height: dimension }}>

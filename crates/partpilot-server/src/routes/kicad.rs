@@ -7,7 +7,7 @@ pub async fn lookup() -> (StatusCode, Json<Value>) {
         Json(json!({
             "mpn": "LM317T",
             "manufacturer": "TEXAS INSTRUMENTS",
-            "lifecycle_stage": "active",
+            "component_metadata": { "commercial": { "lifecycleStatus": "Active" } },
             "score": 92,
             "risk_band": "low"
         })),

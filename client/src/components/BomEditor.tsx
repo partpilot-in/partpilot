@@ -1,4 +1,5 @@
 import { Plus, Trash2 } from "lucide-react";
+import { countryOfOriginFromCharacteristics, withCharacteristicSummary } from "../api/componentMetadata";
 import type { BomLine } from "../api/types";
 
 export interface EditableBomLine {
@@ -38,7 +39,7 @@ export function bomLineToEditable(line: BomLine): EditableBomLine {
     mpn: line.mpn,
     description: line.description,
     manufacturer: line.manufacturer,
-    country_of_origin: line.country_of_origin,
+    country_of_origin: countryOfOriginFromCharacteristics(line.component_metadata),
     category: line.category,
     qty: line.qty,
     unit_price: line.unit_price,
@@ -55,17 +56,13 @@ export function editableToBomLines(rows: EditableBomLine[], prefix: string): Bom
       mpn: row.mpn.trim() || `MANUAL-${index + 1}`,
       description: row.description.trim() || "Manual BOM line",
       manufacturer: row.manufacturer.trim() || "Unknown",
-      country_of_origin: row.country_of_origin.trim() || "Unknown",
       category: row.category.trim() || "Uncategorized",
       qty: Number.isFinite(row.qty) && row.qty > 0 ? row.qty : 1,
       unit_price: Number.isFinite(row.unit_price) && row.unit_price >= 0 ? row.unit_price : 0,
-      compliance: [
-        { standard: "RoHS", status: "unknown" },
-        { standard: "REACH", status: "unknown" },
-      ],
-      lifecycle_stage: "unknown",
       score: 72,
-      component_metadata: {},
+      component_metadata: withCharacteristicSummary({}, {
+        countryOfOrigin: row.country_of_origin.trim() || "Unknown",
+      }),
     }));
 }
 
@@ -76,7 +73,7 @@ export function exportBomCsv(filename: string, rows: BomLine[]) {
     line.mpn,
     line.description,
     line.manufacturer,
-    line.country_of_origin,
+    countryOfOriginFromCharacteristics(line.component_metadata),
     line.category,
     line.qty,
     line.unit_price,

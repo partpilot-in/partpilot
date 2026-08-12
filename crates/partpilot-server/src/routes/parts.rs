@@ -36,14 +36,21 @@ pub async fn search(
         let lifecycles = csv_values(query.lifecycle);
         sqlx::query_as::<_, PartDto>(
             r#"
-            select id, mpn, manufacturer, description, category, lifecycle_stage, score,
-                   country_of_origin, unit_price::float8 as unit_price, compliance, parameters,
-                   component_metadata
+            select id, mpn, manufacturer, description, category, score, component_metadata
               from partpilot_part_api
              where ($1 = '' or mpn ilike '%' || $1 || '%' or description ilike '%' || $1 || '%')
                and ($2::text[] is null or category = any($2))
                and ($3::text[] is null or manufacturer = any($3))
-               and ($4::text[] is null or lifecycle_stage = any($4))
+               and ($4::text[] is null or (
+                    case component_metadata #>> '{commercial,lifecycleStatus}'
+                        when 'Active' then 'active'
+                        when 'Preview' then 'active'
+                        when 'NRND' then 'nrnd'
+                        when 'EOL' then 'last_time_buy'
+                        when 'Obsolete' then 'obsolete'
+                        else 'unknown'
+                    end
+               ) = any($4))
              order by similarity(mpn, $1) desc, mpn
              limit $5"#,
         )
@@ -82,9 +89,7 @@ pub async fn detail(
     let part = if let Some(db) = &state.db {
         sqlx::query_as::<_, PartDto>(
             r#"
-            select id, mpn, manufacturer, description, category, lifecycle_stage, score,
-                   country_of_origin, unit_price::float8 as unit_price, compliance, parameters,
-                   component_metadata
+            select id, mpn, manufacturer, description, category, score, component_metadata
               from partpilot_part_api where id = $1"#,
         )
         .bind(id)
@@ -97,10 +102,7 @@ pub async fn detail(
     Ok(Json(json!({
         "id": part.id, "mpn": part.mpn, "manufacturer": part.manufacturer,
         "description": part.description, "category": part.category,
-        "country_of_origin": part.country_of_origin, "unit_price": part.unit_price,
-        "compliance": part.compliance, "lifecycle_stage": part.lifecycle_stage,
-        "parameters": part.parameters, "component_metadata": part.component_metadata,
-        "score": part.score,
+        "component_metadata": part.component_metadata, "score": part.score,
         "reconciled_status": null, "risk": null
     })))
 }
@@ -132,12 +134,15 @@ pub async fn alternates() -> (StatusCode, Json<Value>) {
                 "manufacturer": "ONSEMI",
                 "description": "3-terminal adjustable regulator, TO-220",
                 "category": "regulator",
-                "lifecycle_stage": "active",
-                "country_of_origin": "US",
-                "unit_price": 0.37,
-                "compliance": [{ "standard": "RoHS", "status": "pass" }],
-                "parameters": { "package": "TO-220" },
-                "component_metadata": {},
+                "component_metadata": {
+                    "mechanical": { "packageType": "TO-220" },
+                    "environmental": { "rohsCompliant": true },
+                    "regulatory": { "countryOfOrigin": "US" },
+                    "commercial": {
+                        "lifecycleStatus": "Active",
+                        "priceBreaks": [{ "quantity": 1, "unitPrice": 0.37 }]
+                    }
+                },
                 "match_kind": "manufacturer_cross_ref",
                 "similarity": 1.0,
                 "score": 88
@@ -180,9 +185,7 @@ pub async fn compare(
     let parts = if let Some(db) = &state.db {
         sqlx::query_as::<_, PartDto>(
             r#"
-            select id, mpn, manufacturer, description, category, lifecycle_stage, score,
-                   country_of_origin, unit_price::float8 as unit_price, compliance, parameters,
-                   component_metadata
+            select id, mpn, manufacturer, description, category, score, component_metadata
               from partpilot_part_api where id = any($1)"#,
         )
         .bind(&ids)
@@ -199,7 +202,6 @@ pub async fn compare(
         .map(|part| {
             json!({
                 "id": part.id, "label": format!("{} - {}", part.mpn, part.manufacturer),
-                "parameters": part.parameters,
                 "component_metadata": part.component_metadata
             })
         })

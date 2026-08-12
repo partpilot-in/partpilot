@@ -13,13 +13,13 @@ pub async fn list() -> (StatusCode, Json<Value>) {
                 "manufacturer": "TEXAS INSTRUMENTS",
                 "description": "3-terminal adjustable regulator, TO-220",
                 "category": "regulator",
-                "lifecycle_stage": "active",
                 "score": 92,
-                "country_of_origin": "US",
-                "unit_price": 0.42,
-                "compliance": [{ "standard": "RoHS", "status": "pass" }],
-                "parameters": { "package": "TO-220" },
-                "component_metadata": {},
+                "component_metadata": {
+                    "mechanical": { "packageType": "TO-220" },
+                    "environmental": { "rohsCompliant": true },
+                    "regulatory": { "countryOfOrigin": "US" },
+                    "commercial": { "lifecycleStatus": "Active" }
+                },
                 "created_at": "2026-06-01T00:00:00Z"
             }]
         })),

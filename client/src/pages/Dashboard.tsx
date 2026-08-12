@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Star } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
+import { lifecycleFromCharacteristics } from "../api/componentMetadata";
 import { useProjectParts } from "../api/hooks/parts";
 import type { Part } from "../api/types";
 import { EmptyState, ErrorMessage, ScoreRing, Spinner } from "../components/ui";
@@ -128,14 +129,11 @@ export function Dashboard() {
   }, [projectParts]);
   const flaggedAttentionParts = useMemo(
     () =>
-      parts.filter(
-        (part) =>
-          importantIds.has(part.id) ||
-          part.score < 75 ||
-          part.lifecycle_stage === "obsolete" ||
-          part.lifecycle_stage === "last_time_buy" ||
-          part.lifecycle_stage === "nrnd",
-      ),
+      parts.filter((part) => {
+        const lifecycle = lifecycleFromCharacteristics(part.component_metadata);
+        return importantIds.has(part.id) || part.score < 75 || lifecycle === "obsolete"
+          || lifecycle === "last_time_buy" || lifecycle === "nrnd";
+      }),
     [importantIds, parts],
   );
   const attentionParts = useMemo(() => {

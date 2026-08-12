@@ -10,12 +10,7 @@ pub struct PartDto {
     pub manufacturer: String,
     pub description: String,
     pub category: String,
-    pub lifecycle_stage: String,
     pub score: i32,
-    pub country_of_origin: String,
-    pub unit_price: f64,
-    pub compliance: Value,
-    pub parameters: Value,
     pub component_metadata: Value,
 }
 
@@ -27,12 +22,9 @@ pub struct BomLineDto {
     pub mpn: String,
     pub description: String,
     pub manufacturer: String,
-    pub country_of_origin: String,
     pub category: String,
     pub qty: i32,
     pub unit_price: f64,
-    pub compliance: Value,
-    pub lifecycle_stage: String,
     pub score: i32,
     pub component_metadata: Value,
 }
@@ -58,17 +50,11 @@ pub struct BomLineInput {
     #[serde(default)]
     pub manufacturer: String,
     #[serde(default)]
-    pub country_of_origin: String,
-    #[serde(default)]
     pub category: String,
     #[serde(default = "default_qty")]
     pub qty: i32,
     #[serde(default)]
     pub unit_price: f64,
-    #[serde(default = "default_compliance")]
-    pub compliance: Value,
-    #[serde(default = "default_lifecycle")]
-    pub lifecycle_stage: String,
     #[serde(default = "partpilot_engine::base_rating")]
     pub score: i32,
     #[serde(default = "default_component_metadata")]
@@ -97,12 +83,7 @@ pub struct MyPartDto {
     pub manufacturer: String,
     pub description: String,
     pub category: String,
-    pub lifecycle_stage: String,
     pub score: i32,
-    pub country_of_origin: String,
-    pub unit_price: f64,
-    pub compliance: Value,
-    pub parameters: Value,
     pub component_metadata: Value,
     pub project_count: i32,
     pub project_names: String,
@@ -118,18 +99,8 @@ pub struct MyPartInput {
     pub description: String,
     #[serde(default)]
     pub category: String,
-    #[serde(default = "default_lifecycle")]
-    pub lifecycle_stage: String,
     #[serde(default = "partpilot_engine::base_rating")]
     pub score: i32,
-    #[serde(default)]
-    pub country_of_origin: String,
-    #[serde(default)]
-    pub unit_price: f64,
-    #[serde(default = "default_compliance")]
-    pub compliance: Value,
-    #[serde(default = "default_parameters")]
-    pub parameters: Value,
     #[serde(default = "default_component_metadata")]
     pub component_metadata: Value,
     #[serde(default = "default_qty", alias = "qty")]
@@ -205,18 +176,6 @@ pub struct ResetPasswordInput {
 pub fn default_qty() -> i32 {
     1
 }
-pub fn default_lifecycle() -> String {
-    "unknown".into()
-}
-pub fn default_parameters() -> Value {
-    json!({})
-}
 pub fn default_component_metadata() -> Value {
     json!({})
-}
-pub fn default_compliance() -> Value {
-    json!([
-        { "standard": "RoHS", "status": "unknown" },
-        { "standard": "REACH", "status": "unknown" }
-    ])
 }

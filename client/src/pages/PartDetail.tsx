@@ -9,14 +9,17 @@ import {
   DESIGNATOR_CATEGORY_LABELS,
   cddFieldLabel,
   cddValueAtPath,
+  lifecycleFromCharacteristics,
   fieldsForCddSection,
   formatCddValue,
+  overviewCharacteristicFields,
+  referencePriceFromCharacteristics,
   resolveDesignatorCategory,
+  type CddSectionKey,
 } from "../api/componentMetadata";
 import type { Part } from "../api/types";
 import {
   Card,
-  ComplianceBadge,
   DataTable,
   EmptyState,
   ErrorMessage,
@@ -79,6 +82,7 @@ export function PartDetail() {
   const { data: alternates, loading: altLoading } = usePartAlternates(localPart ? undefined : id);
   const { showToast } = useToast();
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [activeCharacteristicTab, setActiveCharacteristicTab] = useState<CddSectionKey>("electrical");
   const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -110,14 +114,16 @@ export function PartDetail() {
       key: "lifecycle_stage",
       header: "Lifecycle",
       sortable: true,
-      render: (row) => <LifecycleBadge stage={row.lifecycle_stage} />,
+      sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
+      render: (row) => <LifecycleBadge stage={lifecycleFromCharacteristics(row.component_metadata)} />,
     },
     {
       key: "unit_price",
       header: "Price",
       sortable: true,
       numeric: true,
-      render: (row) => currencyFormatter.format(row.unit_price),
+      sortValue: (row) => referencePriceFromCharacteristics(row.component_metadata),
+      render: (row) => currencyFormatter.format(referencePriceFromCharacteristics(row.component_metadata)),
     },
     {
       key: "score",
@@ -194,9 +200,12 @@ export function PartDetail() {
     );
   }
 
-  const parameterEntries = Object.entries(part.parameters ?? {});
   const designatorCategory = resolveDesignatorCategory(part.category, part.description);
   const componentMetadata = part.component_metadata ?? {};
+  const activeCharacteristicSection = CDD_SECTION_DEFINITIONS.find(
+    (section) => section.key === activeCharacteristicTab,
+  ) ?? CDD_SECTION_DEFINITIONS[0];
+  const overviewFields = overviewCharacteristicFields(designatorCategory);
 
   return (
     <div className="stack">
@@ -256,68 +265,74 @@ export function PartDetail() {
         </div>
       </div>
 
-      <section className={`detail-grid${parameterEntries.length ? "" : " detail-grid--single"}`}>
-        <Card title="Lifecycle summary">
-          <div className="part-summary">
-            <ScoreRing value={part.score} size="lg" showLabel />
-            <dl className="property-list">
-              <dt>Manufacturer</dt>
-              <dd>{part.manufacturer}</dd>
-              <dt>Lifecycle</dt>
-              <dd>
-                <LifecycleBadge stage={part.lifecycle_stage} />
-              </dd>
-              <dt>Compliance</dt>
-              <dd>
-                <ComplianceBadge statuses={part.compliance} />
-              </dd>
-              <dt>Country</dt>
-              <dd>{part.country_of_origin}</dd>
-              <dt>Unit price</dt>
-              <dd>{currencyFormatter.format(part.unit_price)}</dd>
-            </dl>
-          </div>
-        </Card>
-        {parameterEntries.length > 0 && (
-          <Card title="Parameters">
-            <dl className="property-list">
-              {parameterEntries.map(([key, value]) => (
-                <Fragment key={key}>
-                  <dt>{key}</dt>
-                  <dd>{String(value)}</dd>
-                </Fragment>
-              ))}
+      <section className="detail-grid part-detail-grid">
+        <div className="part-overview-grid">
+          <Card title="PartPilot score" className="part-score-card">
+            <div className="part-score-summary">
+              <ScoreRing value={part.score} size="xl" />
+            </div>
+          </Card>
+          <Card title="Overview">
+            <dl className="property-list overview-list">
+              {overviewFields.map(({ section, field }) => {
+                const value = cddValueAtPath(componentMetadata, section, field);
+                return (
+                  <Fragment key={`${section}.${field}`}>
+                    <dt>{cddFieldLabel(field)}</dt>
+                    <dd>
+                      {section === "commercial" && field === "lifecycleStatus"
+                        ? <LifecycleBadge stage={lifecycleFromCharacteristics(componentMetadata)} />
+                        : formatCddValue(value)}
+                    </dd>
+                  </Fragment>
+                );
+              })}
             </dl>
           </Card>
-        )}
-      </section>
-
-      <section className="stack component-metadata-section" aria-labelledby="component-metadata-title">
-        <div className="component-metadata-heading">
-          <div>
-            <h2 className="section-title" id="component-metadata-title">Component</h2>
-            <p className="component-metadata-subtitle">IEC CDD metadata</p>
-          </div>
-          {designatorCategory && (
+        </div>
+        <Card
+          title="Characteristics"
+          className="characteristics-card"
+          action={designatorCategory && (
             <span className="component-category-label">
               {designatorCategory} · {DESIGNATOR_CATEGORY_LABELS[designatorCategory]}
             </span>
           )}
-        </div>
-        <div className="component-metadata-grid">
-          {CDD_SECTION_DEFINITIONS.map((section) => (
-            <Card key={section.key} title={section.title} className="component-metadata-card">
-              <dl className="property-list component-metadata-list">
-                {fieldsForCddSection(section, designatorCategory).map((field) => (
-                  <Fragment key={field}>
-                    <dt>{cddFieldLabel(field)}</dt>
-                    <dd>{formatCddValue(cddValueAtPath(componentMetadata, section.key, field))}</dd>
-                  </Fragment>
-                ))}
-              </dl>
-            </Card>
-          ))}
-        </div>
+        >
+          <div className="characteristics-tabs" role="tablist" aria-label="Characteristic sections">
+            {CDD_SECTION_DEFINITIONS.map((section) => (
+              <button
+                key={section.key}
+                type="button"
+                className={[
+                  "characteristics-tab",
+                  section.key === activeCharacteristicTab && "characteristics-tab--active",
+                ].filter(Boolean).join(" ")}
+                role="tab"
+                aria-selected={section.key === activeCharacteristicTab}
+                aria-controls="characteristics-panel"
+                onClick={() => setActiveCharacteristicTab(section.key)}
+              >
+                {section.title}
+              </button>
+            ))}
+          </div>
+          <div
+            className="characteristics-panel"
+            id="characteristics-panel"
+            role="tabpanel"
+            aria-label={activeCharacteristicSection.title}
+          >
+            <dl className="property-list characteristics-list">
+              {fieldsForCddSection(activeCharacteristicSection, designatorCategory).map((field) => (
+                <Fragment key={field}>
+                  <dt>{cddFieldLabel(field)}</dt>
+                  <dd>{formatCddValue(cddValueAtPath(componentMetadata, activeCharacteristicSection.key, field))}</dd>
+                </Fragment>
+              ))}
+            </dl>
+          </div>
+        </Card>
       </section>
 
       <section className="stack alternates-section">

@@ -13,12 +13,7 @@ export interface MyPartInput {
   category: string;
   description: string;
   total_qty: number;
-  unit_price: number;
-  country_of_origin: string;
-  lifecycle_stage?: Part["lifecycle_stage"];
   score?: number;
-  compliance?: Part["compliance"];
-  parameters?: Part["parameters"];
   component_metadata?: Part["component_metadata"];
 }
 

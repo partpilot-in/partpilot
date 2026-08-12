@@ -301,23 +301,22 @@ pub async fn compare(
                 "delta": "added", "change_summary": "Added in comparison BOM.",
                 "previous_score": null, "id": line.id, "part_id": line.part_id,
                 "line_no": line.line_no, "mpn": line.mpn, "description": line.description,
-                "manufacturer": line.manufacturer, "country_of_origin": line.country_of_origin,
+                "manufacturer": line.manufacturer,
                 "category": line.category, "qty": line.qty, "unit_price": line.unit_price,
-                "compliance": line.compliance, "lifecycle_stage": line.lifecycle_stage, "score": line.score,
-                "component_metadata": line.component_metadata
+                "score": line.score, "component_metadata": line.component_metadata
             })),
             (Some(line), None) => items.push(json!({
                 "delta": "removed", "change_summary": "Removed from comparison BOM.",
                 "previous_score": line.score, "id": line.id, "part_id": line.part_id,
                 "line_no": line.line_no, "mpn": line.mpn, "description": line.description,
-                "manufacturer": line.manufacturer, "country_of_origin": line.country_of_origin,
+                "manufacturer": line.manufacturer,
                 "category": line.category, "qty": line.qty, "unit_price": line.unit_price,
-                "compliance": line.compliance, "lifecycle_stage": line.lifecycle_stage, "score": line.score,
-                "component_metadata": line.component_metadata
+                "score": line.score, "component_metadata": line.component_metadata
             })),
             (Some(before), Some(after)) => {
-                let changed = before.qty != after.qty || before.unit_price != after.unit_price
-                    || before.lifecycle_stage != after.lifecycle_stage || before.score != after.score
+                let changed = before.qty != after.qty
+                    || before.unit_price != after.unit_price
+                    || before.score != after.score
                     || before.description != after.description
                     || before.component_metadata != after.component_metadata;
                 items.push(json!({
@@ -325,10 +324,9 @@ pub async fn compare(
                     "change_summary": if changed { "Part attributes changed." } else { "No changes." },
                     "previous_score": before.score, "id": after.id, "part_id": after.part_id,
                     "line_no": after.line_no, "mpn": after.mpn, "description": after.description,
-                    "manufacturer": after.manufacturer, "country_of_origin": after.country_of_origin,
+                    "manufacturer": after.manufacturer,
                     "category": after.category, "qty": after.qty, "unit_price": after.unit_price,
-                    "compliance": after.compliance, "lifecycle_stage": after.lifecycle_stage, "score": after.score,
-                    "component_metadata": after.component_metadata
+                    "score": after.score, "component_metadata": after.component_metadata
                 }));
             }
             _ => {}
@@ -380,8 +378,7 @@ async fn load_project_db(
 async fn project_from_row(db: &PgPool, row: ProjectRow) -> Result<ProjectDto, AppError> {
     let lines = sqlx::query_as::<_, BomLineDto>(
         r#"select id, part_id, line_no, mpn, description, manufacturer,
-            country_of_origin, category, qty, unit_price::float8 as unit_price,
-            compliance, lifecycle_stage, score, component_metadata
+            category, qty, unit_price::float8 as unit_price, score, component_metadata
            from partpilot_bom_line_api where bom_id = $1 order by line_no"#,
     )
     .bind(row.id)
@@ -411,9 +408,8 @@ async fn insert_lines(
         sqlx::query(
             r#"insert into bom_lines
                (bom_id, line_no, mpn_raw, manufacturer_raw, description_raw, matched_part_id,
-                country_of_origin, category, qty, unit_price, compliance, lifecycle_stage, score,
-                component_metadata)
-               values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)"#,
+                category, qty, unit_price, score, component_metadata)
+               values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)"#,
         )
         .bind(bom_id)
         .bind(line.line_no.unwrap_or(index as i32 + 1))
@@ -421,12 +417,9 @@ async fn insert_lines(
         .bind(nonempty(&line.manufacturer))
         .bind(nonempty(&line.description))
         .bind(matched_part_id)
-        .bind(nonempty(&line.country_of_origin))
         .bind(category_for_line(line))
         .bind(line.qty.max(1))
         .bind(line.unit_price.max(0.0))
-        .bind(&line.compliance)
-        .bind(valid_lifecycle(&line.lifecycle_stage))
         .bind(line.score.clamp(0, 100))
         .bind(&line.component_metadata)
         .execute(&mut **tx)
@@ -564,6 +557,7 @@ fn parse_csv_lines(bytes: &[u8]) -> Result<Vec<BomLineInput>, AppError> {
             (designator, "") => designator.to_owned(),
             (designator, description) => format!("{designator} — {description}"),
         };
+        let country_of_origin = value(country);
         lines.push(BomLineInput {
             line_no: Some(index as i32 + 1),
             part_id: None,
@@ -574,14 +568,15 @@ fn parse_csv_lines(bytes: &[u8]) -> Result<Vec<BomLineInput>, AppError> {
             },
             description: combined_description,
             manufacturer: value(manufacturer).into(),
-            country_of_origin: value(country).into(),
             category: value(category).into(),
             qty: value(qty).parse().unwrap_or(1),
             unit_price: value(price).parse().unwrap_or(0.0),
-            compliance: crate::models::default_compliance(),
-            lifecycle_stage: "unknown".into(),
             score: partpilot_engine::base_rating(),
-            component_metadata: crate::models::default_component_metadata(),
+            component_metadata: if country_of_origin.is_empty() {
+                crate::models::default_component_metadata()
+            } else {
+                json!({ "regulatory": { "countryOfOrigin": country_of_origin } })
+            },
         });
     }
     Ok(lines)
@@ -619,12 +614,9 @@ fn memory_lines(_project_id: Uuid, lines: Vec<BomLineInput>) -> Vec<BomLineDto> 
                 mpn: line.mpn,
                 description: fallback(line.description, format!("BOM line {}", index + 1)),
                 manufacturer: fallback(line.manufacturer, "Unknown".into()),
-                country_of_origin: fallback(line.country_of_origin, "Unknown".into()),
                 category,
                 qty: line.qty.max(1),
                 unit_price: line.unit_price.max(0.0),
-                compliance: line.compliance,
-                lifecycle_stage: valid_lifecycle(&line.lifecycle_stage).into(),
                 score: line.score.clamp(0, 100),
                 component_metadata: line.component_metadata,
             }
@@ -722,10 +714,4 @@ fn nonempty(value: &str) -> Option<&str> {
 }
 fn normalize_header(value: &str) -> String {
     value.trim().to_lowercase().replace(['_', '-'], " ")
-}
-fn valid_lifecycle(value: &str) -> &str {
-    match value {
-        "active" | "nrnd" | "last_time_buy" | "obsolete" | "unknown" => value,
-        _ => "unknown",
-    }
 }

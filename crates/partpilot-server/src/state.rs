@@ -48,13 +48,16 @@ impl AppState {
             manufacturer: "TEXAS INSTRUMENTS".into(),
             description: "3-terminal adjustable regulator, TO-220".into(),
             category: "regulator".into(),
-            lifecycle_stage: "active".into(),
             score: 92,
-            country_of_origin: "US".into(),
-            unit_price: 0.42,
-            compliance: json!([{ "standard": "RoHS", "status": "pass" }]),
-            parameters: json!({ "package": "TO-220" }),
-            component_metadata: json!({}),
+            component_metadata: json!({
+                "mechanical": { "packageType": "TO-220" },
+                "environmental": { "rohsCompliant": true },
+                "regulatory": { "countryOfOrigin": "US" },
+                "commercial": {
+                    "lifecycleStatus": "Active",
+                    "priceBreaks": [{ "quantity": 1, "unitPrice": 0.42 }]
+                }
+            }),
         };
         Self {
             db: None,

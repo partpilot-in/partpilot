@@ -10,6 +10,7 @@ export interface Column<T> {
   align?: "left" | "right";
   numeric?: boolean;
   render?: (row: T) => ReactNode;
+  sortValue?: (row: T) => unknown;
 }
 
 interface DataTableProps<T> {
@@ -61,11 +62,15 @@ export function DataTable<T>({
 
   const sortedRows = useMemo(() => {
     if (!activeSort) return safeRows;
+    const column = columns.find((candidate) => String(candidate.key) === activeSort.key);
     return [...safeRows].sort((a, b) => {
-      const result = compareValues(getValue(a, activeSort.key), getValue(b, activeSort.key));
+      const result = compareValues(
+        column?.sortValue ? column.sortValue(a) : getValue(a, activeSort.key),
+        column?.sortValue ? column.sortValue(b) : getValue(b, activeSort.key),
+      );
       return activeSort.direction === "asc" ? result : -result;
     });
-  }, [activeSort, safeRows]);
+  }, [activeSort, columns, safeRows]);
 
   const allVisibleSelected = sortedRows.length > 0 && sortedRows.every((row) => selectedIds.has(getRowId(row)));
 

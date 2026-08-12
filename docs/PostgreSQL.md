@@ -36,7 +36,6 @@ flowchart LR
     parts --> lifecycle_statuses
     sources --> lifecycle_statuses
     sources --> source_health
-    parts --> part_compliance
     parts --> community_insights
     community_insights --> community_insight_citations
     parts --> alternates
@@ -50,7 +49,7 @@ flowchart LR
 
 | Category | Objects | Access behavior |
 |---|---|---|
-| Public reference data | `sources`, `parts`, `lifecycle_statuses`, `alternates`, `part_compliance`, `community_insights`, `community_insight_citations` | RLS is enabled with a public `SELECT` policy. Writes are expected to come from trusted server or worker roles. |
+| Public reference data | `sources`, `parts`, `lifecycle_statuses`, `alternates`, `community_insights`, `community_insight_citations` | RLS is enabled with a public `SELECT` policy. Writes are expected to come from trusted server or worker roles. |
 | User-owned data | `boms`, `bom_lines`, `api_keys`, `important_parts`, `part_notes`, `profiles`, `user_parts`, `watchlist` | RLS restricts rows to `auth.uid()`. `bom_lines` derives ownership through its parent `boms` row. |
 | Service-internal data | `source_health` | RLS is enabled with no client policy, so normal anonymous and authenticated roles cannot access rows. |
 | Migration metadata | `public.schema_migrations`, `supabase_migrations.schema_migrations` | Administrative metadata; neither deployed ledger has RLS enabled. Do not expose these through application APIs. |
@@ -105,12 +104,9 @@ catalog data in the API view.
 | `qty` | `integer` | Yes | `1` | Required quantity; must be greater than zero. |
 | `unit_price` | `numeric(12,4)` | Yes | `0` | Stored unit price. |
 | `id` | `uuid` | Yes | `gen_random_uuid()` | Stable line identifier, exposed by the API view. |
-| `country_of_origin` | `text` | No | — | Line-specific country override. |
 | `category` | `text` | No | — | Line-specific category override. |
-| `compliance` | `jsonb` | Yes | `[]` | Line-specific compliance array. An empty array allows the view to fall back to catalog compliance. |
-| `lifecycle_stage` | `text` | No | — | Line-specific lifecycle override. |
 | `score` | `integer` | No | — | Line-specific score override, constrained to 0–100. |
-| `component_metadata` | `jsonb` | No | `null` | Optional CDD line override; empty or null values fall back to matched catalog metadata. |
+| `component_metadata` | `jsonb` | No | `null` | Optional Characteristics override containing origin, compliance, lifecycle, and other component facts. |
 
 - Primary key: (`bom_id`, `line_no`); `id` also has a unique index.
 - Index: `matched_part_id` for catalog-match lookups.
@@ -205,20 +201,6 @@ latest observation is used by the frontend contract views.
   (`source_id`, `reported_at DESC`).
 - RLS: public read via `public read lifecycle`.
 
-### `part_compliance`
-
-Stores extensible compliance results for catalog parts. Standards are rows so
-new standards do not require new columns.
-
-| Column | Type | Required | Default | Description |
-|---|---|---:|---|---|
-| `part_id` | `uuid` | Yes | — | Catalog part; FK to `parts.id`, cascade delete. |
-| `standard` | `text` | Yes | — | Standard identifier such as `rohs`, `reach`, or `conflict_minerals`. |
-| `status` | `text` | Yes | — | `pass`, `fail`, or `unknown`. |
-
-- Primary key: (`part_id`, `standard`).
-- RLS: public read via `public read part_compliance`.
-
 ### `part_notes`
 
 Stores one user-owned note per application part identifier. The identifier can
@@ -254,11 +236,8 @@ The canonical, shared component catalog. User-specific inventory belongs in
 | `manufacturer` | `text` | Yes | — | Normalized manufacturer name. |
 | `description` | `text` | No | `No description available` | Human-readable description. Existing blank values were normalized by migration 0007. |
 | `category` | `text` | No | `Uncategorized` | Part category. |
-| `parameters` | `jsonb` | Yes | `{}` | Category-agnostic parametric attributes. |
-| `component_metadata` | `jsonb` | Yes | `{}` | IEC CDD component document defined by `component-cdd.schema.json`. |
+| `component_metadata` | `jsonb` | Yes | `{}` | Canonical Characteristics document defined by `component-cdd.schema.json`. |
 | `created_at` | `timestamptz` | Yes | `now()` | Catalog insertion time. |
-| `country_of_origin` | `text` | Yes | `Unknown` | Country of origin. |
-| `unit_price` | `numeric(12,4)` | Yes | `0` | Reference unit price. |
 | `score` | `integer` | Yes | `72` | PartPilot score, constrained to 0–100. |
 
 - Primary key: `id`; unique constraint: (`mpn`, `manufacturer`).
@@ -328,9 +307,8 @@ weight.
 
 ### `user_parts`
 
-Stores a user's manually managed inventory for the My Parts page. These rows
-are independent of the shared `parts` catalog and can carry user-entered price,
-quantity, compliance, and parameter data.
+Stores a user's manually managed inventory for the My Parts page. Component
+facts use the same Characteristics document as catalog and BOM-only parts.
 
 | Column | Type | Required | Default | Description |
 |---|---|---:|---|---|
@@ -340,13 +318,8 @@ quantity, compliance, and parameter data.
 | `manufacturer` | `text` | Yes | — | User-entered manufacturer. |
 | `description` | `text` | Yes | `Manually added part` | Description. |
 | `category` | `text` | Yes | `Uncategorized` | Category. |
-| `lifecycle_stage` | `text` | Yes | `unknown` | Lifecycle stage. |
 | `score` | `integer` | Yes | `72` | Score constrained to 0–100. |
-| `country_of_origin` | `text` | Yes | `Unknown` | Country of origin. |
-| `unit_price` | `numeric(12,4)` | Yes | `0` | Non-negative unit price. |
-| `compliance` | `jsonb` | Yes | `[]` | Compliance records in frontend-compatible array form. |
-| `parameters` | `jsonb` | Yes | `{}` | Category-agnostic parameters. |
-| `component_metadata` | `jsonb` | Yes | `{}` | IEC CDD component document for the user-owned part. |
+| `component_metadata` | `jsonb` | Yes | `{}` | Canonical Characteristics document for the user-owned part. |
 | `quantity` | `integer` | Yes | `1` | Inventory quantity; must be greater than zero. |
 | `created_at` | `timestamptz` | Yes | `now()` | Creation time. |
 | `updated_at` | `timestamptz` | Yes | `now()` | Last application-managed update time. There is no database trigger that updates it automatically. |
@@ -379,9 +352,8 @@ in the catalog even when the view expression supplies a fallback.
 
 ### `partpilot_bom_line_api`
 
-Produces the frontend `BomLine` shape by combining `bom_lines` with optional
-catalog enrichment from `parts`, the latest lifecycle observation, and catalog
-compliance.
+Produces the frontend `BomLine` shape by combining line identity/context with
+optional catalog Characteristics.
 
 | Column | Type | Derivation |
 |---|---|---|
@@ -392,14 +364,11 @@ compliance.
 | `mpn` | `text` | Nonblank `mpn_raw`, then catalog MPN, then `UNKNOWN-{line_no}`. |
 | `description` | `text` | Raw description, catalog description, then `BOM line {line_no}`. |
 | `manufacturer` | `text` | Raw manufacturer, catalog manufacturer, then `Unknown`. |
-| `country_of_origin` | `text` | Line override, catalog value, then `Unknown`. |
 | `category` | `text` | Line override, catalog value, then `Uncategorized`. |
 | `qty` | `integer` | Stored quantity. |
-| `unit_price` | `numeric` | Line price, catalog price, then zero. |
-| `compliance` | `jsonb` | Nonempty line array, otherwise aggregated catalog compliance, otherwise `[]`. |
-| `lifecycle_stage` | `text` | Line override, latest catalog status, then `unknown`. |
+| `unit_price` | `numeric` | Contextual BOM line price, then zero. |
 | `score` | `integer` | Line override, catalog score, then 72. |
-| `component_metadata` | `jsonb` | Nonempty line document, catalog document, then `{}`. |
+| `component_metadata` | `jsonb` | Catalog Characteristics deep-merged with the line override. |
 
 - Granted to: `authenticated` for `SELECT`.
 - Ownership caution: the view has no `user_id` predicate. Server queries should
@@ -419,13 +388,8 @@ details for each important-part relation.
 | `manufacturer` | `text` | Catalog manufacturer. |
 | `description` | `text` | Normalized description. |
 | `category` | `text` | Normalized category. |
-| `parameters` | `jsonb` | Catalog parameters. |
-| `lifecycle_stage` | `text` | Latest lifecycle stage. |
 | `score` | `integer` | Catalog score. |
-| `country_of_origin` | `text` | Normalized country of origin. |
-| `unit_price` | `numeric` | Catalog unit price. |
-| `compliance` | `jsonb` | Aggregated compliance array. |
-| `component_metadata` | `jsonb` | Catalog CDD component document. |
+| `component_metadata` | `jsonb` | Catalog Characteristics, including projected latest lifecycle. |
 
 - Granted to: `authenticated` for `SELECT`.
 - Callers must filter by the authenticated `user_id`; the view definition does
@@ -433,8 +397,9 @@ details for each important-part relation.
 
 ### `partpilot_part_api`
 
-Produces the frontend `Part` shape from the canonical catalog. It adds the
-latest lifecycle stage and aggregates compliance rows into JSON.
+Produces the frontend `Part` shape from the canonical catalog. The latest
+lifecycle observation is projected into `commercial.lifecycleStatus` inside
+Characteristics instead of becoming a duplicate top-level field.
 
 | Column | Type | Derivation |
 |---|---|---|
@@ -443,13 +408,8 @@ latest lifecycle stage and aggregates compliance rows into JSON.
 | `manufacturer` | `text` | Catalog manufacturer. |
 | `description` | `text` | Nonblank description, otherwise `No description available`. |
 | `category` | `text` | Nonblank category, otherwise `Uncategorized`. |
-| `parameters` | `jsonb` | Catalog parameters. |
-| `lifecycle_stage` | `text` | Most recently reported lifecycle stage, otherwise `unknown`. |
 | `score` | `integer` | Catalog score. |
-| `country_of_origin` | `text` | Nonblank country, otherwise `Unknown`. |
-| `unit_price` | `numeric` | Catalog unit price. |
-| `compliance` | `jsonb` | Compliance rows ordered by standard and aggregated as objects, otherwise `[]`. |
-| `component_metadata` | `jsonb` | CDD component document, otherwise `{}`. |
+| `component_metadata` | `jsonb` | Canonical Characteristics document, otherwise `{}`. |
 
 - Granted to: `anon` and `authenticated` for `SELECT`.
 
@@ -495,3 +455,6 @@ effective RLS behavior.
 | `0008_user_parts_crud.sql` | Server-backed manual inventory in `user_parts`. |
 | `0009_user_profiles.sql` | User profile fields managed from Settings. |
 | `0010_part_notes.sql` | User-owned part notes and reserved PartPilot insight points. |
+| `0011_part_categories.sql` | Enforces category on catalog, manual, and BOM part records. |
+| `0012_component_cdd_metadata.sql` | Introduces the shared Characteristics document. |
+| `0013_consolidate_component_characteristics.sql` | Backfills Characteristics, removes redundant legacy columns and `part_compliance`, and rebuilds API views. |

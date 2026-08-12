@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { api } from "../client";
+import { flattenCharacteristics } from "../componentMetadata";
 import type { Part, PartFilters } from "../types";
 import { useAsync } from "./useAsync";
 
@@ -75,7 +76,7 @@ export function useComparePartsProperties(ids: string[]) {
             return parts.map((part) => ({
               id: part.id,
               label: `${part.mpn} - ${part.manufacturer}`,
-              parameters: part.parameters,
+              parameters: flattenCharacteristics(part.component_metadata ?? {}),
             }));
           })
       : null,
@@ -89,7 +90,7 @@ export function useComparePartsProperties(ids: string[]) {
  * — there's no dedicated server endpoint.
  */
 export function useProjectParts(
-  projects: { name: string; lines: { part_id: string; qty: number; mpn: string; manufacturer: string; category: string; description: string; lifecycle_stage: Part["lifecycle_stage"]; score: number; country_of_origin: string; unit_price: number; compliance: Part["compliance"]; parameters?: Part["parameters"]; component_metadata?: Part["component_metadata"] }[] }[] | undefined,
+  projects: { name: string; lines: { part_id: string; qty: number; mpn: string; manufacturer: string; category: string; description: string; score: number; unit_price: number; component_metadata?: Part["component_metadata"] }[] }[] | undefined,
 ) {
   return useMemo(() => {
     if (!projects) return [];
@@ -117,12 +118,7 @@ export function useProjectParts(
           manufacturer: line.manufacturer,
           category: line.category,
           description: line.description,
-          lifecycle_stage: line.lifecycle_stage,
           score: line.score,
-          country_of_origin: line.country_of_origin,
-          unit_price: line.unit_price,
-          compliance: line.compliance,
-          parameters: line.parameters ?? {},
           component_metadata: line.component_metadata ?? {},
           project_count: 1,
           project_names: project.name,

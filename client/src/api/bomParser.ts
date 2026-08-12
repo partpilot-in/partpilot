@@ -1,4 +1,5 @@
 import type { BomLine } from "./types";
+import { withCharacteristicSummary } from "./componentMetadata";
 
 export interface ParsedBom {
   name: string;
@@ -89,11 +90,6 @@ export interface BomMappingValidation {
   errors: BomMappingIssue[];
   warnings: BomMappingIssue[];
 }
-
-const DEFAULT_COMPLIANCE = [
-  { standard: "RoHS", status: "unknown" as const },
-  { standard: "REACH", status: "unknown" as const },
-];
 
 export async function parseBomFile(file: File): Promise<ParsedBom> {
   const preview = await inspectBomFile(file);
@@ -505,14 +501,13 @@ function rowToBomLine(
     mpn: mpn || `UNKNOWN-${lineNo}`,
     description,
     manufacturer: cleanText(cellAt(row, fields.manufacturer)) || "Unknown",
-    country_of_origin: cleanText(cellAt(row, fields.country_of_origin)) || "Unknown",
     category,
     qty: parseNumber(cellAt(row, fields.qty)) || 1,
     unit_price: parseNumber(cellAt(row, fields.unit_price)),
-    compliance: DEFAULT_COMPLIANCE,
-    lifecycle_stage: "unknown",
     score: 72,
-    component_metadata: {},
+    component_metadata: withCharacteristicSummary({}, {
+      countryOfOrigin: cleanText(cellAt(row, fields.country_of_origin)) || "Unknown",
+    }),
   };
 }
 

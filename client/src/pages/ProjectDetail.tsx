@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Check, Download, GitCompareArrows, MoreVertical, Pencil, Trash2, X } from "lucide-react";
 import { useDeleteBom, useProject, useProjects, useRenameBom } from "../api/hooks/boms";
+import { complianceFromCharacteristics, lifecycleFromCharacteristics } from "../api/componentMetadata";
 import type { BomLine } from "../api/types";
 import { exportBomCsv } from "../components/BomEditor";
 import {
@@ -107,13 +108,15 @@ export function ProjectDetail() {
       key: "compliance",
       header: "Compliance",
       sortable: true,
-      render: (row) => <ComplianceBadge statuses={row.compliance} />,
+      sortValue: (row) => complianceFromCharacteristics(row.component_metadata).map((item) => item.status).join(","),
+      render: (row) => <ComplianceBadge statuses={complianceFromCharacteristics(row.component_metadata)} />,
     },
     {
       key: "lifecycle_stage",
       header: "Lifecycle",
       sortable: true,
-      render: (row) => <LifecycleBadge stage={row.lifecycle_stage} />,
+      sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
+      render: (row) => <LifecycleBadge stage={lifecycleFromCharacteristics(row.component_metadata)} />,
     },
     {
       key: "score",

@@ -16,10 +16,7 @@ use crate::{
 const SELECT_MY_PART: &str = r#"select id, mpn, manufacturer,
     coalesce(nullif(description, ''), 'Manually added part') as description,
     coalesce(nullif(category, ''), 'Uncategorized') as category,
-    lifecycle_stage, score,
-    coalesce(nullif(country_of_origin, ''), 'Unknown') as country_of_origin,
-    unit_price::float8 as unit_price, compliance, parameters,
-    component_metadata,
+    score, component_metadata,
     0::int as project_count, 'Manual entry'::text as project_names,
     quantity::int as total_qty, 'manual'::text as source
    from user_parts"#;
@@ -59,17 +56,13 @@ pub async fn create(
     let part = if let Some(db) = &state.db {
         sqlx::query_as::<_, MyPartDto>(
             r#"insert into user_parts
-               (user_id, mpn, manufacturer, description, category, lifecycle_stage,
-                score, country_of_origin, unit_price, compliance, parameters, component_metadata,
-                quantity)
-               values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+               (user_id, mpn, manufacturer, description, category, score,
+                component_metadata, quantity)
+               values ($1,$2,$3,$4,$5,$6,$7,$8)
                returning id, mpn, manufacturer,
                 coalesce(nullif(description, ''), 'Manually added part') as description,
                 coalesce(nullif(category, ''), 'Uncategorized') as category,
-                lifecycle_stage, score,
-                coalesce(nullif(country_of_origin, ''), 'Unknown') as country_of_origin,
-                unit_price::float8 as unit_price, compliance, parameters,
-                component_metadata,
+                score, component_metadata,
                 0::int as project_count, 'Manual entry'::text as project_names,
                 quantity::int as total_qty, 'manual'::text as source"#,
         )
@@ -78,12 +71,7 @@ pub async fn create(
         .bind(input.manufacturer.trim())
         .bind(clean(&input.description, "Manually added part"))
         .bind(clean(&input.category, "Uncategorized"))
-        .bind(valid_lifecycle(&input.lifecycle_stage))
         .bind(input.score.clamp(0, 100))
-        .bind(clean(&input.country_of_origin, "Unknown"))
-        .bind(input.unit_price.max(0.0))
-        .bind(&input.compliance)
-        .bind(&input.parameters)
         .bind(&input.component_metadata)
         .bind(input.total_qty.max(1))
         .fetch_one(db)
@@ -142,17 +130,13 @@ pub async fn update(
     let part = if let Some(db) = &state.db {
         sqlx::query_as::<_, MyPartDto>(
             r#"update user_parts set
-                mpn=$3, manufacturer=$4, description=$5, category=$6, lifecycle_stage=$7,
-                score=$8, country_of_origin=$9, unit_price=$10, compliance=$11,
-                parameters=$12, component_metadata=$13, quantity=$14, updated_at=now()
+                mpn=$3, manufacturer=$4, description=$5, category=$6, score=$7,
+                component_metadata=$8, quantity=$9, updated_at=now()
                where id=$1 and user_id=$2
                returning id, mpn, manufacturer,
                 coalesce(nullif(description, ''), 'Manually added part') as description,
                 coalesce(nullif(category, ''), 'Uncategorized') as category,
-                lifecycle_stage, score,
-                coalesce(nullif(country_of_origin, ''), 'Unknown') as country_of_origin,
-                unit_price::float8 as unit_price, compliance, parameters,
-                component_metadata,
+                score, component_metadata,
                 0::int as project_count, 'Manual entry'::text as project_names,
                 quantity::int as total_qty, 'manual'::text as source"#,
         )
@@ -162,12 +146,7 @@ pub async fn update(
         .bind(input.manufacturer.trim())
         .bind(clean(&input.description, "Manually added part"))
         .bind(clean(&input.category, "Uncategorized"))
-        .bind(valid_lifecycle(&input.lifecycle_stage))
         .bind(input.score.clamp(0, 100))
-        .bind(clean(&input.country_of_origin, "Unknown"))
-        .bind(input.unit_price.max(0.0))
-        .bind(&input.compliance)
-        .bind(&input.parameters)
         .bind(&input.component_metadata)
         .bind(input.total_qty.max(1))
         .fetch_optional(db)
@@ -231,12 +210,7 @@ fn from_input(id: Uuid, input: MyPartInput) -> MyPartDto {
         manufacturer: input.manufacturer.trim().into(),
         description: clean(&input.description, "Manually added part"),
         category: clean(&input.category, "Uncategorized"),
-        lifecycle_stage: valid_lifecycle(&input.lifecycle_stage).into(),
         score: input.score.clamp(0, 100),
-        country_of_origin: clean(&input.country_of_origin, "Unknown"),
-        unit_price: input.unit_price.max(0.0),
-        compliance: input.compliance,
-        parameters: input.parameters,
         component_metadata: input.component_metadata,
         project_count: 0,
         project_names: "Manual entry".into(),
@@ -265,13 +239,6 @@ fn clean(value: &str, fallback: &str) -> String {
         fallback.into()
     } else {
         value.trim().into()
-    }
-}
-
-fn valid_lifecycle(value: &str) -> &str {
-    match value {
-        "active" | "nrnd" | "last_time_buy" | "obsolete" | "unknown" => value,
-        _ => "unknown",
     }
 }
 

@@ -320,3 +320,98 @@ export function formatCddValue(value: unknown): string {
 
   return Object.keys(property).length ? JSON.stringify(property) : "—";
 }
+
+export function lifecycleFromCharacteristics(metadata: ComponentMetadata) {
+  const value = metadata.commercial?.lifecycleStatus;
+  switch (String(value ?? "").toLowerCase()) {
+    case "active":
+    case "preview":
+      return "active" as const;
+    case "nrnd":
+      return "nrnd" as const;
+    case "eol":
+      return "last_time_buy" as const;
+    case "obsolete":
+      return "obsolete" as const;
+    default:
+      return "unknown" as const;
+  }
+}
+
+export function countryOfOriginFromCharacteristics(metadata: ComponentMetadata) {
+  const value = metadata.regulatory?.countryOfOrigin;
+  return typeof value === "string" && value.trim() ? value.trim() : "Unknown";
+}
+
+export function complianceFromCharacteristics(metadata: ComponentMetadata) {
+  const environmental = metadata.environmental ?? {};
+  const records: { standard: string; status: "pass" | "fail" | "unknown" }[] = [];
+  const add = (standard: string, value: unknown) => {
+    records.push({
+      standard,
+      status: typeof value === "boolean" ? (value ? "pass" : "fail") : "unknown",
+    });
+  };
+  add("RoHS", environmental.rohsCompliant);
+  add("REACH", environmental.reachCompliant);
+  return records;
+}
+
+export function referencePriceFromCharacteristics(metadata: ComponentMetadata) {
+  const priceBreaks = metadata.commercial?.priceBreaks;
+  if (!Array.isArray(priceBreaks)) return 0;
+  const first = priceBreaks.find((entry) => entry && typeof entry === "object") as Record<string, unknown> | undefined;
+  const value = Number(first?.unitPrice);
+  return Number.isFinite(value) && value >= 0 ? value : 0;
+}
+
+export function withCharacteristicSummary(
+  current: ComponentMetadata,
+  input: {
+    countryOfOrigin?: string;
+    lifecycleStatus?: "Active" | "NRND" | "EOL" | "Obsolete" | "Preview" | "Unknown";
+    unitPrice?: number;
+  },
+): ComponentMetadata {
+  const next: ComponentMetadata = { ...current };
+  if (input.countryOfOrigin?.trim()) {
+    next.regulatory = {
+      ...(current.regulatory ?? {}),
+      countryOfOrigin: input.countryOfOrigin.trim(),
+    };
+  }
+  if (input.lifecycleStatus || input.unitPrice !== undefined) {
+    next.commercial = { ...(current.commercial ?? {}) };
+    if (input.lifecycleStatus) next.commercial.lifecycleStatus = input.lifecycleStatus;
+    if (input.unitPrice !== undefined && Number.isFinite(input.unitPrice) && input.unitPrice >= 0) {
+      next.commercial.priceBreaks = [{ quantity: 1, unitPrice: input.unitPrice }];
+    }
+  }
+  return next;
+}
+
+export function flattenCharacteristics(metadata: ComponentMetadata) {
+  const entries: Record<string, string | number | boolean> = {};
+  CDD_SECTION_DEFINITIONS.forEach((section) => {
+    section.fields.forEach((field) => {
+      const value = cddValueAtPath(metadata, section.key, field);
+      const formatted = formatCddValue(value);
+      if (formatted !== "—") entries[`${section.title} · ${cddFieldLabel(field)}`] = formatted;
+    });
+  });
+  return entries;
+}
+
+export function overviewCharacteristicFields(category?: DesignatorCategory) {
+  const categoryElectrical = category
+    ? ELECTRICAL_FIELDS_BY_CATEGORY[category].filter((field) => field !== "additionalProperties").slice(0, 3)
+    : [];
+  return [
+    ...categoryElectrical.map((field) => ({ section: "electrical" as const, field })),
+    { section: "mechanical" as const, field: "packageType" },
+    { section: "thermal" as const, field: "operatingTemperatureRange" },
+    { section: "commercial" as const, field: "lifecycleStatus" },
+    { section: "regulatory" as const, field: "countryOfOrigin" },
+    { section: "environmental" as const, field: "rohsCompliant" },
+  ];
+}

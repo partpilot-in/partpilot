@@ -4,6 +4,13 @@ import { Download, FileSpreadsheet, MoreVertical, Plus, Search, Star, Trash2 } f
 import { useProjects } from "../api/hooks/boms";
 import { useMyParts, useMyPartsMutations, type MyPartInput } from "../api/hooks/myParts";
 import { useProjectParts, useSearchParts, type ProjectPartRow } from "../api/hooks/parts";
+import {
+  complianceFromCharacteristics,
+  countryOfOriginFromCharacteristics,
+  lifecycleFromCharacteristics,
+  referencePriceFromCharacteristics,
+  withCharacteristicSummary,
+} from "../api/componentMetadata";
 import type { Part } from "../api/types";
 import {
   ComplianceBadge,
@@ -200,7 +207,13 @@ export function MyParts() {
     },
     { key: "mpn", header: "MPN", sortable: true },
     { key: "manufacturer", header: "Manufacturer", sortable: true },
-    { key: "country_of_origin", header: "Made In", sortable: true },
+    {
+      key: "country_of_origin",
+      header: "Made In",
+      sortable: true,
+      sortValue: (row) => countryOfOriginFromCharacteristics(row.component_metadata),
+      render: (row) => countryOfOriginFromCharacteristics(row.component_metadata),
+    },
     { key: "category", header: "Category", sortable: true },
     {
       key: "description",
@@ -212,13 +225,16 @@ export function MyParts() {
     {
       key: "compliance",
       header: "Compliance",
-      render: (row) => <ComplianceBadge statuses={row.compliance} />,
+      sortable: true,
+      sortValue: (row) => complianceFromCharacteristics(row.component_metadata).map((item) => item.status).join(","),
+      render: (row) => <ComplianceBadge statuses={complianceFromCharacteristics(row.component_metadata)} />,
     },
     {
       key: "lifecycle_stage",
       header: "Lifecycle",
       sortable: true,
-      render: (row) => <LifecycleBadge stage={row.lifecycle_stage} />,
+      sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
+      render: (row) => <LifecycleBadge stage={lifecycleFromCharacteristics(row.component_metadata)} />,
     },
     {
       key: "score",
@@ -296,8 +312,8 @@ export function MyParts() {
       category: row.category,
       description: row.description,
       qty: String(row.total_qty),
-      unit_price: String(row.unit_price),
-      country_of_origin: row.country_of_origin,
+      unit_price: String(referencePriceFromCharacteristics(row.component_metadata)),
+      country_of_origin: countryOfOriginFromCharacteristics(row.component_metadata),
     });
     setAddPartOpen(true);
   }
@@ -327,9 +343,9 @@ export function MyParts() {
       row.project_names,
       row.project_count,
       row.total_qty,
-      row.unit_price,
-      row.country_of_origin,
-      row.lifecycle_stage.replace(/_/g, " "),
+      referencePriceFromCharacteristics(row.component_metadata),
+      countryOfOriginFromCharacteristics(row.component_metadata),
+      lifecycleFromCharacteristics(row.component_metadata).replace(/_/g, " "),
       row.score,
       row.source === "manual" ? "Manual" : "Project",
       importantIds.has(row.id) ? "Yes" : "No",
@@ -365,13 +381,12 @@ export function MyParts() {
       manufacturer: manualForm.manufacturer.trim(),
       category: manualForm.category.trim() || "Uncategorized",
       description: manualForm.description.trim() || "Manually added part",
-      lifecycle_stage: "active",
       score: 80,
-      country_of_origin: manualForm.country_of_origin.trim() || "Unknown",
-      unit_price: Number.isFinite(unitPrice) ? Math.max(0, unitPrice) : 0,
-      compliance: [{ standard: "Manual review", status: "unknown" }],
-      parameters: {},
-      component_metadata: editingPart?.component_metadata ?? {},
+      component_metadata: withCharacteristicSummary(editingPart?.component_metadata ?? {}, {
+        countryOfOrigin: manualForm.country_of_origin.trim() || "Unknown",
+        lifecycleStatus: "Active",
+        unitPrice: Number.isFinite(unitPrice) ? Math.max(0, unitPrice) : 0,
+      }),
       total_qty: Number.isFinite(qty) ? Math.max(1, qty) : 1,
     };
     setSavingPart(true);

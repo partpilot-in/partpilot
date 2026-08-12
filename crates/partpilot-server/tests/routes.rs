@@ -60,7 +60,13 @@ async fn my_parts_support_full_crud() {
     let create = json!({
         "mpn": "STM32F411CEU6", "manufacturer": "STMicroelectronics",
         "description": "ARM microcontroller", "category": "MCU", "total_qty": 3,
-        "unit_price": 4.25, "country_of_origin": "FR"
+        "component_metadata": {
+            "regulatory": { "countryOfOrigin": "FR" },
+            "commercial": {
+                "lifecycleStatus": "Active",
+                "priceBreaks": [{ "quantity": 1, "unitPrice": 4.25 }]
+            }
+        }
     });
     let response = app
         .clone()
@@ -72,7 +78,10 @@ async fn my_parts_support_full_crud() {
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     let id = created["id"].as_str().unwrap();
     assert_eq!(created["score"], partpilot_engine::base_rating());
-    assert_eq!(created["component_metadata"], json!({}));
+    assert_eq!(
+        created["component_metadata"]["regulatory"]["countryOfOrigin"],
+        "FR"
+    );
 
     let list = app
         .clone()
@@ -87,7 +96,10 @@ async fn my_parts_support_full_crud() {
     let update = json!({
         "mpn": "STM32F411CEU6", "manufacturer": "STMicroelectronics",
         "description": "Updated MCU", "category": "MCU", "total_qty": 8,
-        "unit_price": 4.10, "country_of_origin": "FR"
+        "component_metadata": {
+            "regulatory": { "countryOfOrigin": "FR" },
+            "commercial": { "priceBreaks": [{ "quantity": 1, "unitPrice": 4.10 }] }
+        }
     });
     let updated = app
         .clone()
@@ -113,7 +125,7 @@ async fn projects_support_full_crud() {
     let create = json!({ "name": "Controller v1", "lines": [{
         "mpn": "LM317T", "manufacturer": "Texas Instruments", "description": "Regulator",
         "category": "Regulator", "qty": 4, "unit_price": 0.42,
-        "lifecycle_stage": "active"
+        "component_metadata": { "commercial": { "lifecycleStatus": "Active" } }
     }]});
     let response = app
         .clone()
@@ -128,7 +140,10 @@ async fn projects_support_full_crud() {
         created["lines"][0]["score"],
         partpilot_engine::base_rating()
     );
-    assert_eq!(created["lines"][0]["component_metadata"], json!({}));
+    assert_eq!(
+        created["lines"][0]["component_metadata"]["commercial"]["lifecycleStatus"],
+        "Active"
+    );
 
     let list = app
         .clone()

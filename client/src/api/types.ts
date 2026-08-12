@@ -4,15 +4,6 @@ export type LifecycleStage = "active" | "nrnd" | "last_time_buy" | "obsolete" | 
 
 export type ComplianceStatus = "pass" | "fail" | "unknown";
 
-export interface ComplianceRecord {
-  standard: string;
-  status: ComplianceStatus;
-}
-
-export interface PartParameters {
-  [key: string]: string | number | boolean;
-}
-
 export interface PartNote {
   part_id: string;
   note: string;
@@ -25,12 +16,7 @@ export interface Part {
   manufacturer: string;
   category: string;
   description: string;
-  lifecycle_stage: LifecycleStage;
   score: number;
-  country_of_origin: string;
-  compliance: ComplianceRecord[];
-  unit_price: number;
-  parameters: PartParameters;
   component_metadata: ComponentMetadata;
 }
 
@@ -47,12 +33,9 @@ export interface BomLine {
   mpn: string;
   description: string;
   manufacturer: string;
-  country_of_origin: string;
   category: string;
   qty: number;
   unit_price: number;
-  compliance: ComplianceRecord[];
-  lifecycle_stage: LifecycleStage;
   score: number;
   component_metadata: ComponentMetadata;
 }

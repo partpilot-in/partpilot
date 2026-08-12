@@ -23,6 +23,16 @@ typical and maximum values, condition of application, definition, IRDI, and
 source. Flattening those properties into database columns would discard that
 context and require a migration whenever a category gains another property.
 
+This document is the single source of truth for component characteristics.
+Lifecycle status lives at `commercial.lifecycleStatus`, country of origin at
+`regulatory.countryOfOrigin`, RoHS/REACH results under `environmental`, package
+and dimensional data under `mechanical`, and reference pricing under
+`commercial.priceBreaks`. These values are not duplicated as top-level part
+columns or API properties. PartPilot score stays separate because it is a
+PartPilot-derived assessment rather than a component characteristic. BOM
+quantity and BOM line price also stay separate because they describe a project
+and procurement context, not the component itself.
+
 `{}` is the valid application-level empty state until enrichment is available.
 The client expands that empty document into the category-applicable fields and
 renders an em dash for each missing value. A BOM line's nonempty metadata takes
@@ -39,7 +49,7 @@ resolved category label to choose applicable electrical fields. For example,
 logic, switching, pin-count, and ESD properties. All categories retain the
 shared CDD sections so new data can be added without changing the API shape.
 
-The CDD schema remains the canonical definition of field names and value
+The component schema remains the canonical definition of field names and value
 wrappers. Category applicability is presentation and extraction guidance, not
 a second incompatible data model.
 

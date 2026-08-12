@@ -78,15 +78,13 @@ Fuzzy search by MPN or description.
       "manufacturer": "TEXAS INSTRUMENTS",
       "description": "3-terminal adjustable regulator, TO-220",
       "category": "regulator",
-      "lifecycle_stage": "active",
       "score": 92,
-      "country_of_origin": "US",
-      "unit_price": 0.42,
-      "compliance": [{ "standard": "RoHS", "status": "pass" }],
-      "parameters": {
-        "package": "TO-220"
-      },
-      "component_metadata": {}
+      "component_metadata": {
+        "mechanical": { "packageType": "TO-220" },
+        "environmental": { "rohsCompliant": true },
+        "regulatory": { "countryOfOrigin": "US" },
+        "commercial": { "lifecycleStatus": "Active" }
+      }
     }
   ],
   "next_cursor": null,
@@ -113,17 +111,12 @@ Part detail — reconciled lifecycle status and risk/PartPilot score.
   "manufacturer": "TEXAS INSTRUMENTS",
   "description": "3-terminal adjustable regulator, TO-220",
   "category": "regulator",
-  "country_of_origin": "US",
-  "unit_price": 0.42,
-  "compliance": [{ "standard": "RoHS", "status": "pass" }],
-  "lifecycle_stage": "active",
-  "parameters": {
-    "output_current_max_a": 1.5,
-    "package": "TO-220",
-    "voltage_min_v": 1.25,
-    "voltage_max_v": 37
+  "component_metadata": {
+    "mechanical": { "packageType": "TO-220" },
+    "environmental": { "rohsCompliant": true },
+    "regulatory": { "countryOfOrigin": "US" },
+    "commercial": { "lifecycleStatus": "Active" }
   },
-  "component_metadata": {},
   "reconciled_status": {
     "stage": "active",
     "last_time_buy_date": null,
@@ -253,7 +246,7 @@ Community Pulse digest — synthesized summary of public forum mentions, with ci
 
 ### 3.6 `GET /v1/parts/compare`
 
-Side-by-side parameter comparison for the Part Search "Compare" flow.
+Side-by-side Characteristics comparison for the Part Search "Compare" flow.
 
 **Auth**: none
 
@@ -267,12 +260,12 @@ Side-by-side parameter comparison for the Part Search "Compare" flow.
     {
       "id": "8e4c1a20-...",
       "label": "LM317T — Texas Instruments",
-      "parameters": { "output_current_max_a": 1.5, "package": "TO-220" }
+      "component_metadata": { "mechanical": { "packageType": "TO-220" } }
     },
     {
       "id": "c2b3d4e5-...",
       "label": "LM317T-ALT — STMicroelectronics",
-      "parameters": { "output_current_max_a": 1.5, "package": "TO-220" }
+      "component_metadata": { "mechanical": { "packageType": "TO-220" } }
     }
   ]
 }
@@ -382,14 +375,15 @@ Upload a BOM (CSV or XLSX) and generate a risk report.
       "mpn": "RC0805FR-0710KL",
       "description": "10k resistor, 1%",
       "manufacturer": "YAGEO",
-      "country_of_origin": "TW",
       "category": "resistor",
       "qty": 12,
       "unit_price": 0.01,
-      "compliance": [{ "standard": "RoHS", "status": "pass" }],
-      "lifecycle_stage": "active",
       "score": 97,
-      "component_metadata": {}
+      "component_metadata": {
+        "environmental": { "rohsCompliant": true },
+        "regulatory": { "countryOfOrigin": "TW" },
+        "commercial": { "lifecycleStatus": "Active" }
+      }
     }
   ]
 }
@@ -405,7 +399,7 @@ Fetch a stored BOM's risk report.
 
 **Auth**: Supabase session, owner-only
 
-**Query params** (sorting): `sort` — one of `line_no`, `description`, `manufacturer`, `country_of_origin`, `category`, `qty`, `unit_price`, `compliance`, `lifecycle_stage`, `score`. `order` — `asc` | `desc`.
+**Query params**: sorting is performed client-side, including Characteristics-derived lifecycle and compliance values.
 
 **Response** `200`
 
@@ -425,14 +419,15 @@ Fetch a stored BOM's risk report.
       "mpn": "RC0805FR-0710KL",
       "description": "10k resistor, 1%",
       "manufacturer": "YAGEO",
-      "country_of_origin": "TW",
       "category": "resistor",
       "qty": 12,
       "unit_price": 0.01,
-      "compliance": [{ "standard": "RoHS", "status": "pass" }],
-      "lifecycle_stage": "active",
       "score": 97,
-      "component_metadata": {}
+      "component_metadata": {
+        "environmental": { "rohsCompliant": true },
+        "regulatory": { "countryOfOrigin": "TW" },
+        "commercial": { "lifecycleStatus": "Active" }
+      }
     },
     {
       "id": "line-2",
@@ -441,14 +436,15 @@ Fetch a stored BOM's risk report.
       "mpn": "LM317T",
       "description": "LM317T regulator",
       "manufacturer": "TEXAS INSTRUMENTS",
-      "country_of_origin": "US",
       "category": "regulator",
       "qty": 4,
       "unit_price": 0.42,
-      "compliance": [{ "standard": "RoHS", "status": "pass" }],
-      "lifecycle_stage": "nrnd",
       "score": 58,
-      "component_metadata": {}
+      "component_metadata": {
+        "environmental": { "rohsCompliant": true },
+        "regulatory": { "countryOfOrigin": "US" },
+        "commercial": { "lifecycleStatus": "NRND" }
+      }
     }
   ]
 }
@@ -478,13 +474,11 @@ Line-by-line diff against another BOM (e.g. two revisions of a project).
       "mpn": "LM317T",
       "description": "LM317T regulator",
       "manufacturer": "TEXAS INSTRUMENTS",
-      "country_of_origin": "US",
       "category": "regulator",
       "qty": 4,
       "unit_price": 0.42,
-      "compliance": [{ "standard": "RoHS", "status": "pass" }],
-      "lifecycle_stage": "nrnd",
       "score": 58,
+      "component_metadata": { "commercial": { "lifecycleStatus": "NRND" } },
       "delta": "changed",
       "change_summary": "Lifecycle changed from active to NRND; score dropped from 92 to 58.",
       "previous_score": 92
@@ -496,13 +490,11 @@ Line-by-line diff against another BOM (e.g. two revisions of a project).
       "mpn": "74HC595",
       "description": "8-bit shift register",
       "manufacturer": "NXP",
-      "country_of_origin": "NL",
       "category": "logic",
       "qty": 8,
       "unit_price": 0.18,
-      "compliance": [{ "standard": "RoHS", "status": "pass" }],
-      "lifecycle_stage": "active",
       "score": 89,
+      "component_metadata": { "commercial": { "lifecycleStatus": "Active" } },
       "delta": "added",
       "change_summary": "Added in comparison BOM."
     },
@@ -513,13 +505,11 @@ Line-by-line diff against another BOM (e.g. two revisions of a project).
       "mpn": "OLD-PART-123",
       "description": "Legacy component",
       "manufacturer": "VENDOR",
-      "country_of_origin": "Unknown",
       "category": "Uncategorized",
       "qty": 1,
       "unit_price": 0,
-      "compliance": [],
-      "lifecycle_stage": "obsolete",
       "score": 3,
+      "component_metadata": { "commercial": { "lifecycleStatus": "Obsolete" } },
       "delta": "removed",
       "change_summary": "Removed from comparison BOM."
     }
@@ -546,13 +536,13 @@ Current user's important parts.
       "manufacturer": "TEXAS INSTRUMENTS",
       "description": "3-terminal adjustable regulator, TO-220",
       "category": "regulator",
-      "lifecycle_stage": "active",
       "score": 92,
-      "country_of_origin": "US",
-      "unit_price": 0.42,
-      "compliance": [{ "standard": "RoHS", "status": "pass" }],
-      "parameters": { "package": "TO-220" },
-      "component_metadata": {},
+      "component_metadata": {
+        "mechanical": { "packageType": "TO-220" },
+        "environmental": { "rohsCompliant": true },
+        "regulatory": { "countryOfOrigin": "US" },
+        "commercial": { "lifecycleStatus": "Active" }
+      },
       "created_at": "2026-06-01T00:00:00Z"
     }
   ]
@@ -612,7 +602,7 @@ Slim single-part lookup for the KiCad plugin.
 {
   "mpn": "LM317T",
   "manufacturer": "TEXAS INSTRUMENTS",
-  "lifecycle_stage": "active",
+  "component_metadata": { "commercial": { "lifecycleStatus": "Active" } },
   "score": 92,
   "risk_band": "low"
 }

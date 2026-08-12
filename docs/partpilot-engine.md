@@ -62,6 +62,11 @@ Reliability, Regulatory, Manufacturing, Commercial, Packaging, and
 Documentation sections. The field is currently `{}` because datasheet
 ingestion is not implemented.
 
+`component_metadata` is canonical for component facts such as lifecycle,
+origin, compliance, package, electrical parameters, and reference pricing.
+PartPilot score is intentionally separate because it is engine-native output;
+BOM quantity and line price are also separate because they are contextual.
+
 The future engine operation will accept the normalized part identity,
 designator category, and evidence-bearing candidates extracted by adapters. It
 will return a schema-valid component document plus rejected candidates and

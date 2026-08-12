@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useCompareBoms, useProject } from "../api/hooks/boms";
+import { complianceFromCharacteristics, lifecycleFromCharacteristics } from "../api/componentMetadata";
 import type { BomDiffLine } from "../api/types";
 import {
   Card,
@@ -50,13 +51,15 @@ export function BomCompare() {
       key: "compliance",
       header: "Compliance",
       sortable: true,
-      render: (row) => <ComplianceBadge statuses={row.compliance} />,
+      sortValue: (row) => complianceFromCharacteristics(row.component_metadata).map((item) => item.status).join(","),
+      render: (row) => <ComplianceBadge statuses={complianceFromCharacteristics(row.component_metadata)} />,
     },
     {
       key: "lifecycle_stage",
       header: "Lifecycle",
       sortable: true,
-      render: (row) => <LifecycleBadge stage={row.lifecycle_stage} />,
+      sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
+      render: (row) => <LifecycleBadge stage={lifecycleFromCharacteristics(row.component_metadata)} />,
     },
     {
       key: "score",

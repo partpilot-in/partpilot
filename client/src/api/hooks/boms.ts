@@ -40,17 +40,9 @@ function normalizeBomLine(value: unknown, index: number, projectId: string): Bom
     mpn: asString(line.mpn, asString(line.manufacturer_part_number, `UNKNOWN-${lineNo}`)),
     description: asString(line.description, `BOM line ${lineNo}`),
     manufacturer: asString(line.manufacturer, "Unknown"),
-    country_of_origin: asString(line.country_of_origin, "Unknown"),
     category: asString(line.category, "Uncategorized"),
     qty: Math.max(1, asNumber(line.qty, 1)),
     unit_price: Math.max(0, asNumber(line.unit_price, 0)),
-    compliance: Array.isArray(line.compliance) ? (line.compliance as BomLine["compliance"]) : [
-      { standard: "RoHS", status: "unknown" },
-      { standard: "REACH", status: "unknown" },
-    ],
-    lifecycle_stage: ["active", "nrnd", "last_time_buy", "obsolete", "unknown"].includes(String(line.lifecycle_stage))
-      ? (line.lifecycle_stage as BomLine["lifecycle_stage"])
-      : "unknown",
     score: Math.max(0, Math.min(100, asNumber(line.score, 72))),
     component_metadata: asRecord(line.component_metadata),
   };
