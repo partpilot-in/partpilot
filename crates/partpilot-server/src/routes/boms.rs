@@ -23,6 +23,41 @@ use crate::{
     state::AppState,
 };
 
+const DESIGNATOR_CATEGORIES: &[(&str, &str)] = &[
+    ("A", "Removable Sub-assembly or Plug-in Module"),
+    ("AE", "Antenna"),
+    ("BT", "Battery"),
+    ("C", "Capacitor"),
+    ("D", "Diode"),
+    ("DS", "Display"),
+    ("F", "Fuse"),
+    ("FB", "Ferrite Bead"),
+    ("FD", "Fiducial"),
+    ("FL", "Filter"),
+    ("H", "Hardware"),
+    ("J", "Jack"),
+    ("JP", "Jumper / Link"),
+    ("K", "Relay"),
+    ("L", "Inductor"),
+    ("LS", "Loudspeaker or Buzzer"),
+    ("M", "Motor"),
+    ("MK", "Microphone"),
+    ("P", "Plug"),
+    ("Q", "Transistor"),
+    ("R", "Resistor"),
+    ("RN", "Resistor Network"),
+    ("RT", "Thermistor"),
+    ("RV", "Varistor"),
+    ("SW", "Switch"),
+    ("T", "Transformer"),
+    ("TC", "Thermocouple"),
+    ("TJ", "Thermal Jumper"),
+    ("TP", "Test Point"),
+    ("U", "Integrated Circuit"),
+    ("Y", "Crystal / Oscillator"),
+    ("Z", "Zener Diode"),
+];
+
 #[derive(sqlx::FromRow)]
 struct ProjectRow {
     id: Uuid,
@@ -382,7 +417,7 @@ async fn insert_lines(
         .bind(nonempty(&line.description))
         .bind(matched_part_id)
         .bind(nonempty(&line.country_of_origin))
-        .bind(nonempty(&line.category))
+        .bind(category_for_line(line))
         .bind(line.qty.max(1))
         .bind(line.unit_price.max(0.0))
         .bind(&line.compliance)
@@ -494,6 +529,15 @@ fn parse_csv_lines(bytes: &[u8]) -> Result<Vec<BomLineInput>, AppError> {
     ]);
     let description = find(&["description", "desc"]);
     let manufacturer = find(&["manufacturer", "mfr", "mfg", "vendor"]);
+    let designator = find(&[
+        "designator",
+        "designators",
+        "reference",
+        "reference designator",
+        "refdes",
+        "ref des",
+        "ref",
+    ]);
     let qty = find(&["qty", "quantity", "count"]);
     let price = find(&["unit price", "price", "unit cost", "cost"]);
     let country = find(&["country", "country of origin", "coo", "made in"]);
@@ -505,9 +549,15 @@ fn parse_csv_lines(bytes: &[u8]) -> Result<Vec<BomLineInput>, AppError> {
         let value = |column: Option<usize>| column.and_then(|i| record.get(i)).unwrap_or("").trim();
         let mpn_value = value(mpn);
         let description_value = value(description);
+        let designator_value = value(designator);
         if mpn_value.is_empty() && description_value.is_empty() {
             continue;
         }
+        let combined_description = match (designator_value, description_value) {
+            ("", description) => description.to_owned(),
+            (designator, "") => designator.to_owned(),
+            (designator, description) => format!("{designator} — {description}"),
+        };
         lines.push(BomLineInput {
             line_no: Some(index as i32 + 1),
             part_id: None,
@@ -516,7 +566,7 @@ fn parse_csv_lines(bytes: &[u8]) -> Result<Vec<BomLineInput>, AppError> {
             } else {
                 mpn_value.into()
             },
-            description: description_value.into(),
+            description: combined_description,
             manufacturer: value(manufacturer).into(),
             country_of_origin: value(country).into(),
             category: value(category).into(),
@@ -550,6 +600,7 @@ fn memory_lines(_project_id: Uuid, lines: Vec<BomLineInput>) -> Vec<BomLineDto> 
         .enumerate()
         .map(|(index, line)| {
             let id = Uuid::new_v4();
+            let category = category_for_line(&line);
             BomLineDto {
                 id,
                 part_id: line
@@ -562,7 +613,7 @@ fn memory_lines(_project_id: Uuid, lines: Vec<BomLineInput>) -> Vec<BomLineDto> 
                 description: fallback(line.description, format!("BOM line {}", index + 1)),
                 manufacturer: fallback(line.manufacturer, "Unknown".into()),
                 country_of_origin: fallback(line.country_of_origin, "Unknown".into()),
-                category: fallback(line.category, "Uncategorized".into()),
+                category,
                 qty: line.qty.max(1),
                 unit_price: line.unit_price.max(0.0),
                 compliance: line.compliance,
@@ -600,6 +651,33 @@ fn validate_lines(lines: &[BomLineInput]) -> Result<(), AppError> {
         return Err(AppError::bad_request("every BOM line must have an MPN"));
     }
     Ok(())
+}
+
+fn category_for_line(line: &BomLineInput) -> String {
+    let category = line.category.trim();
+    if !category.is_empty() && !category.eq_ignore_ascii_case("Uncategorized") {
+        return category.to_owned();
+    }
+
+    infer_category(&line.description)
+        .unwrap_or("Uncategorized")
+        .to_owned()
+}
+
+fn infer_category(description: &str) -> Option<&'static str> {
+    let trimmed = description.trim_start();
+    let prefix_length = trimmed.bytes().take_while(u8::is_ascii_alphabetic).count();
+    let (letters, remainder) = trimmed.split_at(prefix_length);
+    if letters.is_empty() || !remainder.starts_with(|character: char| character.is_ascii_digit()) {
+        return None;
+    }
+
+    let designator = letters.to_ascii_uppercase();
+    DESIGNATOR_CATEGORIES
+        .iter()
+        .filter(|(prefix, _)| designator.starts_with(prefix))
+        .max_by_key(|(prefix, _)| prefix.len())
+        .map(|(_, category)| *category)
 }
 
 fn line_key(line: &BomLineDto) -> String {

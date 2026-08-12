@@ -166,6 +166,42 @@ async fn projects_support_full_crud() {
 }
 
 #[tokio::test]
+async fn project_categories_are_inferred_from_designators_on_the_server() {
+    let app = router();
+    let create = json!({ "name": "Inferred categories", "lines": [
+        {
+            "mpn": "RC0603FR-0710KL",
+            "manufacturer": "Yageo",
+            "description": "R12 — 10 kOhm resistor",
+            "category": ""
+        },
+        {
+            "mpn": "CAT24C32WI-GT3",
+            "manufacturer": "onsemi",
+            "description": "U2 — EEPROM",
+            "category": "Memory"
+        },
+        {
+            "mpn": "EXB-38V103JV",
+            "manufacturer": "Panasonic",
+            "description": "RN4 — resistor array"
+        }
+    ]});
+
+    let response = app
+        .oneshot(json_request(Method::POST, "/v1/boms", create))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let project: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+
+    assert_eq!(project["lines"][0]["category"], "Resistor");
+    assert_eq!(project["lines"][1]["category"], "Memory");
+    assert_eq!(project["lines"][2]["category"], "Resistor Network");
+}
+
+#[tokio::test]
 async fn part_notes_are_user_editable_and_preserve_partpilot_points() {
     let app = router();
     let initial = app

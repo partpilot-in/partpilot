@@ -95,43 +95,6 @@ const DEFAULT_COMPLIANCE = [
   { standard: "REACH", status: "unknown" as const },
 ];
 
-const DESIGNATOR_CATEGORIES: Record<string, string> = {
-  A: "Removable Sub-assembly or Plug-in Module",
-  AE: "Antenna",
-  BT: "Battery",
-  C: "Capacitor",
-  D: "Diode",
-  DS: "Display",
-  F: "Fuse",
-  FB: "Ferrite Bead",
-  FD: "Fiducial",
-  FL: "Filter",
-  H: "Hardware",
-  J: "Jack",
-  JP: "Jumper / Link",
-  K: "Relay",
-  L: "Inductor",
-  LS: "Loudspeaker or Buzzer",
-  M: "Motor",
-  MK: "Microphone",
-  P: "Plug",
-  Q: "Transistor",
-  R: "Resistor",
-  RN: "Resistor Network",
-  RT: "Thermistor",
-  RV: "Varistor",
-  SW: "Switch",
-  T: "Transformer",
-  TC: "Thermocouple",
-  TJ: "Thermal Jumper",
-  TP: "Test Point",
-  U: "Integrated Circuit",
-  Y: "Crystal / Oscillator",
-  Z: "Zener Diode",
-};
-
-const DESIGNATOR_PREFIXES = Object.keys(DESIGNATOR_CATEGORIES).sort((a, b) => b.length - a.length);
-
 export async function parseBomFile(file: File): Promise<ParsedBom> {
   const preview = await inspectBomFile(file);
   const lines = buildBomLines(preview, preview.suggestedMapping);
@@ -532,7 +495,7 @@ function rowToBomLine(
   if (!mpn || !designator) return undefined;
 
   const description = mappedDescription ? `${designator} — ${mappedDescription}` : designator;
-  const category = cleanText(cellAt(row, fields.category)) || inferCategory(description);
+  const category = cleanText(cellAt(row, fields.category));
   const id = `${prefix}-line-${lineNo}`;
 
   return {
@@ -543,7 +506,7 @@ function rowToBomLine(
     description,
     manufacturer: cleanText(cellAt(row, fields.manufacturer)) || "Unknown",
     country_of_origin: cleanText(cellAt(row, fields.country_of_origin)) || "Unknown",
-    category: category || "Uncategorized",
+    category,
     qty: parseNumber(cellAt(row, fields.qty)) || 1,
     unit_price: parseNumber(cellAt(row, fields.unit_price)),
     compliance: DEFAULT_COMPLIANCE,
@@ -578,14 +541,6 @@ function parseNumber(value: BomCellValue | undefined) {
 function parseInteger(value: BomCellValue | undefined) {
   const number = parseNumber(value);
   return number > 0 ? Math.floor(number) : 0;
-}
-
-function inferCategory(description: string) {
-  const token = description.trim().match(/^([A-Za-z]+)\d/)?.[1].toUpperCase();
-  if (!token) return "";
-
-  const prefix = DESIGNATOR_PREFIXES.find((candidate) => token.startsWith(candidate));
-  return prefix ? DESIGNATOR_CATEGORIES[prefix] : "";
 }
 
 function sanitizeId(value: string) {
