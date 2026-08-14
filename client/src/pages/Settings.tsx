@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { KeyRound, Save } from "lucide-react";
+import { Check, CreditCard, KeyRound, Save } from "lucide-react";
 import { useSettingsMutations, useProfile, type UserProfile } from "../api/hooks/settings";
 import { useAuth } from "../auth/AuthProvider";
 import { Card, ErrorMessage, Spinner, useToast } from "../components/ui";
@@ -8,10 +8,24 @@ const emptyProfile: UserProfile = {
   email: "",
   first_name: "",
   last_name: "",
+  phone: "",
   job: "",
   company: "",
+  organization_slug: "personal",
+  github: "",
   linkedin: "",
+  billing_plan: "hobby",
 };
+
+const availablePlans = ["startup", "scale", "enterprise"] as const;
+
+function planName(plan: unknown) {
+  const safePlan =
+    typeof plan === "string" && ["hobby", "startup", "scale", "enterprise"].includes(plan)
+      ? plan
+      : "hobby";
+  return safePlan.charAt(0).toUpperCase() + safePlan.slice(1);
+}
 
 function apiErrorMessage(error: unknown) {
   if (error && typeof error === "object" && "response" in error) {
@@ -31,8 +45,13 @@ export function SettingsPage() {
   const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
-    if (profile) setForm(profile);
-  }, [profile]);
+    if (profile) {
+      setForm({
+        ...profile,
+        organization_slug: profile.organization_slug || user?.organizationSlug || "personal",
+      });
+    }
+  }, [profile, user?.organizationSlug]);
 
   function updateField<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -43,7 +62,16 @@ export function SettingsPage() {
     setSaving(true);
     try {
       const emailChanged = form.email.trim().toLowerCase() !== (user?.email ?? "").trim().toLowerCase();
-      const saved = await updateProfile(form);
+      const saved = await updateProfile({
+        email: form.email,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        phone: form.phone,
+        job: form.job,
+        company: form.company,
+        github: form.github,
+        linkedin: form.linkedin,
+      });
       setForm(saved);
       refetch();
       try {
@@ -96,17 +124,6 @@ export function SettingsPage() {
       <div className="settings-grid">
         <Card title="Profile">
           <form className="settings-form" onSubmit={saveProfile}>
-            <label className="field-label settings-form__wide">
-              Email
-              <input
-                className="form-control"
-                type="email"
-                value={form.email}
-                onChange={(event) => updateField("email", event.target.value)}
-                autoComplete="email"
-                required
-              />
-            </label>
             <label className="field-label">
               First name
               <input
@@ -128,13 +145,25 @@ export function SettingsPage() {
               />
             </label>
             <label className="field-label">
-              Job
+              Email
               <input
                 className="form-control"
-                value={form.job}
-                onChange={(event) => updateField("job", event.target.value)}
-                autoComplete="organization-title"
-                maxLength={160}
+                type="email"
+                value={form.email}
+                onChange={(event) => updateField("email", event.target.value)}
+                autoComplete="email"
+                required
+              />
+            </label>
+            <label className="field-label">
+              Phone number
+              <input
+                className="form-control"
+                type="tel"
+                value={form.phone}
+                onChange={(event) => updateField("phone", event.target.value)}
+                autoComplete="tel"
+                maxLength={40}
               />
             </label>
             <label className="field-label">
@@ -145,6 +174,37 @@ export function SettingsPage() {
                 onChange={(event) => updateField("company", event.target.value)}
                 autoComplete="organization"
                 maxLength={160}
+              />
+            </label>
+            <label className="field-label">
+              Organisation slug
+              <input
+                className="form-control form-control--readonly"
+                value={form.organization_slug}
+                readOnly
+                aria-readonly="true"
+              />
+            </label>
+            <label className="field-label settings-form__wide">
+              Job
+              <input
+                className="form-control"
+                value={form.job}
+                onChange={(event) => updateField("job", event.target.value)}
+                autoComplete="organization-title"
+                maxLength={160}
+              />
+            </label>
+            <label className="field-label settings-form__wide">
+              GitHub
+              <input
+                className="form-control"
+                type="url"
+                value={form.github}
+                onChange={(event) => updateField("github", event.target.value)}
+                placeholder="https://github.com/your-profile"
+                autoComplete="url"
+                maxLength={500}
               />
             </label>
             <label className="field-label settings-form__wide">
@@ -166,6 +226,43 @@ export function SettingsPage() {
               </button>
             </div>
           </form>
+        </Card>
+
+        <Card title="Billing">
+          <div className="billing-settings">
+            <div className="billing-current">
+              <span className="billing-current__icon" aria-hidden="true">
+                <CreditCard size={20} />
+              </span>
+              <span>
+                <span className="billing-current__eyebrow">Current plan</span>
+                <strong>{planName(form.billing_plan)}</strong>
+              </span>
+              <span className="billing-current__status">
+                <Check size={14} aria-hidden="true" />
+                Active
+              </span>
+            </div>
+
+            <div className="billing-plans">
+              <div>
+                <h3>Available plans</h3>
+                <p>Enjoy complimentary access to PartPilot during our launch trial.</p>
+              </div>
+              <ul className="billing-plan-list">
+                {availablePlans.map((plan) => (
+                  <li key={plan}>
+                    <span>
+                      <strong>{planName(plan)}</strong>
+                    </span>
+                    <button type="button" className="button" disabled>
+                      Coming soon
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </Card>
 
         <Card title="Password">

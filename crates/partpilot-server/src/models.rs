@@ -135,9 +135,13 @@ pub struct ProfileDto {
     pub email: String,
     pub first_name: String,
     pub last_name: String,
+    pub phone: String,
     pub job: String,
     pub company: String,
+    pub organization_slug: String,
+    pub github: String,
     pub linkedin: String,
+    pub billing_plan: String,
 }
 
 impl ProfileDto {
@@ -146,9 +150,13 @@ impl ProfileDto {
             email: email.into(),
             first_name: String::new(),
             last_name: String::new(),
+            phone: String::new(),
             job: String::new(),
             company: String::new(),
+            organization_slug: "personal".into(),
+            github: String::new(),
             linkedin: String::new(),
+            billing_plan: "hobby".into(),
         }
     }
 }
@@ -161,9 +169,13 @@ pub struct UpdateProfileInput {
     #[serde(default)]
     pub last_name: String,
     #[serde(default)]
+    pub phone: String,
+    #[serde(default)]
     pub job: String,
     #[serde(default)]
     pub company: String,
+    #[serde(default)]
+    pub github: String,
     #[serde(default)]
     pub linkedin: String,
 }

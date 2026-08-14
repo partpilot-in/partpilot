@@ -1166,6 +1166,12 @@ a.news-list__title:hover {
   color: var(--text-primary);
 }
 
+.form-control--readonly {
+  background: var(--surface-alt);
+  color: var(--text-secondary);
+  cursor: default;
+}
+
 .form-control--textarea {
   min-height: 88px;
   padding: 10px;
@@ -1292,6 +1298,108 @@ a.news-list__title:hover {
   margin: 0;
   color: var(--text-secondary);
   line-height: 1.5;
+}
+
+.billing-settings {
+  display: grid;
+  gap: 20px;
+}
+
+.billing-current {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--accent-surface);
+}
+
+.billing-current__icon {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.billing-current>span:nth-child(2) {
+  display: grid;
+}
+
+.billing-current__eyebrow {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.billing-current strong {
+  font-size: 17px;
+}
+
+.billing-current__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--signal-good);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.billing-plans {
+  display: grid;
+  gap: 12px;
+}
+
+.billing-plans h3,
+.billing-plans p {
+  margin: 0;
+}
+
+.billing-plans h3 {
+  font-size: 14px;
+}
+
+.billing-plans p {
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.billing-plan-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.billing-plan-list li {
+  display: grid;
+  align-content: space-between;
+  align-items: start;
+  gap: 12px;
+  min-width: 0;
+  min-height: 112px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.billing-plan-list .button {
+  width: 100%;
+}
+
+.billing-plan-list li>span {
+  display: grid;
+  text-align: center;
+}
+
+.billing-plan-list strong {
+  font-size: 18px;
 }
 
 .bom-editor {
@@ -2616,6 +2724,22 @@ a.news-list__title:hover {
 
   .settings-form {
     grid-template-columns: 1fr;
+  }
+
+  .billing-current {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .billing-current__status {
+    grid-column: 2;
+  }
+
+  .billing-plan-list {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-plan-list li {
+    min-height: auto;
   }
 
   .part-form__actions {

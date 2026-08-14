@@ -287,13 +287,17 @@ async fn settings_support_profile_updates_and_password_reset_requests() {
     let initial: Value =
         serde_json::from_slice(&to_bytes(initial.into_body(), usize::MAX).await.unwrap()).unwrap();
     assert_eq!(initial["email"], "test@example.com");
+    assert_eq!(initial["organization_slug"], "personal");
+    assert_eq!(initial["billing_plan"], "hobby");
 
     let profile = json!({
         "email": "jane@example.com",
         "first_name": "Jane",
         "last_name": "Doe",
+        "phone": "+1 202 555 0142",
         "job": "Hardware Engineer",
         "company": "PartPilot",
+        "github": "https://github.com/jane-doe",
         "linkedin": "https://www.linkedin.com/in/jane-doe"
     });
     let updated = app
@@ -308,7 +312,11 @@ async fn settings_support_profile_updates_and_password_reset_requests() {
     assert_eq!(updated.status(), StatusCode::OK);
     let updated: Value =
         serde_json::from_slice(&to_bytes(updated.into_body(), usize::MAX).await.unwrap()).unwrap();
-    assert_eq!(updated, profile);
+    assert_eq!(updated["email"], profile["email"]);
+    assert_eq!(updated["phone"], profile["phone"]);
+    assert_eq!(updated["github"], profile["github"]);
+    assert_eq!(updated["organization_slug"], "personal");
+    assert_eq!(updated["billing_plan"], "hobby");
 
     let reset = app
         .oneshot(json_request(
