@@ -7,7 +7,7 @@ export const Navbar: React.FC = () => {
     <nav className="navbar">
       <div className="container navbar-container">
         <a href="/" className="navbar-logo">
-          <img src="/logo.png" alt="PartPilot Logo" style={{ height: '24px', width: 'auto' }} />
+          <img src="/pp-logo-light.png" alt="PartPilot Logo" style={{ height: '24px', width: 'auto' }} />
           <span>PartPilot</span>
         </a>
 

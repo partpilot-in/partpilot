@@ -16,7 +16,7 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
   const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const { currency, updateCurrency } = useCurrencyPreference();
-  const logoSrc = theme === "dark" ? "/PP Logo - Dark.png" : "/PP Logo - Light.png";
+  const logoSrc = theme === "dark" ? "/pp-logo-dark.png" : "/pp-logo-light.png";
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;

@@ -48,7 +48,7 @@ export function Login() {
     <main className="auth-shell">
       <section className="auth-panel" aria-labelledby="auth-title">
         <div className="auth-brand">
-          <img className="brand-mark" src="/PP Logo - Light.png" alt="" />
+          <img className="brand-mark" src="/pp-logo-light.png" alt="" />
           <span>PartPilot</span>
         </div>
         <div className="auth-card">
