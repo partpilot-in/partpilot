@@ -2435,7 +2435,7 @@ a.news-list__title:hover {
 @media (max-width: 640px) {
   :root {
     --page-gutter: 16px;
-    --bottom-nav-height: 72px;
+    --bottom-nav-height: 56px;
   }
 
   .dashboard-overview {
@@ -2514,33 +2514,32 @@ a.news-list__title:hover {
     justify-content: space-around;
     gap: 0;
     height: var(--bottom-nav-height);
-    padding: 6px max(10px, var(--safe-right)) 6px max(10px, var(--safe-left));
+    padding: 2px max(10px, var(--safe-right)) 2px max(10px, var(--safe-left));
   }
 
   .tab-nav__link {
     flex: 1 1 0;
     width: auto;
-    height: 60px;
+    height: 52px;
     flex-direction: column;
-    gap: 4px;
-    border-radius: 16px;
+    gap: 2px;
+    border-radius: 12px;
     font-size: 11px;
   }
 
   .tab-nav__label {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip: auto;
-    line-height: 1.1;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
     white-space: nowrap;
   }
 
   .tab-nav__link--active::before {
     top: auto;
     right: 22px;
-    bottom: -6px;
+    bottom: -2px;
     left: 22px;
     width: auto;
     height: 3px;
