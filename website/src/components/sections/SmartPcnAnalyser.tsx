@@ -32,7 +32,15 @@ const pcnReviewRows = [
 export const SmartPcnAnalyser: React.FC = () => {
   return (
     <section className="section section-alt">
-      <div className="container risk-manager-container">
+      <div className="container agentic-container">
+        <div className="agentic-content">
+          <div className="section-label">Smart PCN Analyser</div>
+          <h2 className="section-title">Verify supplier change notices beyond the headline</h2>
+          <p className="agentic-text source-intelligence-text">
+            PCNs claim "no change" but PartPilot verifies it. It parses supplier change notices, classifies them against J-STD-046 and IPC-1752, and cross-checks the change against your component's real parametric envelope, not just the datasheet headline.
+          </p>
+        </div>
+
         <div className="agentic-visual">
           <div className="mockup-card pcn-card hover-lift">
             <div className="mockup-header pcn-card-header">
@@ -66,14 +74,6 @@ export const SmartPcnAnalyser: React.FC = () => {
               ))}
             </div>
           </div>
-        </div>
-
-        <div className="agentic-content">
-          <div className="section-label">Smart PCN Analyser</div>
-          <h2 className="section-title">Verify supplier change notices beyond the headline</h2>
-          <p className="agentic-text source-intelligence-text">
-            PCNs claim "no change" but PartPilot verifies it. It parses supplier change notices, classifies them against J-STD-046 and IPC-1752, and cross-checks the change against your component's real parametric envelope, not just the datasheet headline.
-          </p>
         </div>
       </div>
     </section>

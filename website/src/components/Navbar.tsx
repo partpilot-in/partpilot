@@ -12,7 +12,14 @@ export const Navbar: React.FC = () => {
         </a>
 
         <div className="navbar-actions">
-          {/* <a href="https://calendly.com" className="btn btn-primary btn-sm">Sign In</a> */}
+          <a
+            href="https://app.bestpartpilot.com"
+            className="navbar-launch"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Launch App
+          </a>
         </div>
       </div>
     </nav>

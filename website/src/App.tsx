@@ -3,8 +3,9 @@ import { Footer } from './components/Footer';
 import { HeroSection } from './components/sections/HeroSection';
 import { SmartPcnAnalyser } from './components/sections/SmartPcnAnalyser';
 import { SourceIntelligence } from './components/sections/SourceIntelligence';
-import { PartRiskManager } from './components/sections/PartRiskManager';
-import { PlatformOverview } from './components/sections/PlatformOverview';
+import { CommunityInsights } from './components/sections/CommunityInsights';
+import { ManufacturerLiveScoring } from './components/sections/ManufacturerLiveScoring';
+import { PartCompare } from './components/sections/PartCompare';
 import { ProductsGrid } from './components/sections/ProductsGrid';
 
 function App() {
@@ -13,10 +14,11 @@ function App() {
       <Navbar />
       <main>
         <HeroSection />
-        <SmartPcnAnalyser />
         <SourceIntelligence />
-        <PartRiskManager />
-        <PlatformOverview />
+        <CommunityInsights />
+        <ManufacturerLiveScoring />
+        <PartCompare />
+        <SmartPcnAnalyser />
         <ProductsGrid />
       </main>
       <Footer />
