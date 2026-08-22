@@ -1,8 +1,18 @@
-use crate::domain::{AlternatePart, LifecycleStatus, NormalizedMpn, Part, PartId};
+use crate::domain::{AlternatePart, LifecycleStatus, NormalizedMpn, Part, PartId, PartSnapshot};
 
 #[async_trait::async_trait]
 pub trait PartRepository: Send + Sync {
     async fn upsert_part(&self, part: &Part) -> Result<PartId, RepoError>;
+
+    /// Persists the catalog fields/component metadata first, then writes the
+    /// lifecycle observation using the database part id returned by the upsert.
+    async fn upsert_snapshot(&self, snapshot: &PartSnapshot) -> Result<PartId, RepoError> {
+        let part_id = self.upsert_part(&snapshot.part).await?;
+        let mut status = snapshot.lifecycle_status.clone();
+        status.part_id = part_id.clone();
+        self.insert_status(&status).await?;
+        Ok(part_id)
+    }
     async fn find_by_mpn(&self, mpn: &NormalizedMpn) -> Result<Option<Part>, RepoError>;
     async fn search(&self, query: &str, limit: u32) -> Result<Vec<Part>, RepoError>;
     async fn insert_status(&self, status: &LifecycleStatus) -> Result<(), RepoError>;

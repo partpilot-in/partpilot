@@ -109,6 +109,17 @@ This is where all source-specific complexity lives:
 
 Keeping these concerns isolated prevents them from leaking into the rest of the system.
 
+#### DigiKey configuration
+
+`adapter-digikey` uses DigiKey Product Information v4 with OAuth 2.0 client
+credentials. Configure `DIGIKEY_CLIENT_ID`, `DIGIKEY_CLIENT_SECRET`, and
+`DIGIKEY_ACCOUNT_ID`, which DigiKey requires for two-legged Product Details
+requests. Locale defaults to `US` / `en` / `USD` and can be changed with the
+`DIGIKEY_LOCALE_*` variables listed in `.env.example`.
+
+Deployed server environment variables take precedence. On a local machine,
+missing values are filled from the repository's top-level `.env` file.
+
 **Community Pulse** is the component that collects and summarizes what engineers actually say about a part across public forums — the same idea as Reddit Answers, applied to component reputation. It pulls in mentions, then hands them to the engine for ranking and synthesis into a short, cited summary (common praise, common issues, overall sentiment) shown alongside a part's lifecycle and risk data.
 
 Credible sources this adapter draws from:

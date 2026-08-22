@@ -1,6 +1,8 @@
 use std::time::Duration;
 
-use crate::domain::{LifecycleStatus, NormalizedManufacturer, NormalizedMpn, SourceId};
+use crate::domain::{
+    LifecycleStatus, NormalizedManufacturer, NormalizedMpn, PartSnapshot, SourceId,
+};
 
 #[async_trait::async_trait]
 pub trait DataSourceConnector: Send + Sync {
@@ -11,6 +13,16 @@ pub trait DataSourceConnector: Send + Sync {
         mpn: &NormalizedMpn,
         manufacturer: &NormalizedManufacturer,
     ) -> Result<Option<LifecycleStatus>, ConnectorError>;
+
+    /// Fetches the complete source-backed part record when the connector can
+    /// provide catalog metadata in addition to lifecycle status.
+    async fn fetch_part(
+        &self,
+        _mpn: &NormalizedMpn,
+        _manufacturer: &NormalizedManufacturer,
+    ) -> Result<Option<PartSnapshot>, ConnectorError> {
+        Ok(None)
+    }
 
     async fn fetch_status_batch(
         &self,

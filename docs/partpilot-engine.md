@@ -12,6 +12,7 @@ in [partpilot-component-protocols.md](partpilot-component-protocols.md).
 |---|---|---|
 | `normalize_mpn` | Manufacturer part number text | `NormalizedMpn` |
 | `normalize_manufacturer` | Manufacturer name text plus an `AliasTable` | `NormalizedManufacturer` |
+| `DataSourceConnector::fetch_part` | Normalized part identity | Source-backed `PartSnapshot` with catalog fields, CDD metadata, and lifecycle evidence |
 | `reconcile` | Lifecycle statuses plus `ReconcilePolicy` | One reconciled `LifecycleStatus` |
 | `find_alternates` | Target part and parameters plus a candidate pool | Ranked `MatchCandidate` values |
 | `score_risk` | `RiskInputs` plus `RiskWeights` | `RiskScore { value, band }` |
@@ -59,8 +60,15 @@ Parts now carry a `component_metadata` document shaped by
 [`component-cdd.schema.json`](component-cdd.schema.json). It contains the CDD
 Identification, Electrical, Mechanical, Thermal, Material, Environmental,
 Reliability, Regulatory, Manufacturing, Commercial, Packaging, and
-Documentation sections. The field is currently `{}` because datasheet
-ingestion is not implemented.
+Documentation sections. Distributor adapters populate the source-backed fields
+that they can establish; datasheet ingestion can enrich the remaining fields
+later.
+
+`PartSnapshot` keeps the catalog `Part` and its `LifecycleStatus` together so
+persistence cannot accidentally attach an observation to a different part.
+`PartRepository::upsert_snapshot` writes the catalog record before the
+lifecycle observation. Migration `0016_digikey_part_enrichment.sql` also
+provides `upsert_source_part_snapshot(...)` for an atomic SQL implementation.
 
 `component_metadata` is canonical for component facts such as lifecycle,
 origin, compliance, package, electrical parameters, and reference pricing.
@@ -76,6 +84,25 @@ will not download or parse source-specific documents itself.
 
 The complete planned pipeline and ownership boundaries are documented in
 [`component-metadata-ingestion.md`](component-metadata-ingestion.md).
+
+### DigiKey Product Information v4 mapping
+
+| DigiKey field | PartPilot destination |
+|---|---|
+| `ManufacturerProductNumber`, `Manufacturer.Name` | `parts.mpn`, `parts.manufacturer`, and `component_metadata.identification` |
+| `Description`, `Category.Name` | `parts.description`, `parts.category` |
+| `ProductStatus`, `EndOfLife`, `Discontinued`, `DateLastBuyChance` | `lifecycle_statuses` and `commercial` metadata |
+| `UnitPrice`, variation pricing, locale currency | `commercial.priceBreaks` |
+| Variation SKU, stock, packaging, MOQ, and supplier | `commercial.distributors` and `packaging` |
+| `Parameters` | Lossless `electrical.additionalProperties`; common package, mounting, pin-count, dielectric, and logic values are also promoted to typed paths |
+| `Classifications` | `environmental`, `material`, and `regulatory` |
+| Product, datasheet, image, and video URLs | `documentation` |
+| Series, base product, and other names | `identification` and `commercial.alternateSources` |
+
+Unknown compliance text is not guessed into a boolean. Account pricing takes
+precedence over standard pricing when DigiKey returns it, duplicate quantity
+breaks retain the lowest price, and the database deep-merges existing metadata
+instead of replacing unrelated sections and keys supplied by other sources.
 
 ## Risk-scoring contract
 

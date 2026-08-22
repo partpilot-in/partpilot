@@ -8,3 +8,4 @@ async-trait = "0.1"
 chrono = { version = "0.4", default-features = true }
 thiserror = "1"
 uuid = { version = "1" }
+serde_json = "1"

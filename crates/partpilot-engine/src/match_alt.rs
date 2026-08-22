@@ -231,6 +231,7 @@ mod tests {
             manufacturer: NormalizedManufacturer("ACME".to_string()),
             description: None,
             category: Some(category.to_string()),
+            component_metadata: serde_json::json!({}),
         }
     }
 

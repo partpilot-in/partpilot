@@ -147,10 +147,6 @@
     "Identification": {
       "type": "object",
       "description": "Unique identity and classification of the component instance.",
-      "required": [
-        "referenceDesignator",
-        "designatorCategory"
-      ],
       "properties": {
         "referenceDesignator": {
           "type": "string",
@@ -177,6 +173,14 @@
         "genericPartFamily": {
           "type": "string",
           "description": "IEC-CDD-style class name, e.g. '0173-1#01-AAA002#010' or a plain-text family such as 'MLCC'."
+        },
+        "series": {
+          "type": "string",
+          "description": "Manufacturer product series."
+        },
+        "baseProductNumber": {
+          "type": "string",
+          "description": "Manufacturer base product or family number."
         },
         "irdiClassId": {
           "type": "string",
@@ -661,6 +665,21 @@
         "leadTimeWeeks": {
           "type": "number"
         },
+        "manufacturerStockQuantity": {
+          "type": "integer"
+        },
+        "normallyStocking": {
+          "type": "boolean"
+        },
+        "backOrderAllowed": {
+          "type": "boolean"
+        },
+        "nonCancellableNonReturnable": {
+          "type": "boolean"
+        },
+        "shippingInfo": {
+          "type": "string"
+        },
         "minimumOrderQuantity": {
           "type": "integer"
         },
@@ -702,6 +721,30 @@
               "url": {
                 "type": "string",
                 "format": "uri"
+              },
+              "packageType": {
+                "type": "string"
+              },
+              "minimumOrderQuantity": {
+                "type": "integer"
+              },
+              "maximumOrderQuantity": {
+                "type": "integer"
+              },
+              "standardPackQuantity": {
+                "type": "integer"
+              },
+              "digiReelFee": {
+                "type": "number"
+              },
+              "marketplace": {
+                "type": "boolean"
+              },
+              "tariffActive": {
+                "type": "boolean"
+              },
+              "supplier": {
+                "type": "string"
               }
             },
             "additionalProperties": false
@@ -771,6 +814,18 @@
       "description": "Reference documents and design artifacts.",
       "properties": {
         "datasheetUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "productPageUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "videoUrl": {
           "type": "string",
           "format": "uri"
         },

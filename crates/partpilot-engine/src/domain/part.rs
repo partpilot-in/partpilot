@@ -10,6 +10,14 @@ pub struct Part {
     pub manufacturer: NormalizedManufacturer,
     pub description: Option<String>,
     pub category: Option<String>,
+    /// Canonical component facts shaped by `docs/component-cdd.schema.json`.
+    pub component_metadata: serde_json::Value,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PartSnapshot {
+    pub part: Part,
+    pub lifecycle_status: super::LifecycleStatus,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
