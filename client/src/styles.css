@@ -520,8 +520,14 @@ a:hover {
   margin-top: 2px;
 }
 
+.auth-switches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+}
+
 .auth-switch {
-  justify-self: center;
   border: 0;
   background: transparent;
   color: var(--accent);
@@ -529,8 +535,13 @@ a:hover {
   cursor: pointer;
 }
 
-.auth-switch:hover {
+.auth-switch:not(:disabled):hover {
   color: var(--accent-hover);
+}
+
+.auth-switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .page-header {

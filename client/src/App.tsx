@@ -10,6 +10,7 @@ import { PartCompare } from "./pages/PartCompare";
 import { PartDetail } from "./pages/PartDetail";
 import { Projects } from "./pages/Projects";
 import { ProjectDetail } from "./pages/ProjectDetail";
+import { ResetPassword } from "./pages/ResetPassword";
 import { BomCompare } from "./pages/BomCompare";
 import { BomEdit } from "./pages/BomEdit";
 import { BomUpload } from "./pages/BomUpload";
@@ -48,7 +49,10 @@ function AppLayout() {
 }
 
 function AuthenticatedRoutes() {
-  const { loading, user } = useAuth();
+  const location = useLocation();
+  const { loading, passwordRecovery, user } = useAuth();
+
+  if (passwordRecovery || location.pathname === "/reset-password") return <ResetPassword />;
 
   if (loading) {
     return (

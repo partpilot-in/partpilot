@@ -5,13 +5,14 @@ import { organizationNameToSlug, useAuth } from "../auth/AuthProvider";
 type AuthMode = "login" | "signup";
 
 export function Login() {
-  const { isConfigured, signIn, signUp } = useAuth();
+  const { isConfigured, requestPasswordReset, signIn, signUp } = useAuth();
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [organizationName, setOrganizationName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const organizationSlug = organizationNameToSlug(organizationName);
@@ -41,6 +42,32 @@ export function Login() {
       setError(caught instanceof Error ? caught.message : "Unable to continue. Check the details and try again.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function forgotPassword() {
+    setError(null);
+    setNotice(null);
+
+    if (!isConfigured) {
+      setError("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to the deployment environment or repository .env file.");
+      return;
+    }
+
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
+      setError("Enter your email address to reset your password.");
+      return;
+    }
+
+    setResettingPassword(true);
+    try {
+      await requestPasswordReset(normalizedEmail, `${window.location.origin}/reset-password`);
+      setNotice("If an account exists for that email, you’ll receive a password reset link shortly.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to send the reset email. Please try again.");
+    } finally {
+      setResettingPassword(false);
     }
   }
 
@@ -112,23 +139,36 @@ export function Login() {
             {notice && <p className="auth-notice">{notice}</p>}
             {error && <p className="auth-error">{error}</p>}
 
-            <button type="submit" className="button button--primary auth-submit" disabled={submitting}>
+            <button type="submit" className="button button--primary auth-submit" disabled={submitting || resettingPassword}>
               <LogIn size={18} />
               {submitting ? "Working..." : mode === "login" ? "Sign in" : "Create account"}
             </button>
           </form>
 
-          <button
-            type="button"
-            className="auth-switch"
-            onClick={() => {
-              setError(null);
-              setNotice(null);
-              setMode((current) => (current === "login" ? "signup" : "login"));
-            }}
-          >
-            {mode === "login" ? "Create a new account" : "Use an existing account"}
-          </button>
+          <div className="auth-switches">
+            <button
+              type="button"
+              className="auth-switch"
+              disabled={submitting || resettingPassword}
+              onClick={() => {
+                setError(null);
+                setNotice(null);
+                setMode((current) => (current === "login" ? "signup" : "login"));
+              }}
+            >
+              {mode === "login" ? "Create a new account" : "Use an existing account"}
+            </button>
+            {mode === "login" && (
+              <button
+                type="button"
+                className="auth-switch"
+                disabled={submitting || resettingPassword}
+                onClick={forgotPassword}
+              >
+                {resettingPassword ? "Sending reset link..." : "Forgot password?"}
+              </button>
+            )}
+          </div>
         </div>
       </section>
     </main>

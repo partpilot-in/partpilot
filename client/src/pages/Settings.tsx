@@ -36,7 +36,7 @@ function apiErrorMessage(error: unknown) {
 }
 
 export function SettingsPage() {
-  const { user, refreshUser } = useAuth();
+  const { refreshUser, user } = useAuth();
   const { data: profile, loading, error, refetch } = useProfile();
   const { updateProfile, requestPasswordReset } = useSettingsMutations();
   const { showToast } = useToast();
@@ -96,10 +96,10 @@ export function SettingsPage() {
   async function resetPassword() {
     setResetting(true);
     try {
-      await requestPasswordReset(`${window.location.origin}/settings`);
+      await requestPasswordReset(`${window.location.origin}/reset-password`);
       showToast({
         title: "Reset email sent",
-        body: "Check your inbox for the secure password reset link.",
+        body: "Open the secure link in your inbox to choose a new password.",
         tone: "success",
       });
     } catch (resetError) {

@@ -126,14 +126,14 @@ impl AuthVerifier {
             return Ok(());
         };
 
-        let mut payload = json!({ "email": email });
-        if let Some(redirect_to) = redirect_to {
-            payload["redirect_to"] = Value::String(redirect_to.to_owned());
-        }
-        let response = client
+        let mut request = client
             .post(auth_recover_url)
-            .header("apikey", publishable_key)
-            .json(&payload)
+            .header("apikey", publishable_key);
+        if let Some(redirect_to) = redirect_to {
+            request = request.query(&[("redirect_to", redirect_to)]);
+        }
+        let response = request
+            .json(&json!({ "email": email }))
             .send()
             .await
             .map_err(|_| AppError::internal("could not request a password reset"))?;
