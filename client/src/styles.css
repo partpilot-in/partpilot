@@ -2229,22 +2229,35 @@ a.news-list__title:hover {
 
 .project-grid {
   display: grid;
+  min-width: 0;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
 .project-card {
   display: grid;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
   gap: 16px;
   min-height: 180px;
   padding: 16px;
 }
 
+.project-card .card__body {
+  min-width: 0;
+}
+
 .project-card__top {
-  display: flex;
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: flex-start;
-  justify-content: space-between;
   gap: 16px;
+}
+
+.project-card__top > div {
+  min-width: 0;
 }
 
 .project-card h3 {
@@ -2253,9 +2266,34 @@ a.news-list__title:hover {
   font-weight: 500;
 }
 
+.project-card h3 a {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .project-card p {
   margin: 4px 0 0;
+  overflow: hidden;
   color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-card .metric-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.project-card .metric-row__label,
+.project-card .metric-row strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .detail-grid {
@@ -3029,7 +3067,6 @@ a.news-list__title:hover {
 
   .project-card {
     gap: 14px;
-    min-height: auto;
     padding: 14px;
   }
 

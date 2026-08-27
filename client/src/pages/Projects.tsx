@@ -51,7 +51,9 @@ export function Projects() {
               <div className="project-card__top">
                 <div>
                   <h3>
-                    <Link to={`/projects/${project.id}`}>{project.name}</Link>
+                    <Link to={`/projects/${project.id}`} title={project.name}>
+                      {project.name}
+                    </Link>
                   </h3>
                   <p>
                     {project.part_count} parts – uploaded {formatDate(project.uploaded_at)}
@@ -70,7 +72,7 @@ export function Projects() {
               </div>
               <div className="metric-row">
                 <span className="metric-row__label">Owner</span>
-                <strong>{project.owner}</strong>
+                <strong title={project.owner}>{project.owner}</strong>
               </div>
             </Card>
           ))}
