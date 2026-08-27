@@ -131,7 +131,7 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
                   >
                     <DollarSign size={18} />
                     <span className="account-menu__item-main">
-                      <span>Default currency</span>
+                      <span>Default Currency:</span>
                       <span className="account-menu__item-meta">{currency}</span>
                     </span>
                     <ChevronLeft size={16} aria-hidden="true" />

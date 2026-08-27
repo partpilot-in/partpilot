@@ -283,7 +283,7 @@ a:hover {
   right: 0;
   z-index: 50;
   display: grid;
-  width: 208px;
+  width: 224px;
   overflow: visible;
   padding: 6px;
   border: 1px solid var(--border);
@@ -319,15 +319,17 @@ a:hover {
 }
 
 .account-menu__item-main {
-  display: grid;
+  display: flex;
   min-width: 0;
   flex: 1;
-  gap: 2px;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .account-menu__item-meta {
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: inherit;
 }
 
 .account-menu__submenu {
@@ -2524,7 +2526,7 @@ a.news-list__title:hover {
     position: fixed;
     top: calc(var(--topbar-safe-height) - 2px);
     right: max(8px, var(--safe-right));
-    width: min(208px, calc(100vw - max(8px, var(--safe-right)) - max(10px, var(--safe-left))));
+    width: min(224px, calc(100vw - max(8px, var(--safe-right)) - max(10px, var(--safe-left))));
   }
 
   .account-menu__item {
