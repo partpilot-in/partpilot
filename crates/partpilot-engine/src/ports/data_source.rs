@@ -24,6 +24,18 @@ pub trait DataSourceConnector: Send + Sync {
         Ok(None)
     }
 
+    /// Fetches a complete part record while preserving the source's original
+    /// product-number spelling. Connectors whose APIs are punctuation-sensitive
+    /// can override this; other connectors retain the normalized lookup behavior.
+    async fn fetch_part_by_query(
+        &self,
+        raw_mpn: &str,
+        manufacturer: &NormalizedManufacturer,
+    ) -> Result<Option<PartSnapshot>, ConnectorError> {
+        self.fetch_part(&crate::normalize::normalize_mpn(raw_mpn), manufacturer)
+            .await
+    }
+
     async fn fetch_status_batch(
         &self,
         parts: &[(NormalizedMpn, NormalizedManufacturer)],

@@ -2,11 +2,94 @@ use axum::{
     body::{Body, to_bytes},
     http::{Method, Request, StatusCode, header::CONTENT_TYPE},
 };
-use partpilot_server::router;
+use chrono::Utc;
+use partpilot_engine::{
+    Confidence, LifecycleStage, LifecycleStatus, NormalizedManufacturer, NormalizedMpn, Part,
+    PartId, PartSnapshot, SourceId,
+    ports::{ConnectorError, DataSourceConnector},
+};
+use partpilot_server::{router, router_with_state, state::AppState};
 use serde_json::{Value, json};
+use std::sync::Arc;
 use tower::ServiceExt;
+use uuid::Uuid;
 
 const PART_ID: &str = "8e4c1a20-1f3a-4b8e-9e2a-0a1b2c3d4e5f";
+
+struct FixtureDigikey;
+
+#[async_trait::async_trait]
+impl DataSourceConnector for FixtureDigikey {
+    fn source_id(&self) -> SourceId {
+        SourceId(1)
+    }
+
+    async fn fetch_status(
+        &self,
+        mpn: &NormalizedMpn,
+        manufacturer: &NormalizedManufacturer,
+    ) -> Result<Option<LifecycleStatus>, ConnectorError> {
+        Ok(self
+            .fetch_part(mpn, manufacturer)
+            .await?
+            .map(|snapshot| snapshot.lifecycle_status))
+    }
+
+    async fn fetch_part(
+        &self,
+        mpn: &NormalizedMpn,
+        _manufacturer: &NormalizedManufacturer,
+    ) -> Result<Option<PartSnapshot>, ConnectorError> {
+        if mpn.0 != "TPS7A49-Q1" {
+            return Ok(None);
+        }
+        let id = PartId(Uuid::from_u128(42));
+        Ok(Some(PartSnapshot {
+            part: Part {
+                id: id.clone(),
+                mpn: mpn.clone(),
+                manufacturer: NormalizedManufacturer("TEXAS INSTRUMENTS".to_owned()),
+                description: Some("Automotive high-voltage linear regulator".to_owned()),
+                category: Some("Integrated Circuits - Power Management".to_owned()),
+                component_metadata: json!({
+                    "identification": {
+                        "manufacturerPartNumber": "TPS7A49-Q1",
+                        "manufacturer": "Texas Instruments"
+                    },
+                    "electrical": {
+                        "voltageRating": {
+                            "value": "36V",
+                            "dataType": "REAL_MEASURE",
+                            "definition": "Voltage - Input (Max)",
+                            "source": "digikey"
+                        }
+                    },
+                    "thermal": {
+                        "operatingTemperatureRange": {
+                            "value": "-40°C ~ 125°C",
+                            "dataType": "RANGE",
+                            "definition": "Operating Temperature",
+                            "source": "digikey"
+                        }
+                    },
+                    "commercial": {
+                        "lifecycleStatus": "Active",
+                        "priceBreaks": [{ "quantity": 1, "unitPrice": 3.5, "currency": "USD" }]
+                    }
+                }),
+            },
+            lifecycle_status: LifecycleStatus {
+                part_id: id,
+                stage: LifecycleStage::Active,
+                source: SourceId(1),
+                reported_at: Utc::now(),
+                last_time_buy_date: None,
+                confidence: Confidence(0.9),
+                raw_payload_ref: Some("https://www.digikey.com/example".to_owned()),
+            },
+        }))
+    }
+}
 
 async fn send(method: Method, uri: &str, body: Option<Value>) -> (StatusCode, Value) {
     let app = router();
@@ -52,6 +135,45 @@ async fn public_and_legacy_routes_respond() {
         let (status, _) = send(method.clone(), &uri, None).await;
         assert_eq!(status, StatusCode::OK, "{method} {uri}");
     }
+}
+
+#[tokio::test]
+async fn part_search_enriches_a_miss_and_detail_returns_the_persisted_shape() {
+    let mut state = AppState::placeholder();
+    state.digikey = Some(Arc::new(FixtureDigikey));
+    let app = router_with_state(state);
+
+    let response = app
+        .clone()
+        .oneshot(empty_request(
+            Method::GET,
+            "/v1/parts/search?q=TPS7A49-Q1&manufacturer=Texas%20Instruments",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    let part = &body["data"][0];
+    assert_eq!(part["manufacturer"], "TEXAS INSTRUMENTS");
+    assert_eq!(
+        part["component_metadata"]["electrical"]["voltageRating"]["value"],
+        "36V"
+    );
+    let id = part["id"].as_str().expect("enriched part id");
+
+    let detail = app
+        .oneshot(empty_request(Method::GET, &format!("/v1/parts/{id}")))
+        .await
+        .unwrap();
+    assert_eq!(detail.status(), StatusCode::OK);
+    let detail: Value =
+        serde_json::from_slice(&to_bytes(detail.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(detail["mpn"], "TPS7A49-Q1");
+    assert_eq!(
+        detail["component_metadata"]["commercial"]["lifecycleStatus"],
+        "Active"
+    );
 }
 
 #[tokio::test]

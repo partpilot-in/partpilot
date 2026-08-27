@@ -19,13 +19,12 @@ pub(crate) fn matches_requested_part(
     let response_mpn = normalize_mpn(&product.manufacturer_product_number);
     let response_manufacturer =
         normalize_manufacturer(&product.manufacturer.name, &AliasTable::seed_default());
-    response_mpn == *mpn && response_manufacturer == *manufacturer
+    response_mpn == *mpn && (manufacturer.0.is_empty() || response_manufacturer == *manufacturer)
 }
 
 pub(crate) fn to_part_snapshot(
     details: &ProductDetailsResponse,
     mpn: &NormalizedMpn,
-    manufacturer: &NormalizedManufacturer,
     source_id: SourceId,
     fallback_currency: &str,
 ) -> PartSnapshot {
@@ -33,7 +32,9 @@ pub(crate) fn to_part_snapshot(
     let today = Utc::now().date_naive();
     let last_time_buy_date = product.date_last_buy_chance.map(|date| date.date_naive());
     let (stage, confidence) = lifecycle_stage(product, last_time_buy_date, today);
-    let stable_key = format!("{}:{}", manufacturer.0, mpn.0);
+    let response_manufacturer =
+        normalize_manufacturer(&product.manufacturer.name, &AliasTable::seed_default());
+    let stable_key = format!("{}:{}", response_manufacturer.0, mpn.0);
     let part_id = PartId(Uuid::new_v5(&Uuid::NAMESPACE_URL, stable_key.as_bytes()));
     let currency = details
         .search_locale_used
@@ -65,7 +66,7 @@ pub(crate) fn to_part_snapshot(
         part: Part {
             id: part_id,
             mpn: mpn.clone(),
-            manufacturer: manufacturer.clone(),
+            manufacturer: response_manufacturer,
             description,
             category,
             component_metadata: component_metadata(product, stage, last_time_buy_date, currency),
@@ -266,6 +267,33 @@ fn component_metadata(
         "logicFamily",
         parameter_value(product, &["Logic Type", "Logic Family"]),
     );
+    for (field, names) in [
+        ("voltageRating", &["Voltage - Rated", "Voltage Rating"][..]),
+        (
+            "currentRating",
+            &[
+                "Current Rating (Amps)",
+                "Current - Output (Max)",
+                "Current - Collector (Ic) (Max)",
+            ][..],
+        ),
+        ("powerRating", &["Power (Watts)", "Power - Max"][..]),
+        ("resistance", &["Resistance"][..]),
+        ("capacitance", &["Capacitance"][..]),
+        ("inductance", &["Inductance"][..]),
+        ("impedance", &["Impedance"][..]),
+        (
+            "frequencyRange",
+            &["Frequency", "Frequency - Operating", "Frequency Range"][..],
+        ),
+        ("tolerance", &["Tolerance"][..]),
+        ("temperatureCoefficient", &["Temperature Coefficient"][..]),
+        ("insulationResistance", &["Insulation Resistance"][..]),
+    ] {
+        if let Some(property) = parameter_cdd_property(product, names) {
+            electrical.insert(field.to_owned(), property);
+        }
+    }
 
     let mut mechanical = Map::new();
     insert_string(
@@ -275,6 +303,22 @@ fn component_metadata(
     );
     if let Some(mounting) = parameter_value(product, &["Mounting Type"]).map(mounting_type) {
         mechanical.insert("mountingType".to_owned(), json!(mounting));
+    }
+    insert_string(
+        &mut mechanical,
+        "terminationStyle",
+        parameter_value(product, &["Termination Style"]),
+    );
+    if let Some(height) = parameter_cdd_property(
+        product,
+        &["Height - Seated (Max)", "Height (Max)", "Height"],
+    ) {
+        mechanical.insert("dimensions".to_owned(), json!({ "height": height }));
+    }
+
+    let mut thermal = Map::new();
+    if let Some(property) = parameter_cdd_property(product, &["Operating Temperature"]) {
+        thermal.insert("operatingTemperatureRange".to_owned(), property);
     }
 
     let mut packaging = Map::new();
@@ -295,6 +339,7 @@ fn component_metadata(
     insert_section(&mut root, "identification", identification);
     insert_section(&mut root, "electrical", electrical);
     insert_section(&mut root, "mechanical", mechanical);
+    insert_section(&mut root, "thermal", thermal);
     insert_section(&mut root, "material", material);
     insert_section(&mut root, "environmental", environmental);
     insert_section(&mut root, "regulatory", regulatory);
@@ -425,6 +470,15 @@ fn parameter_value<'a>(product: &'a Product, names: &[&str]) -> Option<&'a str> 
             .any(|name| parameter.parameter_text.eq_ignore_ascii_case(name))
             .then(|| non_empty(Some(&parameter.value_text)))
             .flatten()
+    })
+}
+
+fn parameter_cdd_property(product: &Product, names: &[&str]) -> Option<Value> {
+    product.parameters.iter().find_map(|parameter| {
+        names
+            .iter()
+            .any(|name| parameter.parameter_text.eq_ignore_ascii_case(name))
+            .then(|| parameter_property(parameter))
     })
 }
 
@@ -586,7 +640,7 @@ fn insert_section(root: &mut Map<String, Value>, key: &str, section: Map<String,
 #[cfg(test)]
 mod tests {
     use chrono::{Duration, Utc};
-    use partpilot_engine::{LifecycleStage, NormalizedManufacturer, NormalizedMpn, SourceId};
+    use partpilot_engine::{LifecycleStage, NormalizedMpn, SourceId};
     use serde_json::json;
 
     use super::to_part_snapshot;
@@ -618,7 +672,6 @@ mod tests {
                 product,
             },
             &NormalizedMpn("LM358DR".to_owned()),
-            &NormalizedManufacturer("TEXAS INSTRUMENTS".to_owned()),
             SourceId(7),
             "USD",
         )
@@ -684,6 +737,21 @@ mod tests {
                 parameter_type: "String".to_owned(),
                 value_text: "SOIC-8".to_owned(),
             },
+            ParameterValue {
+                parameter_text: "Voltage - Rated".to_owned(),
+                parameter_type: "UnitOfMeasure".to_owned(),
+                value_text: "36 V".to_owned(),
+            },
+            ParameterValue {
+                parameter_text: "Operating Temperature".to_owned(),
+                parameter_type: "RangeUnitOfMeasure".to_owned(),
+                value_text: "-40°C ~ 125°C".to_owned(),
+            },
+            ParameterValue {
+                parameter_text: "Height - Seated (Max)".to_owned(),
+                parameter_type: "UnitOfMeasure".to_owned(),
+                value_text: "1.75 mm".to_owned(),
+            },
         ];
         product.classifications = Some(Classifications {
             rohs_status: Some("RoHS3 Compliant".to_owned()),
@@ -738,6 +806,18 @@ mod tests {
         assert_eq!(
             snapshot.part.component_metadata["electrical"]["pinCount"],
             8
+        );
+        assert_eq!(
+            snapshot.part.component_metadata["electrical"]["voltageRating"]["value"],
+            "36 V"
+        );
+        assert_eq!(
+            snapshot.part.component_metadata["thermal"]["operatingTemperatureRange"]["dataType"],
+            "RANGE"
+        );
+        assert_eq!(
+            snapshot.part.component_metadata["mechanical"]["dimensions"]["height"]["value"],
+            "1.75 mm"
         );
         assert_eq!(snapshot.part.id, snapshot.lifecycle_status.part_id);
     }

@@ -38,6 +38,24 @@ impl DigikeyConfig {
         Self::from_lookup(|name| std::env::var(name).ok())
     }
 
+    /// Returns `None` when DigiKey is entirely unconfigured, while rejecting
+    /// partial credential sets so a deployment cannot silently disable enrichment.
+    pub fn from_env_optional() -> Result<Option<Self>, ConnectorError> {
+        dotenvy::dotenv().ok();
+        let configured = [
+            "DIGIKEY_CLIENT_ID",
+            "DIGIKEY_CLIENT_SECRET",
+            "DIGIKEY_ACCOUNT_ID",
+        ]
+        .iter()
+        .any(|name| std::env::var(name).is_ok_and(|value| !value.trim().is_empty()));
+        if configured {
+            Self::from_env().map(Some)
+        } else {
+            Ok(None)
+        }
+    }
+
     fn from_lookup(mut lookup: impl FnMut(&str) -> Option<String>) -> Result<Self, ConnectorError> {
         let client_id = required(&mut lookup, "DIGIKEY_CLIENT_ID")?;
         let client_secret = required(&mut lookup, "DIGIKEY_CLIENT_SECRET")?;
@@ -117,7 +135,17 @@ impl DigikeyConnector {
         mpn: &NormalizedMpn,
         manufacturer: &NormalizedManufacturer,
     ) -> Result<Option<PartSnapshot>, ConnectorError> {
-        let details = match self.client.product_details(&mpn.0).await {
+        self.fetch_snapshot_by_product_number(&mpn.0, mpn, manufacturer)
+            .await
+    }
+
+    async fn fetch_snapshot_by_product_number(
+        &self,
+        product_number: &str,
+        mpn: &NormalizedMpn,
+        manufacturer: &NormalizedManufacturer,
+    ) -> Result<Option<PartSnapshot>, ConnectorError> {
+        let details = match self.client.product_details(product_number).await {
             Ok(details) => details,
             Err(ConnectorError::NotFound) => return Ok(None),
             Err(error) => return Err(error),
@@ -128,7 +156,6 @@ impl DigikeyConnector {
         Ok(Some(mapping::to_part_snapshot(
             &details,
             mpn,
-            manufacturer,
             self.source_id,
             &self.locale_currency,
         )))
@@ -158,6 +185,16 @@ impl DataSourceConnector for DigikeyConnector {
         manufacturer: &NormalizedManufacturer,
     ) -> Result<Option<PartSnapshot>, ConnectorError> {
         self.fetch_snapshot(mpn, manufacturer).await
+    }
+
+    async fn fetch_part_by_query(
+        &self,
+        raw_mpn: &str,
+        manufacturer: &NormalizedManufacturer,
+    ) -> Result<Option<PartSnapshot>, ConnectorError> {
+        let mpn = partpilot_engine::normalize::normalize_mpn(raw_mpn);
+        self.fetch_snapshot_by_product_number(raw_mpn, &mpn, manufacturer)
+            .await
     }
 }
 
@@ -190,8 +227,7 @@ mod tests {
         routing::{get, post},
     };
     use partpilot_engine::{
-        LifecycleStage, NormalizedManufacturer, NormalizedMpn, SourceId,
-        ports::data_source::DataSourceConnector,
+        LifecycleStage, NormalizedManufacturer, SourceId, ports::data_source::DataSourceConnector,
     };
     use serde_json::{Value, json};
 
@@ -225,7 +261,7 @@ mod tests {
         let app = Router::new()
             .route("/v1/oauth2/token", post(token_handler))
             .route(
-                "/products/v4/search/LM358DR/productdetails",
+                "/products/v4/search/LM1117-3.3/productdetails",
                 get(product_details_handler),
             )
             .with_state(token_requests.clone());
@@ -250,17 +286,16 @@ mod tests {
             request_timeout: Duration::from_secs(2),
         })
         .expect("valid connector");
-        let mpn = NormalizedMpn("LM358DR".to_owned());
         let manufacturer = NormalizedManufacturer("TEXAS INSTRUMENTS".to_owned());
 
         for _ in 0..2 {
-            let status = connector
-                .fetch_status(&mpn, &manufacturer)
+            let snapshot = connector
+                .fetch_part_by_query("LM1117-3.3", &manufacturer)
                 .await
                 .expect("successful request")
                 .expect("matching product");
-            assert_eq!(status.stage, LifecycleStage::Active);
-            assert_eq!(status.source, SourceId(7));
+            assert_eq!(snapshot.lifecycle_status.stage, LifecycleStage::Active);
+            assert_eq!(snapshot.lifecycle_status.source, SourceId(7));
         }
         assert_eq!(token_requests.load(Ordering::SeqCst), 1);
     }
@@ -301,7 +336,7 @@ mod tests {
         Ok(Json(json!({
             "Product": {
                 "Manufacturer": { "Id": 296, "Name": "Texas Instruments" },
-                "ManufacturerProductNumber": "LM358DR",
+                "ManufacturerProductNumber": "LM1117-3.3",
                 "ProductUrl": "https://www.digikey.com/example",
                 "ProductStatus": { "Id": 0, "Status": "Active" },
                 "Discontinued": false,

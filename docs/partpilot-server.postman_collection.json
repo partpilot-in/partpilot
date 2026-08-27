@@ -101,6 +101,60 @@
           }
         },
         {
+          "name": "Search and enrich from DigiKey",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Returns a populated part\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.data).to.be.an(\"array\").that.is.not.empty;",
+                  "  pm.expect(body.data[0].component_metadata).to.be.an(\"object\");",
+                  "  pm.collectionVariables.set(\"part_id\", body.data[0].id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Searches the PartPilot database first. On an exact catalog miss, a configured server fetches ProductDetails from DigiKey, normalizes and persists the result, then returns the populated API record. The test stores its id in {{part_id}} for the detail request.",
+            "url": {
+              "raw": "{{base_url}}/v1/parts/search?q=TPS7A49-Q1&manufacturer=Texas%20Instruments&limit=25",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "parts",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "TPS7A49-Q1",
+                  "description": "Use the original manufacturer part-number spelling; punctuation is preserved for DigiKey."
+                },
+                {
+                  "key": "manufacturer",
+                  "value": "Texas Instruments",
+                  "description": "Recommended to disambiguate manufacturer part numbers."
+                },
+                {
+                  "key": "limit",
+                  "value": "25"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Get part detail",
           "request": {
             "method": "GET",

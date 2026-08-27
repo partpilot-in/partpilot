@@ -9,6 +9,7 @@ pub struct Config {
     pub supabase_publishable_key: String,
     pub supabase_jwks_url: String,
     pub db_max_connections: u32,
+    pub digikey: Option<adapter_digikey::DigikeyConfig>,
 }
 
 impl Config {
@@ -51,6 +52,8 @@ impl Config {
             .ok()
             .and_then(|value| value.parse().ok())
             .unwrap_or(10);
+        let digikey = adapter_digikey::DigikeyConfig::from_env_optional()
+            .map_err(|error| anyhow::anyhow!(error))?;
 
         Ok(Self {
             host,
@@ -60,6 +63,7 @@ impl Config {
             supabase_publishable_key,
             supabase_jwks_url,
             db_max_connections,
+            digikey,
         })
     }
 

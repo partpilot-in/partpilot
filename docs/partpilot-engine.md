@@ -54,7 +54,7 @@ When adapters are added, the calling flow becomes:
 All of these calls remain in-process Rust function or trait-method calls. Only
 the adapter implementations perform network I/O.
 
-## Planned component metadata enrichment
+## Component metadata enrichment
 
 Parts now carry a `component_metadata` document shaped by
 [`component-cdd.schema.json`](component-cdd.schema.json). It contains the CDD
@@ -69,6 +69,10 @@ persistence cannot accidentally attach an observation to a different part.
 `PartRepository::upsert_snapshot` writes the catalog record before the
 lifecycle observation. Migration `0016_digikey_part_enrichment.sql` also
 provides `upsert_source_part_snapshot(...)` for an atomic SQL implementation.
+The public part search uses this operation on a database miss: it fetches the
+original MPN from DigiKey, persists the normalized snapshot, and repeats the
+same database query so `/v1/parts/search` and `/v1/parts/{id}` return one
+consistent API shape.
 
 `component_metadata` is canonical for component facts such as lifecycle,
 origin, compliance, package, electrical parameters, and reference pricing.
@@ -94,7 +98,7 @@ The complete planned pipeline and ownership boundaries are documented in
 | `ProductStatus`, `EndOfLife`, `Discontinued`, `DateLastBuyChance` | `lifecycle_statuses` and `commercial` metadata |
 | `UnitPrice`, variation pricing, locale currency | `commercial.priceBreaks` |
 | Variation SKU, stock, packaging, MOQ, and supplier | `commercial.distributors` and `packaging` |
-| `Parameters` | Lossless `electrical.additionalProperties`; common package, mounting, pin-count, dielectric, and logic values are also promoted to typed paths |
+| `Parameters` | Lossless `electrical.additionalProperties`; common ratings, passive values, package, dimensions, mounting, pin count, logic, and operating-temperature values are also promoted to typed CDD paths |
 | `Classifications` | `environmental`, `material`, and `regulatory` |
 | Product, datasheet, image, and video URLs | `documentation` |
 | Series, base product, and other names | `identification` and `commercial.alternateSources` |

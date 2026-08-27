@@ -1,5 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
+use adapter_digikey::DigikeyConnector;
+use partpilot_engine::ports::DataSourceConnector;
 use serde_json::json;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use tokio::sync::RwLock;
@@ -27,12 +29,14 @@ pub struct AppState {
     pub db: Option<PgPool>,
     pub auth: AuthVerifier,
     pub memory: Arc<RwLock<MemoryStore>>,
+    pub digikey: Option<Arc<dyn DataSourceConnector>>,
 }
 
 impl std::fmt::Debug for AppState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AppState")
             .field("database_configured", &self.db.is_some())
+            .field("digikey_configured", &self.digikey.is_some())
             .finish_non_exhaustive()
     }
 }
@@ -66,6 +70,7 @@ impl AppState {
                 parts: HashMap::from([(part_id, part)]),
                 ..MemoryStore::default()
             })),
+            digikey: None,
         }
     }
 
@@ -77,6 +82,14 @@ impl AppState {
 
         sqlx::query("select 1").execute(&db).await?;
 
+        let digikey = config
+            .digikey
+            .clone()
+            .map(DigikeyConnector::new)
+            .transpose()
+            .map_err(|error| anyhow::anyhow!(error))?
+            .map(|connector| Arc::new(connector) as Arc<dyn DataSourceConnector>);
+
         Ok(Self {
             db: Some(db),
             auth: AuthVerifier::supabase(
@@ -85,6 +98,7 @@ impl AppState {
                 config.supabase_publishable_key.clone(),
             ),
             memory: Arc::new(RwLock::new(MemoryStore::default())),
+            digikey,
         })
     }
 }

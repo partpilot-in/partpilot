@@ -1394,7 +1394,9 @@ dependencies = [
 name = "partpilot-server"
 version = "0.1.0"
 dependencies = [
+ "adapter-digikey",
  "anyhow",
+ "async-trait",
  "axum",
  "chrono",
  "csv",
