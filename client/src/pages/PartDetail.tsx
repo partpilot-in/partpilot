@@ -37,6 +37,11 @@ import { useImportantParts } from "../lib/useImportantParts";
 
 const recentSearchesStorageKey = "partpilot.recentPartSearches";
 
+const hiddenCharacteristicFields: Partial<Record<CddSectionKey, ReadonlySet<string>>> = {
+  electrical: new Set(["additionalProperties"]),
+  commercial: new Set(["priceBreaks", "distributors"]),
+};
+
 function removeRecentSearch(part: Part) {
   try {
     const raw = window.localStorage.getItem(recentSearchesStorageKey);
@@ -335,12 +340,14 @@ export function PartDetail() {
             aria-label={activeCharacteristicSection.title}
           >
             <dl className="property-list characteristics-list">
-              {fieldsForCddSection(activeCharacteristicSection, designatorCategory).map((field) => (
-                <Fragment key={field}>
-                  <dt>{cddFieldLabel(field)}</dt>
-                  <dd>{formatCddValue(cddValueAtPath(componentMetadata, activeCharacteristicSection.key, field))}</dd>
-                </Fragment>
-              ))}
+              {fieldsForCddSection(activeCharacteristicSection, designatorCategory)
+                .filter((field) => !hiddenCharacteristicFields[activeCharacteristicSection.key]?.has(field))
+                .map((field) => (
+                  <Fragment key={field}>
+                    <dt>{cddFieldLabel(field)}</dt>
+                    <dd>{formatCddValue(cddValueAtPath(componentMetadata, activeCharacteristicSection.key, field))}</dd>
+                  </Fragment>
+                ))}
             </dl>
           </div>
         </Card>
