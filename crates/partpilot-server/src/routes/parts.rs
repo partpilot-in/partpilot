@@ -53,7 +53,7 @@ async fn load_search_results(
 ) -> Result<Vec<PartDto>, AppError> {
     if let Some(db) = &state.db {
         let categories = csv_values(query.category.clone());
-        let manufacturers = csv_values(query.manufacturer.clone());
+        let manufacturers = manufacturer_values(query.manufacturer.clone());
         let lifecycles = csv_values(query.lifecycle.clone());
         Ok(sqlx::query_as::<_, PartDto>(
             r#"
@@ -92,7 +92,7 @@ async fn load_search_results(
         let query_text = query.q.to_lowercase();
         let normalized_query = normalize_mpn(&query.q).0.to_lowercase();
         let categories = csv_values(query.category.clone());
-        let manufacturers = csv_values(query.manufacturer.clone());
+        let manufacturers = manufacturer_values(query.manufacturer.clone());
         let lifecycles = csv_values(query.lifecycle.clone());
         let mut parts: Vec<_> = state
             .memory
@@ -240,6 +240,16 @@ fn contains_case_insensitive(values: &[String], candidate: &str) -> bool {
     values
         .iter()
         .any(|value| value.eq_ignore_ascii_case(candidate))
+}
+
+fn manufacturer_values(raw: Option<String>) -> Option<Vec<String>> {
+    let aliases = AliasTable::seed_default();
+    csv_values(raw).map(|values| {
+        values
+            .into_iter()
+            .map(|value| normalize_manufacturer(&value, &aliases).0)
+            .collect()
+    })
 }
 
 pub async fn detail(

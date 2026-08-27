@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { MoreVertical, Plus, Star } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
 import { useMyParts, useMyPartsMutations } from "../api/hooks/myParts";
-import { usePart, usePartAlternates, useProjectParts } from "../api/hooks/parts";
+import { usePart, usePartAlternates, usePartByMpn, useProjectParts } from "../api/hooks/parts";
 import {
   CDD_SECTION_DEFINITIONS,
   DESIGNATOR_CATEGORY_LABELS,
@@ -78,8 +78,16 @@ export function PartDetail() {
     [id, importantParts, manualParts, projectParts],
   );
   const { data: catalogPart, loading, error } = usePart(localPart ? undefined : id);
-  const part = localPart ?? catalogPart;
-  const { data: alternates, loading: altLoading } = usePartAlternates(localPart ? undefined : id);
+  const catalogPartForRoute = catalogPart?.id === id ? catalogPart : undefined;
+  const lookupPart = localPart ?? catalogPartForRoute;
+  const {
+    data: searchedPart,
+    loading: searchLoading,
+  } = usePartByMpn(lookupPart?.mpn, lookupPart?.manufacturer);
+  const part = searchedPart ?? lookupPart;
+  const { data: alternates, loading: altLoading } = usePartAlternates(
+    searchLoading ? undefined : part?.id,
+  );
   const { showToast } = useToast();
   const [actionsOpen, setActionsOpen] = useState(false);
   const [activeCharacteristicTab, setActiveCharacteristicTab] = useState<CddSectionKey>("electrical");
@@ -178,7 +186,10 @@ export function PartDetail() {
     }
   }
 
-  if (!localPart && (loading || projectsLoading || manualPartsLoading)) {
+  if (
+    (!localPart && (loading || projectsLoading || manualPartsLoading))
+    || (!!lookupPart && searchLoading)
+  ) {
     return <Spinner message="Loading part details..." />;
   }
 

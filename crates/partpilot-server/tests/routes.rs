@@ -147,7 +147,7 @@ async fn part_search_enriches_a_miss_and_detail_returns_the_persisted_shape() {
         .clone()
         .oneshot(empty_request(
             Method::GET,
-            "/v1/parts/search?q=TPS7A49-Q1&manufacturer=Texas%20Instruments",
+            "/v1/parts/search?q=TPS7A49-Q1&manufacturer=TI",
         ))
         .await
         .unwrap();

@@ -50,6 +50,43 @@ export function usePart(id: string | undefined) {
   );
 }
 
+function comparableMpn(value: string) {
+  return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+/**
+ * Resolve a part through `GET /v1/parts/search` using its MPN. This is kept
+ * separate from `usePart` because the search endpoint may enrich a catalog
+ * miss through a configured distributor adapter before returning the record.
+ */
+export function usePartByMpn(mpn: string | undefined, manufacturer?: string) {
+  const q = mpn?.trim() ?? "";
+  const manufacturerFilter = manufacturer?.trim() ?? "";
+  const requestKey = `${q}\n${manufacturerFilter}`;
+  const state = useAsync<{ requestKey: string; part: Part | undefined }>(
+    q
+      ? () => {
+        const params: Record<string, string> = { q, limit: "25" };
+        if (manufacturerFilter) params.manufacturer = manufacturerFilter;
+        return api.get("/v1/parts/search", { params }).then((res) => {
+          const expectedMpn = comparableMpn(q);
+          const part = itemsFromResponse<Part>(res.data).find(
+            (candidate) => comparableMpn(candidate.mpn) === expectedMpn,
+          );
+          return { requestKey, part };
+        });
+      }
+      : null,
+    [q, manufacturerFilter],
+  );
+
+  return {
+    ...state,
+    data: state.data?.requestKey === requestKey ? state.data.part : undefined,
+    loading: state.loading || (!!q && !state.error && state.data?.requestKey !== requestKey),
+  };
+}
+
 /**
  * Get alternates for a part via `GET /v1/parts/{id}/alternates`.
  */
