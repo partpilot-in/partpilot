@@ -9,6 +9,7 @@ import {
   DESIGNATOR_CATEGORY_LABELS,
   cddFieldLabel,
   cddValueAtPath,
+  complianceFromCharacteristics,
   lifecycleFromCharacteristics,
   fieldsForCddSection,
   formatCddValue,
@@ -20,6 +21,7 @@ import {
 import type { Part } from "../api/types";
 import {
   Card,
+  ComplianceBadge,
   DataTable,
   EmptyState,
   ErrorMessage,
@@ -165,15 +167,7 @@ export function PartDetail() {
 
   const columns: Column<Part>[] = [
     { key: "mpn", header: "MPN", sortable: true },
-    { key: "manufacturer", header: "Manufacturer", sortable: true },
-    { key: "category", header: "Category", sortable: true },
-    {
-      key: "lifecycle_stage",
-      header: "Lifecycle",
-      sortable: true,
-      sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
-      render: (row) => <LifecycleBadge stage={lifecycleFromCharacteristics(row.component_metadata)} />,
-    },
+    { key: "description", header: "Description", sortable: true },
     {
       key: "unit_price",
       header: "Price",
@@ -181,6 +175,22 @@ export function PartDetail() {
       numeric: true,
       sortValue: (row) => referencePriceFromCharacteristics(row.component_metadata),
       render: (row) => currencyFormatter.format(referencePriceFromCharacteristics(row.component_metadata)),
+    },
+    {
+      key: "compliance",
+      header: "Compliance",
+      sortable: true,
+      sortValue: (row) => complianceFromCharacteristics(row.component_metadata)
+        .map((item) => item.status)
+        .join(","),
+      render: (row) => <ComplianceBadge statuses={complianceFromCharacteristics(row.component_metadata)} />,
+    },
+    {
+      key: "lifecycle_stage",
+      header: "Lifecycle",
+      sortable: true,
+      sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
+      render: (row) => <LifecycleBadge stage={lifecycleFromCharacteristics(row.component_metadata)} />,
     },
     {
       key: "score",
