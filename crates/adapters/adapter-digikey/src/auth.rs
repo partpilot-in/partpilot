@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use partpilot_engine::ports::data_source::ConnectorError;
+use engine::ports::data_source::ConnectorError;
 use serde::Deserialize;
 use tokio::sync::Mutex;
 

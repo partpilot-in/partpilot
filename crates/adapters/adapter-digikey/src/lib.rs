@@ -7,7 +7,7 @@ mod mapping;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use partpilot_engine::{
+use engine::{
     LifecycleStatus, NormalizedManufacturer, NormalizedMpn, PartSnapshot, SourceId,
     ports::data_source::{ConnectorError, DataSourceConnector},
 };
@@ -192,7 +192,7 @@ impl DataSourceConnector for DigikeyConnector {
         raw_mpn: &str,
         manufacturer: &NormalizedManufacturer,
     ) -> Result<Option<PartSnapshot>, ConnectorError> {
-        let mpn = partpilot_engine::normalize::normalize_mpn(raw_mpn);
+        let mpn = engine::normalize::normalize_mpn(raw_mpn);
         self.fetch_snapshot_by_product_number(raw_mpn, &mpn, manufacturer)
             .await
     }
@@ -226,7 +226,7 @@ mod tests {
         http::{HeaderMap, StatusCode},
         routing::{get, post},
     };
-    use partpilot_engine::{
+    use engine::{
         LifecycleStage, NormalizedManufacturer, SourceId, ports::data_source::DataSourceConnector,
     };
     use serde_json::{Value, json};

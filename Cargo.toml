@@ -1,8 +1,9 @@
 [workspace]
 members = [
-    "crates/partpilot-engine",
-    "crates/partpilot-server",
+    "apps/feed",
+    "crates/engine",
     "crates/adapters/adapter-digikey",
-    "partpilot-feed",
+    "crates/server",
+    "tools/cli",
 ]
 resolver = "2"

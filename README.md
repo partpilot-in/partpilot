@@ -9,9 +9,9 @@ Electronic component obsolescence intelligence platform.
 ```mermaid
 graph TD
     Client["client<br/>(React / Vite)"]
-    Server["partpilot-server<br/>(axum API)"]
-    Engine["partpilot-engine<br/>(domain + ports)"]
-    Worker["partpilot-worker<br/>(ingestion sweep & enrichment)"]
+    Server["server<br/>(axum API)"]
+    Engine["engine<br/>(domain + ports)"]
+    Worker["worker<br/>(ingestion sweep & enrichment)"]
 
     subgraph Adapters["adapters"]
         DigiKey["adapter-digikey"]
@@ -22,7 +22,7 @@ graph TD
         CommunityPulse["adapter-community-pulse"]
     end
 
-    Cache["partpilot-cache<br/>(CachedConnector decorator)"]
+    Cache["cache<br/>(CachedConnector decorator)"]
 
     Supabase[("Supabase\n(Postgres/Auth/Storage)")]
     Redis[("Redis\n(adapter response cache)")]
@@ -50,7 +50,7 @@ graph TD
 
 The React frontend (Vite). Everything the user actually sees and clicks — Dashboard, Part Search, Projects/BOM tabs, all built from the shared DataTable, ScoreRing, and other reusable UI components.
 
-The client talks to partpilot-server over HTTP and directly to Supabase only for authentication and session management.
+The client talks to server over HTTP and directly to Supabase only for authentication and session management.
 
 It contains no business logic. Reconciliation, risk scoring, and BOM diffing all happen server-side; the client simply renders the results.
 
@@ -91,7 +91,7 @@ The outward-facing edges of the system — one crate per external integration:
 * adapter-notify
 * adapter-community-pulse
 
-Each adapter implements a trait defined in partpilot-engine such as:
+Each adapter implements a trait defined in engine such as:
 
 * DataSourceConnector
 * PartRepository
@@ -135,18 +135,18 @@ Credible sources this adapter draws from:
 * NXP Community
 * All About Circuits forums
 
-### Caching layer (`partpilot-cache`)
+### Caching layer (`cache`)
 
-`partpilot-server` and `partpilot-worker` both call out to the same rate-limited, sometimes-paid external APIs (DigiKey, Mouser, Octopart) — the worker on its daily sweep, the server synchronously in enrich mode when a user searches/uploads a BOM containing a part with no data yet. Without a shared cache, a burst of enrich-mode lookups for the same not-yet-seen part (e.g. several users uploading BOMs that share a part) each re-hit the paid API before the worker ever gets to it.
+`server` and `worker` both call out to the same rate-limited, sometimes-paid external APIs (DigiKey, Mouser, Octopart) — the worker on its daily sweep, the server synchronously in enrich mode when a user searches/uploads a BOM containing a part with no data yet. Without a shared cache, a burst of enrich-mode lookups for the same not-yet-seen part (e.g. several users uploading BOMs that share a part) each re-hit the paid API before the worker ever gets to it.
 
-`partpilot-cache` is a `CachedConnector<T: DataSourceConnector>` decorator — same shape as the existing `RateLimited<T>` wrapper — backed by Redis. It sits *inside* the rate limiter in the composition root (`RateLimited(CachedConnector(inner))`), so cache hits never consume rate-limit budget; only real misses do.
+`cache` is a `CachedConnector<T: DataSourceConnector>` decorator — same shape as the existing `RateLimited<T>` wrapper — backed by Redis. It sits *inside* the rate limiter in the composition root (`RateLimited(CachedConnector(inner))`), so cache hits never consume rate-limit budget; only real misses do.
 
 * **Why Redis, not another Postgres table**: the cached data is disposable (re-fetchable from source), wants TTL-based expiry rather than a cleanup job, and needs to be shared between two separate Railway services (server + worker) without adding read/write load to the Postgres instance that holds the actual source of truth.
 * **Key shape**: `adapter:{source_id}:{normalized_mpn}:{normalized_manufacturer}` → serialized raw connector response.
 * **TTL**: defaults to the sweep cadence (24h) — data can't be fresher than the next scheduled sweep anyway, so caching past that point costs nothing in staleness.
 * Client: `deadpool-redis` for pooling, added to both `AppState` (server) and the worker's composition root.
 
-### 3. partpilot-engine
+### 3. engine
 
 The brain of the system.
 
@@ -164,13 +164,13 @@ Responsibilities include:
   metadata extracted from datasheets (planned; the storage/API/UI contract is
   already present)
 
-partpilot-engine depends on nothing else in the workspace.
+engine depends on nothing else in the workspace.
 
 Everything else depends on it.
 
 If Postgres, DigiKey, Reddit, or any other external dependency changed, this crate would remain largely untouched — Community Pulse's ranking/synthesis logic lives here for the same reason reconciliation and risk scoring do: it's judgment the engine owns, while adapter-community-pulse just fetches the raw posts.
 
-### 4. partpilot-server
+### 4. server
 
 The API layer.
 
@@ -193,7 +193,7 @@ The server intentionally remains thin:
 
 Very little business logic lives here.
 
-### 5. partpilot-worker
+### 5. worker
 
 The background processing service.
 
@@ -216,6 +216,6 @@ It runs as an independent Railway service so that slow, rate-limited, or failure
 - [Client UI Specification](docs/partpilot-client-ui-spec.md)
 - [Component Protocols](docs/partpilot-component-protocols.md)
 - [Component Metadata and Datasheet Ingestion](docs/component-metadata-ingestion.md)
-- [PartPilot Engine](docs/partpilot-engine.md)
+- [PartPilot Engine](docs/engine.md)
 - [Feature Proposal](docs/partpilot-feature-proposal.md)
-- [Postman Collection](docs/partpilot-server.postman_collection.json)
+- [Postman Collection](docs/server.postman_collection.json)

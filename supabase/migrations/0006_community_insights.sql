@@ -1,6 +1,6 @@
 -- 0006_community_insights.sql
 -- Community Pulse: synthesized forum digest per part, with citations.
--- Populated by partpilot-worker's insight-sweep mode via the
+-- Populated by worker's insight-sweep mode via the
 -- community-pulse pipeline.
 -- Portability: pure vanilla Postgres. RLS policies below are public-read
 -- only (`using (true)`) — no auth.uid() or auth schema dependency.

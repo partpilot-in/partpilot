@@ -1,4 +1,4 @@
-# PartPilot API — `partpilot-server`
+# PartPilot API — `server`
 
 Base URL: `https://api.bestpartpilot.com` (production) · `http://localhost:8080` (local dev)
 

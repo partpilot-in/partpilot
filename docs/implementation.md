@@ -15,7 +15,7 @@ partpilot/
 │       └── deploy.yml              # Railway deploy trigger on main, per service
 │
 ├── crates/
-│   ├── partpilot-engine/
+│   ├── engine/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
@@ -36,7 +36,7 @@ partpilot/
 │   │       ├── match_alt.rs
 │   │       └── config.rs           # ReconcilePolicy, RiskWeights — tunable, loaded not hardcoded
 │   │
-│   ├── partpilot-server/
+│   ├── server/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── main.rs
@@ -53,7 +53,7 @@ partpilot/
 │   │           ├── kicad.rs
 │   │           └── health.rs
 │   │
-│   ├── partpilot-worker/
+│   ├── worker/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── main.rs
@@ -74,7 +74,7 @@ partpilot/
 │   │   └── adapter-notify/
 │   │       └── src/{lib.rs, email.rs, webhook.rs}
 │   │
-│   └── partpilot-cache/                # Redis-backed CachedConnector<T> decorator, shared by server + worker
+│   └── cache/                # Redis-backed CachedConnector<T> decorator, shared by server + worker
 │       ├── Cargo.toml
 │       └── src/{lib.rs, connector.rs, key.rs}
 │
@@ -116,9 +116,9 @@ partpilot/
 
 ---
 
-## 3. `partpilot-engine`
+## 3. `engine`
 
-Pure library crate. No `tokio` runtime requirement in the domain math itself (traits are async via `async-trait` since implementations need it, but `normalize`/`risk`/`reconcile` are plain sync functions). No `sqlx`, `axum`, or HTTP types appear anywhere in this crate — verify periodically with `cargo tree -i partpilot-engine` that no adapter shows up as a dependency of the engine.
+Pure library crate. No `tokio` runtime requirement in the domain math itself (traits are async via `async-trait` since implementations need it, but `normalize`/`risk`/`reconcile` are plain sync functions). No `sqlx`, `axum`, or HTTP types appear anywhere in this crate — verify periodically with `cargo tree -i engine` that no adapter shows up as a dependency of the engine.
 
 ### 3.1 `domain` — core types
 
@@ -315,7 +315,7 @@ pub enum NotifyError {
 }
 ```
 
-Every adapter crate depends on `partpilot-engine`; the engine never depends on an adapter. This is the enforcement point for the hexagonal boundary — CI can run `cargo tree -i partpilot-engine -p adapter-*` as a lint step and fail the build if it ever returns a non-empty result.
+Every adapter crate depends on `engine`; the engine never depends on an adapter. This is the enforcement point for the hexagonal boundary — CI can run `cargo tree -i engine -p adapter-*` as a lint step and fail the build if it ever returns a non-empty result.
 
 ### 3.3 `normalize`
 
@@ -545,7 +545,7 @@ impl<T: DataSourceConnector> DataSourceConnector for RateLimited<T> {
 
 Retry/backoff: wrap `ConnectorError::RateLimited` and `ConnectorError::Unavailable` in an exponential backoff (`backoff` crate or hand-rolled), capped at 3 attempts, surfaced to `source_health` on exhaustion rather than silently dropped.
 
-### 4.0 `partpilot-cache` — Redis-backed response cache
+### 4.0 `cache` — Redis-backed response cache
 
 Same decorator shape as `RateLimited<T>`, composed *outside* it (`RateLimited::new(CachedConnector::new(inner, redis))`) so a cache hit never consumes rate-limit budget — only real upstream calls do.
 
@@ -585,7 +585,7 @@ fn cache_key(source: SourceId, mpn: &NormalizedMpn, mfr: &NormalizedManufacturer
 }
 ```
 
-- **Why Redis over a Postgres cache table**: this data is disposable and re-fetchable, wants TTL expiry rather than a cleanup job, and must be shared between `partpilot-server` (synchronous enrich-mode lookups) and `partpilot-worker` (sweep) — two separate Railway services — without adding read/write load to the Postgres instance holding the actual source of truth.
+- **Why Redis over a Postgres cache table**: this data is disposable and re-fetchable, wants TTL expiry rather than a cleanup job, and must be shared between `server` (synchronous enrich-mode lookups) and `worker` (sweep) — two separate Railway services — without adding read/write load to the Postgres instance holding the actual source of truth.
 - Redis prevents the main failure mode this solves: several users uploading BOMs containing the same not-yet-seen part in quick succession, each triggering a separate paid/rate-limited call to the same upstream API before the worker's next sweep would have fetched it anyway.
 - A Redis outage should degrade to cache-miss-always (log + fall through to `inner`), never fail the request — the cache is a performance/cost optimization, not a correctness dependency.
 - TTL default of 24h matches the sweep cadence (§6.4): cached data can't be staler, in practice, than what the next scheduled sweep would produce.
@@ -646,7 +646,7 @@ impl PartRepository for PostgresRepository {
 
 ---
 
-## 5. `partpilot-server`
+## 5. `server`
 
 ### 5.1 Composition root
 
@@ -658,7 +658,7 @@ pub struct AppState {
     pub reconcile_policy: std::sync::Arc<ReconcilePolicy>,
     pub risk_weights: std::sync::Arc<RiskWeights>,
     pub db: sqlx::PgPool, // raw pool for server-specific queries (pagination, full-text search) outside the engine's port
-    pub redis: deadpool_redis::Pool, // shared with partpilot-worker; backs CachedConnector for enrich-mode lookups
+    pub redis: deadpool_redis::Pool, // shared with worker; backs CachedConnector for enrich-mode lookups
 }
 
 pub async fn build_state(config: &Config) -> anyhow::Result<AppState> {
@@ -789,7 +789,7 @@ Internal errors are logged with full detail via `tracing` but never leak interna
 
 ---
 
-## 6. `partpilot-worker`
+## 6. `worker`
 
 Single binary, two run modes selected by CLI arg or env var, each a distinct Railway service (or one service with mode chosen per Railway Cron schedule).
 
@@ -1044,14 +1044,14 @@ jobs:
       - run: cargo test --workspace
       - name: enforce engine has no adapter dependencies
         run: |
-          if cargo tree -i partpilot-engine -p 'adapter-*' 2>/dev/null | grep -q .; then
+          if cargo tree -i engine -p 'adapter-*' 2>/dev/null | grep -q .; then
             echo "engine crate must not be depended on by adapters in the wrong direction" && exit 1
           fi
 ```
 
 `.github/workflows/client-ci.yml` (path-filtered to `client/**`): `npm ci`, `npm run lint`, `npm run build`.
 
-`.github/workflows/deploy.yml`: on push to `main`, trigger Railway deploys for `partpilot-server` and `partpilot-worker` via Railway's GitHub integration (auto-deploy per service, scoped to its own root directory — no custom script needed beyond configuring each Railway service's source directory in the Railway dashboard).
+`.github/workflows/deploy.yml`: on push to `main`, trigger Railway deploys for `server` and `worker` via Railway's GitHub integration (auto-deploy per service, scoped to its own root directory — no custom script needed beyond configuring each Railway service's source directory in the Railway dashboard).
 
 ---
 
@@ -1059,13 +1059,13 @@ jobs:
 
 | Service | Source dir | Trigger | Key env vars |
 |---|---|---|---|
-| `partpilot-server` | `/` (bin: `partpilot-server`) | always-on, auto-deploy on push to `main` | `DATABASE_URL` or `SUPABASE_DB_URL` (pooled), plus `SUPABASE_JWKS_URL` or `SUPABASE_URL`; Railway's `PORT` is read automatically |
-| `partpilot-worker-sweep` | `/` (bin: `partpilot-worker --mode sweep`) | Railway Cron, daily 03:00 UTC | `DATABASE_URL` (direct), `REDIS_URL`, `DIGIKEY_CLIENT_ID/SECRET`, `MOUSER_API_KEY`, `OCTOPART_API_TOKEN`, `NOTIFY_API_KEY` |
+| `server` | `/` (bin: `server`) | always-on, auto-deploy on push to `main` | `DATABASE_URL` or `SUPABASE_DB_URL` (pooled), plus `SUPABASE_JWKS_URL` or `SUPABASE_URL`; Railway's `PORT` is read automatically |
+| `worker-sweep` | `/` (bin: `worker --mode sweep`) | Railway Cron, daily 03:00 UTC | `DATABASE_URL` (direct), `REDIS_URL`, `DIGIKEY_CLIENT_ID/SECRET`, `MOUSER_API_KEY`, `OCTOPART_API_TOKEN`, `NOTIFY_API_KEY` |
 | Redis | Railway Redis plugin | n/a | in-memory, no persistence needed — every key is re-derivable from adapter calls |
 | Supabase project | external | n/a | Postgres, Auth, Storage — not hosted on Railway |
 | Client | `client/` | Railway static service | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` (Railway service variables are read at build time; repository-root `.env` is the local fallback) |
 
-Both `partpilot-server` and `partpilot-worker-sweep` point `REDIS_URL` at the same Railway Redis instance — the cache is shared deliberately, not per-service, so a sweep-populated key is available to a same-day enrich-mode lookup and vice versa.
+Both `server` and `worker-sweep` point `REDIS_URL` at the same Railway Redis instance — the cache is shared deliberately, not per-service, so a sweep-populated key is available to a same-day enrich-mode lookup and vice versa.
 
 Use Supabase's pooled (pgbouncer) connection string for the server's many short-lived request-scoped connections, and the direct connection string for the worker's longer batch transactions to avoid pgbouncer's transaction-mode limitations with long-running writes.
 
@@ -1075,11 +1075,11 @@ Use Supabase's pooled (pgbouncer) connection string for the server's many short-
 
 | Layer | Approach |
 |---|---|
-| `partpilot-engine` | Pure unit tests, table-driven, no DB/network — this is where correctness matters most and is cheapest to verify |
+| `engine` | Pure unit tests, table-driven, no DB/network — this is where correctness matters most and is cheapest to verify |
 | Adapters | Contract tests against recorded fixtures (`wiremock` or checked-in JSON responses) rather than live API calls in CI; a small manual/scheduled smoke test against real APIs, separate from the main CI run |
-| `partpilot-cache` | Unit tests against a `redis-rs` test instance (Docker service in CI, same pattern as Postgres) covering: cache hit skips `inner`, miss falls through and populates, TTL expiry, and Redis-unavailable degrades to always-miss rather than erroring |
-| `partpilot-server` | Integration tests spinning up the router with a test Postgres (via `sqlx::test` or a Docker service in CI), hitting routes with `axum::body::Body` requests |
-| `partpilot-worker` | Unit tests on `sweep`/`enrich` logic with mock `DataSourceConnector`/`PartRepository` implementations (trivial thanks to the port traits) |
+| `cache` | Unit tests against a `redis-rs` test instance (Docker service in CI, same pattern as Postgres) covering: cache hit skips `inner`, miss falls through and populates, TTL expiry, and Redis-unavailable degrades to always-miss rather than erroring |
+| `server` | Integration tests spinning up the router with a test Postgres (via `sqlx::test` or a Docker service in CI), hitting routes with `axum::body::Body` requests |
+| `worker` | Unit tests on `sweep`/`enrich` logic with mock `DataSourceConnector`/`PartRepository` implementations (trivial thanks to the port traits) |
 | Client | Component tests for risk-band rendering logic; light end-to-end smoke test against a staging server |
 | KiCad plugin | Manual test matrix across KiCad versions before each PCM release; the plugin's logic is thin enough that automated testing has limited payoff relative to its Python/GUI surface |
 
@@ -1087,13 +1087,13 @@ Use Supabase's pooled (pgbouncer) connection string for the server's many short-
 
 ## 13. Build order
 
-1. `partpilot-engine`: domain types + `normalize` + `risk` — pure, fully unit-testable with no DB.
+1. `engine`: domain types + `normalize` + `risk` — pure, fully unit-testable with no DB.
 2. Supabase repository + schema (section 7); minimal axum server exposing just `GET /v1/parts/:id` against seeded data.
-3. `adapter-mouser` (simplest auth) + `partpilot-worker` sweep mode end-to-end for a handful of seeded parts.
+3. `adapter-mouser` (simplest auth) + `worker` sweep mode end-to-end for a handful of seeded parts.
 4. `reconcile` once ≥2 real sources disagree on a real part — tune the policy against real data rather than imagined cases.
 5. React client search + detail view against the now-working API.
 6. BOM upload + risk report.
 7. `adapter-digikey`, `adapter-octopart`, `adapter-pcn-parser` — expand source coverage.
-8. `partpilot-cache` — add once ≥2 adapters exist and either rate-limit pressure or duplicate-lookup cost is actually observed, not speculatively; wire in via the composition root, no changes needed to the adapter crates themselves.
+8. `cache` — add once ≥2 adapters exist and either rate-limit pressure or duplicate-lookup cost is actually observed, not speculatively; wire in via the composition root, no changes needed to the adapter crates themselves.
 9. `match_alt` + alternates UI.
 10. KiCad plugin — smallest surface area, depends on an API that should be stable by this point.

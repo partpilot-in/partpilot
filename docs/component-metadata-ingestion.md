@@ -69,7 +69,7 @@ The future enrichment path will be asynchronous and evidence-preserving:
 4. **Generate candidates.** Adapter output contains candidate facts with raw
    value, raw unit, source page/table, surrounding condition text, and extraction
    confidence. Adapters do not decide the final CDD field.
-5. **Normalize in the engine.** `partpilot-engine` maps candidates to the CDD
+5. **Normalize in the engine.** `engine` maps candidates to the CDD
    field applicable to the component category, normalizes units, preserves
    min/typ/max and tolerance, and writes the condition of application and source.
 6. **Validate.** The engine validates the document against
@@ -82,18 +82,18 @@ The future enrichment path will be asynchronous and evidence-preserving:
 8. **Persist atomically.** The worker writes the validated
    `component_metadata` document together with source hashes and enrichment
    timestamps. A document hash makes retries idempotent.
-9. **Serve unchanged.** `partpilot-server` reads and returns the stored document.
+9. **Serve unchanged.** `server` reads and returns the stored document.
    It does not scrape datasheets or reproduce extraction rules.
 
 ## Ownership boundaries
 
 - **Adapters** fetch documents and translate source-specific formats into
   evidence-bearing candidates.
-- **partpilot-worker** schedules enrichment, retries failures, and persists the
+- **worker** schedules enrichment, retries failures, and persists the
   accepted result.
-- **partpilot-engine** owns category applicability, semantic field mapping, unit
+- **engine** owns category applicability, semantic field mapping, unit
   normalization, validation, and reconciliation.
-- **partpilot-server** exposes the persisted contract and applies catalog/BOM
+- **server** exposes the persisted contract and applies catalog/BOM
   fallback rules.
 - **client** renders the schema and never invents metadata values.
 

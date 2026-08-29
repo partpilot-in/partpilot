@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "PartPilot API — partpilot-server",
+    "name": "PartPilot API — server",
     "description": "Component obsolescence intelligence API. Public read endpoints, Supabase-session BOM, Important-parts, and Settings endpoints, and an API-key endpoint for the KiCad plugin.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "b6f0b6d0-2a2a-4f0a-8a0e-partpilot0001"

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use partpilot_engine::ports::data_source::ConnectorError;
+use engine::ports::data_source::ConnectorError;
 use reqwest::{StatusCode, header::RETRY_AFTER};
 use serde::Deserialize;
 

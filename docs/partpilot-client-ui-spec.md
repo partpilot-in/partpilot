@@ -279,4 +279,4 @@ During UI-first development, back each hook with an MSW (Mock Service Worker) ha
 4. `ScoreRing`, `LifecycleBadge`, `ComplianceBadge` — the domain-specific visual vocabulary, still fixture-driven.
 5. Part Search page against MSW-mocked `/v1/parts/search`, then `PropertyCompareTable`.
 6. Projects/BOM pages against MSW-mocked BOM endpoints, including `FileDropzone` upload flow.
-7. Swap `USE_MOCKS` off, point at the real `partpilot-server` once the routes in section 5 exist.
+7. Swap `USE_MOCKS` off, point at the real `server` once the routes in section 5 exist.

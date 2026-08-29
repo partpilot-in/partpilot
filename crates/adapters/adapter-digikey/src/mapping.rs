@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use chrono::{NaiveDate, Utc};
-use partpilot_engine::{
+use engine::{
     Confidence, LifecycleStage, LifecycleStatus, NormalizedManufacturer, NormalizedMpn, Part,
     PartId, PartSnapshot, SourceId,
     normalize::{AliasTable, normalize_manufacturer, normalize_mpn},
@@ -640,7 +640,7 @@ fn insert_section(root: &mut Map<String, Value>, key: &str, section: Map<String,
 #[cfg(test)]
 mod tests {
     use chrono::{Duration, Utc};
-    use partpilot_engine::{LifecycleStage, NormalizedMpn, SourceId};
+    use engine::{LifecycleStage, NormalizedMpn, SourceId};
     use serde_json::json;
 
     use super::to_part_snapshot;
@@ -663,7 +663,7 @@ mod tests {
         }
     }
 
-    fn map(product: Product) -> partpilot_engine::PartSnapshot {
+    fn map(product: Product) -> engine::PartSnapshot {
         to_part_snapshot(
             &ProductDetailsResponse {
                 search_locale_used: Some(SearchLocale {

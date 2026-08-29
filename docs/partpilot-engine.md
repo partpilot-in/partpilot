@@ -1,9 +1,9 @@
 # PartPilot engine
 
-`partpilot-engine` owns PartPilot's domain rules: part-number normalization,
+`engine` owns PartPilot's domain rules: part-number normalization,
 lifecycle reconciliation, alternate matching, risk scoring, and conversion from
 risk to the public PartPilot rating. It is a Rust library, not a separate
-service. `partpilot-server` calls it directly in the same process, as described
+service. `server` calls it directly in the same process, as described
 in [partpilot-component-protocols.md](partpilot-component-protocols.md).
 
 ## Public input and output
@@ -34,7 +34,7 @@ the reconciled lifecycle and sourcing inputs required by `score_risk`. For a
 request that does not provide a score, it calls the engine directly:
 
 ```rust
-let score = partpilot_engine::base_rating();
+let score = engine::base_rating();
 ```
 
 `base_rating` uses the engine's baseline risk value of `0.28` and returns `72`.
