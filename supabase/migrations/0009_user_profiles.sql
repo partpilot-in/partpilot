@@ -1,7 +1,7 @@
 -- User-editable account profile data. Authentication credentials remain in
 -- auth.users; this table stores application-facing profile fields.
 
-create table user_profiles (
+create table if not exists user_profiles (
     user_id uuid primary key references auth.users(id) on delete cascade,
     email text not null,
     first_name text not null default '',
@@ -70,6 +70,7 @@ begin
 end;
 $$;
 
+drop trigger if exists create_profile_after_auth_user on auth.users;
 create trigger create_profile_after_auth_user
 after insert on auth.users
 for each row execute function public.create_user_profile();
@@ -87,6 +88,7 @@ begin
 end;
 $$;
 
+drop trigger if exists sync_profile_after_auth_email_change on auth.users;
 create trigger sync_profile_after_auth_email_change
 after update of email on auth.users
 for each row
@@ -95,7 +97,17 @@ execute function public.sync_user_profile_email();
 
 alter table user_profiles enable row level security;
 
-create policy "users manage own profile" on user_profiles
-    for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+do $$
+begin
+    if not exists (
+        select 1 from pg_policies
+        where schemaname = 'public'
+          and tablename = 'user_profiles'
+          and policyname = 'users manage own profile'
+    ) then
+        create policy "users manage own profile" on user_profiles
+            for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+    end if;
+end $$;
 
 grant select, insert, update on user_profiles to authenticated;

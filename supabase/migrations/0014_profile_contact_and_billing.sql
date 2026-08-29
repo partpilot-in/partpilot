@@ -3,11 +3,18 @@
 -- the Hobby plan.
 
 alter table user_profiles
-    add column phone text not null default '',
-    add column organization_slug text not null default 'personal',
-    add column github text not null default '',
-    add column billing_plan text not null default 'hobby'
-        check (billing_plan in ('hobby', 'startup', 'scale', 'enterprise'));
+    add column if not exists phone text not null default '',
+    add column if not exists organization_slug text not null default 'personal',
+    add column if not exists github text not null default '',
+    add column if not exists billing_plan text not null default 'hobby';
+
+do $$
+begin
+    if not exists (select 1 from pg_constraint where conname = 'user_profiles_billing_plan_check') then
+        alter table user_profiles add constraint user_profiles_billing_plan_check
+            check (billing_plan in ('hobby', 'startup', 'scale', 'enterprise'));
+    end if;
+end $$;
 
 update user_profiles as profile
 set
