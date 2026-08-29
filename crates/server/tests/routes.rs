@@ -8,8 +8,8 @@ use engine::{
     PartId, PartSnapshot, SourceId,
     ports::{ConnectorError, DataSourceConnector},
 };
-use server::{router, router_with_state, state::AppState};
 use serde_json::{Value, json};
+use server::{router, router_with_state, state::AppState};
 use std::sync::Arc;
 use tower::ServiceExt;
 use uuid::Uuid;
@@ -88,6 +88,20 @@ impl DataSourceConnector for FixtureDigikey {
                 raw_payload_ref: Some("https://www.digikey.com/example".to_owned()),
             },
         }))
+    }
+
+    async fn fetch_part_by_query(
+        &self,
+        raw_mpn: &str,
+        manufacturer: &NormalizedManufacturer,
+    ) -> Result<Option<PartSnapshot>, ConnectorError> {
+        let canonical_mpn = if raw_mpn == "TPS7A49-Q1-ALIAS" {
+            "TPS7A49-Q1"
+        } else {
+            raw_mpn
+        };
+        self.fetch_part(&NormalizedMpn(canonical_mpn.to_owned()), manufacturer)
+            .await
     }
 }
 
@@ -177,6 +191,57 @@ async fn part_search_enriches_a_miss_and_detail_returns_the_persisted_shape() {
 }
 
 #[tokio::test]
+async fn part_search_returns_an_adapter_result_when_the_query_is_an_alias() {
+    let mut state = AppState::placeholder();
+    state.digikey = Some(Arc::new(FixtureDigikey));
+    let app = router_with_state(state);
+
+    let response = app
+        .clone()
+        .oneshot(empty_request(
+            Method::GET,
+            "/v1/parts/search?q=TPS7A49-Q1-ALIAS",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    let part = &body["data"][0];
+    assert_eq!(part["mpn"], "TPS7A49-Q1");
+    let id = part["id"].as_str().expect("persisted adapter part id");
+
+    let detail = app
+        .oneshot(empty_request(Method::GET, &format!("/v1/parts/{id}")))
+        .await
+        .unwrap();
+    assert_eq!(detail.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn part_search_finds_an_alternate_number_already_stored_in_metadata() {
+    let state = AppState::placeholder();
+    {
+        let mut store = state.memory.write().await;
+        let part = store.parts.values_mut().next().expect("fixture part");
+        part.component_metadata["identification"] = json!({
+            "manufacturerPartNumber": "LM317T",
+            "alternatePartNumbers": ["5060-LM317T", "497-6063"]
+        });
+    }
+    let app = router_with_state(state);
+
+    let response = app
+        .oneshot(empty_request(Method::GET, "/v1/parts/search?q=497-6063"))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["data"][0]["mpn"], "LM317T");
+}
+
+#[tokio::test]
 async fn my_parts_support_full_crud() {
     let app = router();
     let create = json!({
@@ -258,10 +323,7 @@ async fn projects_support_full_crud() {
     let created: Value =
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     let id = created["id"].as_str().unwrap();
-    assert_eq!(
-        created["lines"][0]["score"],
-        engine::base_rating()
-    );
+    assert_eq!(created["lines"][0]["score"], engine::base_rating());
     assert_eq!(
         created["lines"][0]["component_metadata"]["commercial"]["lifecycleStatus"],
         "Active"

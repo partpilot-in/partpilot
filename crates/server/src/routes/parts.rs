@@ -39,12 +39,32 @@ pub async fn search(
     if data.is_empty()
         && let Some(snapshot) = fetch_digikey_on_miss(&state, &query).await?
     {
-        persist_snapshot(&state, &snapshot).await?;
+        let part_id = persist_snapshot(&state, &snapshot).await?;
         data = load_search_results(&state, &query).await?;
+        if data.is_empty()
+            && let Some(part) = load_part_by_id(&state, part_id).await?
+        {
+            data.push(part);
+        }
     }
     Ok(Json(
         json!({ "data": data, "next_cursor": null, "has_more": false }),
     ))
+}
+
+async fn load_part_by_id(state: &AppState, id: Uuid) -> Result<Option<PartDto>, AppError> {
+    if let Some(db) = &state.db {
+        Ok(sqlx::query_as::<_, PartDto>(
+            r#"
+            select id, mpn, manufacturer, description, category, score, component_metadata
+              from partpilot_part_api where id = $1"#,
+        )
+        .bind(id)
+        .fetch_optional(db)
+        .await?)
+    } else {
+        Ok(state.memory.read().await.parts.get(&id).cloned())
+    }
 }
 
 async fn load_search_results(
@@ -60,7 +80,18 @@ async fn load_search_results(
             select id, mpn, manufacturer, description, category, score, component_metadata
               from partpilot_part_api
              where ($1 = '' or mpn ilike '%' || $1 || '%' or mpn ilike '%' || $6 || '%'
-                    or description ilike '%' || $1 || '%')
+                    or description ilike '%' || $1 || '%'
+                    or exists (
+                        select 1
+                          from jsonb_array_elements_text(
+                              coalesce(
+                                  component_metadata #> '{identification,alternatePartNumbers}',
+                                  '[]'::jsonb
+                              )
+                          ) as alternate(value)
+                         where lower(alternate.value) = lower($1)
+                            or regexp_replace(upper(alternate.value), '[^A-Z0-9]', '', 'g') = $6
+                    ))
                and ($2::text[] is null or lower(category) = any(
                     array(select lower(value) from unnest($2) as value)
                ))
@@ -104,7 +135,11 @@ async fn load_search_results(
                 (query_text.is_empty()
                     || part.mpn.to_lowercase().contains(&query_text)
                     || part.mpn.to_lowercase().contains(&normalized_query)
-                    || part.description.to_lowercase().contains(&query_text))
+                    || part.description.to_lowercase().contains(&query_text)
+                    || metadata_alternate_part_numbers(&part.component_metadata).any(|alternate| {
+                        alternate.to_lowercase() == query_text
+                            || normalize_mpn(alternate).0.to_lowercase() == normalized_query
+                    }))
                     && categories
                         .as_ref()
                         .is_none_or(|values| contains_case_insensitive(values, &part.category))
@@ -121,6 +156,15 @@ async fn load_search_results(
         parts.truncate(query.limit.unwrap_or(25).clamp(1, 100) as usize);
         Ok(parts)
     }
+}
+
+fn metadata_alternate_part_numbers(metadata: &Value) -> impl Iterator<Item = &str> {
+    metadata
+        .pointer("/identification/alternatePartNumbers")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
 }
 
 async fn fetch_digikey_on_miss(
@@ -256,18 +300,7 @@ pub async fn detail(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<Value>, AppError> {
-    let part = if let Some(db) = &state.db {
-        sqlx::query_as::<_, PartDto>(
-            r#"
-            select id, mpn, manufacturer, description, category, score, component_metadata
-              from partpilot_part_api where id = $1"#,
-        )
-        .bind(id)
-        .fetch_optional(db)
-        .await?
-    } else {
-        state.memory.read().await.parts.get(&id).cloned()
-    };
+    let part = load_part_by_id(&state, id).await?;
     let part = part.ok_or_else(|| AppError::not_found("part not found"))?;
     Ok(Json(json!({
         "id": part.id, "mpn": part.mpn, "manufacturer": part.manufacturer,

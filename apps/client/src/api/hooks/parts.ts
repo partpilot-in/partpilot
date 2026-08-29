@@ -88,12 +88,54 @@ export function usePartByMpn(mpn: string | undefined, manufacturer?: string) {
 }
 
 /**
- * Get alternates for a part via `GET /v1/parts/{id}/alternates`.
+ * Resolve alternate MPNs through `GET /v1/parts/search?q={mpn}` so a
+ * configured public distributor adapter can populate parts absent from the
+ * PartPilot database. Alternate MPNs do not need database UUIDs.
  */
-export function usePartAlternates(id: string | undefined) {
+export function usePartAlternates(
+  alternatePartNumbers: string[] = [],
+  currentMpn = "",
+) {
+  const uniquePartNumbers = Array.from(
+    new Map(
+      alternatePartNumbers
+        .map((mpn) => mpn.trim())
+        .filter(Boolean)
+        .filter((mpn) => comparableMpn(mpn) !== comparableMpn(currentMpn))
+        .map((mpn) => [comparableMpn(mpn), mpn]),
+    ).values(),
+  );
+  const alternatePartNumbersKey = uniquePartNumbers.join("\n");
+
   return useAsync<Part[]>(
-    id ? () => api.get(`/v1/parts/${id}/alternates`).then((res) => itemsFromResponse<Part>(res.data, "alternates")) : null,
-    [id],
+    uniquePartNumbers.length
+      ? async () => {
+        const searchResults = await Promise.allSettled(
+          uniquePartNumbers.map((mpn) =>
+            api.get("/v1/parts/search", { params: { q: mpn } }).then((res) => {
+              const candidates = itemsFromResponse<Part>(res.data);
+              const expectedMpn = comparableMpn(mpn);
+              const resolvedPart = candidates.find(
+                (candidate) => comparableMpn(candidate.mpn) === expectedMpn,
+              ) ?? candidates[0];
+              return resolvedPart ? { ...resolvedPart, mpn } : undefined;
+            }),
+          ),
+        );
+        const alternates = searchResults.flatMap((result) =>
+          result.status === "fulfilled" && result.value ? [result.value] : []
+        );
+        const seen = new Set<string>();
+
+        return alternates.filter((candidate) => {
+          const key = comparableMpn(candidate.mpn) || candidate.id;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+      : null,
+    [currentMpn, alternatePartNumbersKey],
   );
 }
 

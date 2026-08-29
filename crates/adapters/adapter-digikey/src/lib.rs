@@ -155,7 +155,6 @@ impl DigikeyConnector {
         }
         Ok(Some(mapping::to_part_snapshot(
             &details,
-            mpn,
             self.source_id,
             &self.locale_currency,
         )))
@@ -264,6 +263,10 @@ mod tests {
                 "/products/v4/search/LM1117-3.3/productdetails",
                 get(product_details_handler),
             )
+            .route(
+                "/products/v4/search/5060-STM32F103C8T6/productdetails",
+                get(alias_product_details_handler),
+            )
             .with_state(token_requests.clone());
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
             .await
@@ -297,6 +300,19 @@ mod tests {
             assert_eq!(snapshot.lifecycle_status.stage, LifecycleStage::Active);
             assert_eq!(snapshot.lifecycle_status.source, SourceId(7));
         }
+        let alias_snapshot = connector
+            .fetch_part_by_query(
+                "5060-STM32F103C8T6",
+                &NormalizedManufacturer("STMICROELECTRONICS".to_owned()),
+            )
+            .await
+            .expect("successful alias request")
+            .expect("alias matches DigiKey OtherNames");
+        assert_eq!(alias_snapshot.part.mpn.0, "STM32F103C8T6");
+        assert_eq!(
+            alias_snapshot.part.component_metadata["identification"]["alternatePartNumbers"],
+            json!(["5060-STM32F103C8T6", "497-6063"])
+        );
         assert_eq!(token_requests.load(Ordering::SeqCst), 1);
     }
 
@@ -343,5 +359,19 @@ mod tests {
                 "EndOfLife": false
             }
         })))
+    }
+
+    async fn alias_product_details_handler() -> Json<Value> {
+        Json(json!({
+            "Product": {
+                "Manufacturer": { "Id": 497, "Name": "STMicroelectronics" },
+                "ManufacturerProductNumber": "STM32F103C8T6",
+                "ProductUrl": "https://www.digikey.com/example/stm32f103c8t6",
+                "ProductStatus": { "Id": 0, "Status": "Active" },
+                "OtherNames": ["5060-STM32F103C8T6", "497-6063"],
+                "Discontinued": false,
+                "EndOfLife": false
+            }
+        }))
     }
 }

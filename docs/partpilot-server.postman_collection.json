@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "PartPilot API — server",
-    "description": "Component obsolescence intelligence API. Public read endpoints, Supabase-session BOM, Important-parts, and Settings endpoints, and an API-key endpoint for the KiCad plugin.",
+    "description": "Component obsolescence intelligence API. Public read endpoints include database and adapter-backed part search, including alternate or alias MPN resolution. Supabase-session endpoints cover BOMs, Important Parts, and Settings; an API-key endpoint supports the KiCad plugin.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "b6f0b6d0-2a2a-4f0a-8a0e-partpilot0001"
   },
@@ -149,6 +149,53 @@
                 {
                   "key": "limit",
                   "value": "25"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search by alternate MPN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Returns the populated canonical part for an alternate MPN\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.data).to.be.an(\"array\").that.is.not.empty;",
+                  "  pm.expect(body.data[0].mpn).to.eql(\"STM32F103C8T6\");",
+                  "  pm.expect(body.data[0].id).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.data[0].component_metadata).to.be.an(\"object\");",
+                  "  pm.collectionVariables.set(\"part_id\", body.data[0].id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Resolves an alternate or alias product number through GET /v1/parts/search?q=<mpn>. If the database has no match, the configured public distributor adapter is queried. When the adapter resolves the alias to a different canonical MPN, the canonical record is persisted and returned with its populated metadata and database id.",
+            "url": {
+              "raw": "{{base_url}}/v1/parts/search?q=5060-STM32F103C8T6",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "parts",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "5060-STM32F103C8T6",
+                  "description": "Alternate or alias MPN; no part UUID is required."
                 }
               ]
             }

@@ -73,6 +73,7 @@ function AuthenticatedRoutes() {
         <Route path="/my-parts/compare" element={<PartCompare />} />
         <Route path="/search" element={<PartProcure />} />
         <Route path="/search/compare" element={<PartCompare />} />
+        <Route path="/parts/lookup" element={<PartDetail />} />
         <Route path="/parts/:id" element={<PartDetail />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/upload" element={<BomUpload />} />

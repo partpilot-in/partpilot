@@ -17,14 +17,22 @@ pub(crate) fn matches_requested_part(
     manufacturer: &NormalizedManufacturer,
 ) -> bool {
     let response_mpn = normalize_mpn(&product.manufacturer_product_number);
+    let matches_other_name = product
+        .other_names
+        .iter()
+        .any(|name| normalize_mpn(name) == *mpn);
+    let matches_product_variation = product
+        .product_variations
+        .iter()
+        .any(|variation| normalize_mpn(&variation.digi_key_product_number) == *mpn);
     let response_manufacturer =
         normalize_manufacturer(&product.manufacturer.name, &AliasTable::seed_default());
-    response_mpn == *mpn && (manufacturer.0.is_empty() || response_manufacturer == *manufacturer)
+    (response_mpn == *mpn || matches_other_name || matches_product_variation)
+        && (manufacturer.0.is_empty() || response_manufacturer == *manufacturer)
 }
 
 pub(crate) fn to_part_snapshot(
     details: &ProductDetailsResponse,
-    mpn: &NormalizedMpn,
     source_id: SourceId,
     fallback_currency: &str,
 ) -> PartSnapshot {
@@ -34,7 +42,8 @@ pub(crate) fn to_part_snapshot(
     let (stage, confidence) = lifecycle_stage(product, last_time_buy_date, today);
     let response_manufacturer =
         normalize_manufacturer(&product.manufacturer.name, &AliasTable::seed_default());
-    let stable_key = format!("{}:{}", response_manufacturer.0, mpn.0);
+    let canonical_mpn = normalize_mpn(&product.manufacturer_product_number);
+    let stable_key = format!("{}:{}", response_manufacturer.0, canonical_mpn.0);
     let part_id = PartId(Uuid::new_v5(&Uuid::NAMESPACE_URL, stable_key.as_bytes()));
     let currency = details
         .search_locale_used
@@ -65,7 +74,7 @@ pub(crate) fn to_part_snapshot(
     PartSnapshot {
         part: Part {
             id: part_id,
-            mpn: mpn.clone(),
+            mpn: canonical_mpn,
             manufacturer: response_manufacturer,
             description,
             category,
@@ -640,7 +649,7 @@ fn insert_section(root: &mut Map<String, Value>, key: &str, section: Map<String,
 #[cfg(test)]
 mod tests {
     use chrono::{Duration, Utc};
-    use engine::{LifecycleStage, NormalizedMpn, SourceId};
+    use engine::{LifecycleStage, SourceId};
     use serde_json::json;
 
     use super::to_part_snapshot;
@@ -671,7 +680,6 @@ mod tests {
                 }),
                 product,
             },
-            &NormalizedMpn("LM358DR".to_owned()),
             SourceId(7),
             "USD",
         )

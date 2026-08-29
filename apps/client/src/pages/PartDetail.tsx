@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { MoreVertical, Plus, Star } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
 import { useMyParts, useMyPartsMutations } from "../api/hooks/myParts";
@@ -33,14 +33,46 @@ import {
   type NoteTarget,
 } from "../components/ui";
 import { currencyFormatter } from "../lib/format";
+import { partLookupPath } from "../lib/partRoutes";
 import { useImportantParts } from "../lib/useImportantParts";
 
 const recentSearchesStorageKey = "partpilot.recentPartSearches";
 
 const hiddenCharacteristicFields: Partial<Record<CddSectionKey, ReadonlySet<string>>> = {
+  identification: new Set(["alternatePartNumbers"]),
   electrical: new Set(["additionalProperties"]),
-  commercial: new Set(["priceBreaks", "distributors"]),
+  commercial: new Set(["priceBreaks", "distributors", "obsolescenceRiskScore"]),
 };
+
+function alternatePartNumbersFrom(part: Part | undefined) {
+  const value = cddValueAtPath(
+    part?.component_metadata ?? {},
+    "identification",
+    "alternatePartNumbers",
+  );
+  if (!Array.isArray(value)) return [];
+  return value.filter((partNumber): partNumber is string => typeof partNumber === "string");
+}
+
+function recentSearchForId(id: string | undefined) {
+  if (!id) return undefined;
+  try {
+    const raw = window.localStorage.getItem(recentSearchesStorageKey);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return undefined;
+    return parsed.find(
+      (item): item is { id: string; mpn: string; manufacturer?: string } =>
+        item
+        && typeof item === "object"
+        && item.id === id
+        && typeof item.mpn === "string"
+        && (item.manufacturer === undefined || typeof item.manufacturer === "string"),
+    );
+  } catch {
+    return undefined;
+  }
+}
 
 function removeRecentSearch(part: Part) {
   try {
@@ -61,12 +93,14 @@ function removeRecentSearch(part: Part) {
 
 export function PartDetail() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { data: projects, loading: projectsLoading } = useProjects();
   const { data: manualParts, loading: manualPartsLoading, refetch: refetchMyParts } = useMyParts();
   const { createMyPart } = useMyPartsMutations();
   const projectParts = useProjectParts(projects);
   const { parts: importantParts, isImportant, toggleImportant } = useImportantParts();
+  const recentSearchPart = useMemo(() => recentSearchForId(id), [id]);
   const localPart = useMemo(
     () =>
       [
@@ -82,16 +116,26 @@ export function PartDetail() {
       ].find((row) => row.id === id),
     [id, importantParts, manualParts, projectParts],
   );
-  const { data: catalogPart, loading, error } = usePart(localPart ? undefined : id);
+  const requestedMpn = searchParams.get("mpn")?.trim() || recentSearchPart?.mpn;
+  const requestedManufacturer = searchParams.get("manufacturer")?.trim()
+    || recentSearchPart?.manufacturer;
+  const { data: catalogPart, loading, error } = usePart(
+    localPart || requestedMpn ? undefined : id,
+  );
   const catalogPartForRoute = catalogPart?.id === id ? catalogPart : undefined;
   const lookupPart = localPart ?? catalogPartForRoute;
+  const lookupMpn = lookupPart?.mpn ?? requestedMpn;
+  const lookupManufacturer = lookupPart?.manufacturer ?? requestedManufacturer;
   const {
     data: searchedPart,
     loading: searchLoading,
-  } = usePartByMpn(lookupPart?.mpn, lookupPart?.manufacturer);
+    error: searchError,
+  } = usePartByMpn(lookupMpn, lookupManufacturer);
   const part = searchedPart ?? lookupPart;
+  const alternatePartNumbers = alternatePartNumbersFrom(part);
   const { data: alternates, loading: altLoading } = usePartAlternates(
-    searchLoading ? undefined : part?.id,
+    searchLoading ? [] : alternatePartNumbers,
+    part?.mpn,
   );
   const { showToast } = useToast();
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -145,16 +189,6 @@ export function PartDetail() {
       numeric: true,
       render: (row) => <ScoreRing value={row.score} size="sm" />,
     },
-    {
-      key: "note",
-      header: "Note",
-      render: (row) => (
-        <PartNoteButton
-          part={{ id: row.id, label: row.mpn }}
-          onOpen={setNoteTarget}
-        />
-      ),
-    },
   ];
 
   function markImportant() {
@@ -193,13 +227,13 @@ export function PartDetail() {
 
   if (
     (!localPart && (loading || projectsLoading || manualPartsLoading))
-    || (!!lookupPart && searchLoading)
+    || (!!lookupMpn && searchLoading)
   ) {
     return <Spinner message="Loading part details..." />;
   }
 
-  if (!localPart && error) {
-    return <ErrorMessage message={error} />;
+  if (!part && (searchError || (!lookupMpn && error))) {
+    return <ErrorMessage message={searchError ?? error ?? "Could not load part details"} />;
   }
 
   if (!part) {
@@ -361,8 +395,8 @@ export function PartDetail() {
           <DataTable
             columns={columns}
             rows={alternates ?? []}
-            getRowId={(row) => row.id}
-            onRowClick={(row) => navigate(`/parts/${row.id}`)}
+            getRowId={(row) => `${row.manufacturer}:${row.mpn}`}
+            onRowClick={(row) => navigate(partLookupPath(row))}
           />
         )}
       </section>

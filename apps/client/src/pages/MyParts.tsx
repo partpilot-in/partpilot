@@ -30,6 +30,7 @@ import {
 } from "../components/ui";
 import { useImportantParts } from "../lib/useImportantParts";
 import { exportTableCsv, exportTableXlsx, type ExportCell } from "../lib/exportTable";
+import { partLookupPath } from "../lib/partRoutes";
 
 const recentSearchesStorageKey = "partpilot.recentPartSearches";
 const maxRecentSearches = 8;
@@ -64,7 +65,7 @@ interface MyPartRow extends ProjectPartRow {
 }
 
 interface RecentSearchPart {
-  id: string;
+  id?: string;
   mpn: string;
   manufacturer: string;
 }
@@ -89,7 +90,7 @@ function readRecentSearches(): RecentSearchPart[] {
         (item): item is RecentSearchPart =>
           item &&
           typeof item === "object" &&
-          typeof item.id === "string" &&
+          (item.id === undefined || typeof item.id === "string") &&
           typeof item.mpn === "string" &&
           typeof item.manufacturer === "string",
       )
@@ -258,7 +259,8 @@ export function MyParts() {
   useEffect(() => {
     setRecentSearches((current) => {
       const next = current.filter(
-        (part) => !myPartKeys.ids.has(part.id) && !myPartKeys.mpns.has(part.mpn.trim().toLowerCase()),
+        (part) => (!part.id || !myPartKeys.ids.has(part.id))
+          && !myPartKeys.mpns.has(part.mpn.trim().toLowerCase()),
       );
       if (next.length === current.length) return current;
       saveRecentSearches(next);
@@ -291,7 +293,7 @@ export function MyParts() {
         return next;
       });
     }
-    navigate(`/parts/${part.id}`);
+    navigate(partLookupPath(part));
   }
 
   function updateManualForm<K extends keyof ManualPartForm>(key: K, value: ManualPartForm[K]) {
@@ -474,7 +476,7 @@ export function MyParts() {
             ) : (
               (searchRows ?? []).map((part) => (
                 <button
-                  key={part.id}
+                  key={`${part.manufacturer}:${part.mpn}`}
                   type="button"
                   className="part-search__option"
                   role="option"
@@ -497,11 +499,11 @@ export function MyParts() {
         <div className="filter-strip" aria-label="Recently searched parts">
           {recentSearches.map((part) => (
             <FilterChip
-              key={part.id}
+              key={part.id ?? `${part.manufacturer}:${part.mpn}`}
               label={`${part.mpn} - ${part.manufacturer}`}
               active={activeQuery.toLowerCase() === part.mpn.toLowerCase()}
               showActiveIcon={false}
-              onToggle={() => navigate(`/parts/${part.id}`)}
+              onToggle={() => navigate(partLookupPath(part))}
             />
           ))}
         </div>
