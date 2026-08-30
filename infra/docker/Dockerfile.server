@@ -1,5 +1,5 @@
-# Multi-stage Dockerfile for partpilot-server
-FROM rust:latest as builder
+# Multi-stage Dockerfile for server
+FROM rust:latest AS builder
 
 RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 
@@ -10,7 +10,7 @@ COPY apps ./apps
 COPY crates ./crates
 COPY tools ./tools
 
-RUN cargo build --release --bin partpilot-server
+RUN cargo build --locked --release --bin server
 
 # Runtime Stage
 FROM debian:bookworm-slim
@@ -19,11 +19,11 @@ RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/
 
 WORKDIR /app
 
-COPY --from=builder /usr/src/partpilot/target/release/partpilot-server /app/partpilot-server
+COPY --from=builder /usr/src/partpilot/target/release/server /app/server
 
 ENV HOST=0.0.0.0
 ENV PORT=8080
 
 EXPOSE 8080
 
-CMD ["/app/partpilot-server"]
+CMD ["/app/server"]

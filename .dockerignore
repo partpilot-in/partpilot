@@ -1,0 +1,20 @@
+# Version-control and local tooling metadata
+.git
+.gitignore
+.agents
+.codex
+
+# Local configuration and secrets
+.env
+.env.*
+
+# Build outputs and dependencies
+target
+**/node_modules
+**/dist
+coverage
+
+# Logs and operating-system files
+logs
+*.log
+.DS_Store

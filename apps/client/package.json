@@ -1,5 +1,5 @@
 {
-  "name": "partpilot-client",
+  "name": "client",
   "version": "0.1.0",
   "private": true,
   "type": "module",

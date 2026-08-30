@@ -1,5 +1,5 @@
-# Multi-stage Dockerfile for partpilot-feed
-FROM rust:latest as builder
+# Multi-stage Dockerfile for feed
+FROM rust:latest AS builder
 
 RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 
@@ -10,7 +10,7 @@ COPY apps ./apps
 COPY crates ./crates
 COPY tools ./tools
 
-RUN cargo build --release --bin partpilot-feed
+RUN cargo build --locked --release --bin feed
 
 # Runtime Stage
 FROM debian:bookworm-slim
@@ -19,11 +19,11 @@ RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/
 
 WORKDIR /app
 
-COPY --from=builder /usr/src/partpilot/target/release/partpilot-feed /app/partpilot-feed
+COPY --from=builder /usr/src/partpilot/target/release/feed /app/feed
 
 ENV FEED_HOST=0.0.0.0
 ENV FEED_PORT=8090
 
 EXPOSE 8090
 
-CMD ["/app/partpilot-feed"]
+CMD ["/app/feed"]

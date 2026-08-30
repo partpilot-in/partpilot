@@ -1,3 +1,5 @@
+name: partpilot
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -11,7 +13,7 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
+      - ./postgres/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -34,9 +36,9 @@ services:
 
   server:
     build:
-      context: .
-      dockerfile: Dockerfile.server
-    container_name: partpilot-server
+      context: ..
+      dockerfile: infra/docker/Dockerfile.server
+    container_name: server
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -56,9 +58,9 @@ services:
 
   feed:
     build:
-      context: .
-      dockerfile: Dockerfile.feed
-    container_name: partpilot-feed
+      context: ..
+      dockerfile: infra/docker/Dockerfile.feed
+    container_name: feed
     restart: unless-stopped
     ports:
       - "8090:8090"
@@ -70,9 +72,9 @@ services:
 
   client:
     build:
-      context: .
-      dockerfile: Dockerfile.client
-    container_name: partpilot-client
+      context: ..
+      dockerfile: infra/docker/Dockerfile.client
+    container_name: client
     restart: unless-stopped
     ports:
       - "3000:80"

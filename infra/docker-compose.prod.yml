@@ -1,0 +1,95 @@
+name: partpilot
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: partpilot-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./postgres/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: partpilot-redis-prod
+    restart: always
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$REDIS_PASSWORD\" ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.server
+    container_name: server-prod
+    restart: always
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8080
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
+      REDIS_URL: ${REDIS_URL:?REDIS_URL must be set}
+      SUPABASE_URL: ${SUPABASE_URL:?SUPABASE_URL must be set}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:?SUPABASE_PUBLISHABLE_KEY must be set}
+      SUPABASE_JWKS_URL: ${SUPABASE_JWKS_URL:?SUPABASE_JWKS_URL must be set}
+      DIGIKEY_CLIENT_ID: ${DIGIKEY_CLIENT_ID:-}
+      DIGIKEY_CLIENT_SECRET: ${DIGIKEY_CLIENT_SECRET:-}
+      DIGIKEY_ACCOUNT_ID: ${DIGIKEY_ACCOUNT_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  feed:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.feed
+    container_name: feed-prod
+    restart: always
+    ports:
+      - "${FEED_PORT:-8090}:8090"
+    environment:
+      FEED_HOST: 0.0.0.0
+      FEED_PORT: 8090
+      FEED_CORS_ALLOWED_ORIGINS: ${FEED_CORS_ALLOWED_ORIGINS:?FEED_CORS_ALLOWED_ORIGINS must be set}
+      RSS_FEED_URLS: ${RSS_FEED_URLS:?RSS_FEED_URLS must be set}
+
+  client:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.client
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?VITE_API_BASE_URL must be set}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:?VITE_SUPABASE_URL must be set}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:?VITE_SUPABASE_PUBLISHABLE_KEY must be set}
+    container_name: client-prod
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:

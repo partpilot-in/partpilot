@@ -84,7 +84,7 @@ partpilot/
 │       ├── 0002_user_data_and_alternates.sql
 │       └── ...
 │
-├── client/                         # partpilot-client (Vite + React), own npm workspace
+├── client/                         # client (Vite + React), own npm workspace
 │   ├── package.json
 │   ├── vite.config.ts
 │   ├── src/
@@ -993,7 +993,7 @@ Migrations run via the Supabase CLI from files checked into `supabase/migrations
 
 ---
 
-## 8. `partpilot-client`
+## 8. `client`
 
 - **Auth**: Supabase JS client handles login/session/token refresh only. All part/BOM/Important-parts data goes through the axum API.
 - **API layer** (`src/api/client.ts`): thin `fetch` wrapper that reads the current Supabase session, attaches `Authorization: Bearer <access_token>`, and normalizes error responses into a typed `ApiError`.
