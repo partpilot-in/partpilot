@@ -5,7 +5,7 @@
 -- Portability: pure vanilla Postgres. RLS policies below are public-read
 -- only (`using (true)`) — no auth.uid() or auth schema dependency.
 
-create table community_insights (
+create table if not exists community_insights (
     part_id uuid primary key references parts(id) on delete cascade,
     summary text,
     sentiment text not null check (sentiment in ('positive','mixed','negative','insufficient')),
@@ -15,7 +15,7 @@ create table community_insights (
     generated_at timestamptz not null
 );
 
-create table community_insight_citations (
+create table if not exists community_insight_citations (
     id bigserial primary key,
     part_id uuid not null references community_insights(part_id) on delete cascade,
     source text not null,
@@ -24,10 +24,18 @@ create table community_insight_citations (
     posted_at timestamptz,
     engagement int
 );
-create index community_insight_citations_part_idx on community_insight_citations (part_id);
+create index if not exists community_insight_citations_part_idx on community_insight_citations (part_id);
 
 alter table community_insights enable row level security;
-create policy "public read community_insights" on community_insights for select using (true);
-
 alter table community_insight_citations enable row level security;
-create policy "public read community_insight_citations" on community_insight_citations for select using (true);
+
+do $$
+begin
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'community_insights' and policyname = 'public read community_insights') then
+        create policy "public read community_insights" on community_insights for select using (true);
+    end if;
+
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'community_insight_citations' and policyname = 'public read community_insight_citations') then
+        create policy "public read community_insight_citations" on community_insight_citations for select using (true);
+    end if;
+end $$;

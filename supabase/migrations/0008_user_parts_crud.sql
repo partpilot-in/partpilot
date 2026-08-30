@@ -1,6 +1,6 @@
 -- Server-backed manually managed inventory for the My Parts page.
 
-create table user_parts (
+create table if not exists user_parts (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
     mpn text not null,
@@ -19,12 +19,22 @@ create table user_parts (
     updated_at timestamptz not null default now()
 );
 
-create unique index user_parts_owner_mpn_manufacturer_key
+create unique index if not exists user_parts_owner_mpn_manufacturer_key
     on user_parts (user_id, lower(mpn), lower(manufacturer));
 
 alter table user_parts enable row level security;
 
-create policy "users manage own manually added parts" on user_parts
-    for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+do $$
+begin
+    if not exists (
+        select 1 from pg_policies
+        where schemaname = 'public'
+          and tablename = 'user_parts'
+          and policyname = 'users manage own manually added parts'
+    ) then
+        create policy "users manage own manually added parts" on user_parts
+            for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+    end if;
+end $$;
 
 grant select, insert, update, delete on user_parts to authenticated;

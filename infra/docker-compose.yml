@@ -1,0 +1,86 @@
+name: partpilot
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: partpilot-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: partpilot-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.server
+    container_name: server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8080
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
+      REDIS_URL: redis://redis:6379
+      SUPABASE_URL: http://localhost:8080
+      SUPABASE_PUBLISHABLE_KEY: dev_mock_publishable_key
+      SUPABASE_JWKS_URL: http://localhost:8080/auth/v1/.well-known/jwks.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  feed:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.feed
+    container_name: feed
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      FEED_HOST: 0.0.0.0
+      FEED_PORT: 8090
+      FEED_CORS_ALLOWED_ORIGINS: "*"
+      RSS_FEED_URLS: "https://www.tdk-electronics.tdk.com/en/service/156018/tech-library/articles/article/176158/asFeed/index.xml"
+
+  client:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.client
+    container_name: client
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+
+volumes:
+  postgres_data:
+  redis_data:

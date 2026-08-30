@@ -7,9 +7,9 @@
 -- migration runs unchanged on plain Postgres.
 
 alter table parts
-    add column country_of_origin text;
+    add column if not exists country_of_origin text;
 
-create table part_compliance (
+create table if not exists part_compliance (
     part_id uuid not null references parts(id) on delete cascade,
     standard text not null,           -- 'rohs', 'reach', 'conflict_minerals', ...
     status text not null check (status in ('pass','fail','unknown')),
@@ -17,4 +17,10 @@ create table part_compliance (
 );
 
 alter table part_compliance enable row level security;
-create policy "public read part_compliance" on part_compliance for select using (true);
+
+do $$
+begin
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'part_compliance' and policyname = 'public read part_compliance') then
+        create policy "public read part_compliance" on part_compliance for select using (true);
+    end if;
+end $$;

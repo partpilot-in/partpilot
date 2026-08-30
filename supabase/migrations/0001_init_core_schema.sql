@@ -5,13 +5,13 @@ create extension if not exists pg_trgm;
 create extension if not exists pgcrypto;
 create extension if not exists "uuid-ossp";
 
-create table sources (
+create table if not exists sources (
     id serial primary key,
     name text not null unique,        -- 'digikey', 'mouser', 'octopart', 'manufacturer_pcn'
     trust_weight real not null default 0.5
 );
 
-create table parts (
+create table if not exists parts (
     id uuid primary key default gen_random_uuid(),
     mpn text not null,
     manufacturer text not null,
@@ -21,11 +21,11 @@ create table parts (
     created_at timestamptz not null default now(),
     unique (mpn, manufacturer)
 );
-create index parts_mpn_trgm on parts using gin (mpn gin_trgm_ops);
-create index parts_description_trgm on parts using gin (description gin_trgm_ops);
-create index parts_category_idx on parts (category);
+create index if not exists parts_mpn_trgm on parts using gin (mpn gin_trgm_ops);
+create index if not exists parts_description_trgm on parts using gin (description gin_trgm_ops);
+create index if not exists parts_category_idx on parts (category);
 
-create table lifecycle_statuses (
+create table if not exists lifecycle_statuses (
     id bigserial primary key,
     part_id uuid not null references parts(id) on delete cascade,
     source_id int not null references sources(id),
@@ -35,5 +35,5 @@ create table lifecycle_statuses (
     reported_at timestamptz not null,
     raw_payload_ref text
 );
-create index lifecycle_part_idx on lifecycle_statuses (part_id, reported_at desc);
-create index lifecycle_source_idx on lifecycle_statuses (source_id, reported_at desc);
+create index if not exists lifecycle_part_idx on lifecycle_statuses (part_id, reported_at desc);
+create index if not exists lifecycle_source_idx on lifecycle_statuses (source_id, reported_at desc);

@@ -210,12 +210,14 @@ It runs as an independent Railway service so that slow, rate-limited, or failure
 
 ## Documentation
 
-- [Implementation Plan](docs/implementation.md)
-- [PostgreSQL](docs/PostgreSQL.md)
-- [API Documentation](docs/partpilot-api-doc.md)
-- [Client UI Specification](docs/partpilot-client-ui-spec.md)
-- [Component Protocols](docs/partpilot-component-protocols.md)
+- [API Documentation](docs/api-doc.md)
+- [Client UI Specification](docs/client-ui-spec.md)
+- [Component CDD Schema](docs/component-cdd.schema.json)
 - [Component Metadata and Datasheet Ingestion](docs/component-metadata-ingestion.md)
-- [PartPilot Engine](docs/engine.md)
-- [Feature Proposal](docs/partpilot-feature-proposal.md)
+- [Component Protocols](docs/component-protocols.md)
+- [Engine](docs/engine.md)
+- [Feature Proposal](docs/feature-proposal.md)
+- [Implementation Plan](docs/implementation.md)
+- [Local & Production Setup Guide](docs/local-and-prod-setup.md)
+- [PostgreSQL](docs/PostgreSQL.md)
 - [Postman Collection](docs/server.postman_collection.json)
