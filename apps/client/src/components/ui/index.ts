@@ -7,7 +7,7 @@ export { FileDropzone } from "./FileDropzone";
 export { FilterChip } from "./FilterChip";
 export { LifecycleBadge } from "./LifecycleBadge";
 export { Modal } from "./Modal";
-export { PartNoteButton, PartNoteModal } from "./PartNote";
+export { PartNoteButton, PartNoteEditor, PartNoteModal } from "./PartNote";
 export type { NoteTarget } from "./PartNote";
 export { PropertyCompareTable } from "./PropertyCompareTable";
 export { ScoreRing } from "./ScoreRing";

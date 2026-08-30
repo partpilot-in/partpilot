@@ -21,6 +21,10 @@ interface PartNoteModalProps {
   onClose: () => void;
 }
 
+interface PartNoteEditorProps {
+  part: NoteTarget;
+}
+
 function normalizeNote(payload: unknown, partId: string): PartNote {
   const value =
     payload && typeof payload === "object"
@@ -51,6 +55,114 @@ export function PartNoteButton({ part, onOpen }: PartNoteButtonProps) {
     >
       <NotebookPen size={17} />
     </button>
+  );
+}
+
+export function PartNoteEditor({ part }: PartNoteEditorProps) {
+  const { showToast } = useToast();
+  const [note, setNote] = useState("");
+  const [partpilotPoints, setPartpilotPoints] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    let active = true;
+    setNote("");
+    setPartpilotPoints([]);
+    setError(undefined);
+    setLoading(true);
+
+    api
+      .get(`/v1/part-notes/${part.id}`)
+      .then((response) => {
+        if (!active) return;
+        const value = normalizeNote(response.data, part.id);
+        setNote(value.note);
+        setPartpilotPoints(value.partpilot_points);
+      })
+      .catch((loadError) => {
+        if (!active) return;
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Could not load this note.",
+        );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [part.id]);
+
+  async function saveNote(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setError(undefined);
+    try {
+      const response = await api.patch(`/v1/part-notes/${part.id}`, { note });
+      const saved = normalizeNote(response.data, part.id);
+      setNote(saved.note);
+      setPartpilotPoints(saved.partpilot_points);
+      showToast({ title: "Note saved", body: part.label, tone: "success" });
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Could not save this note.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <Spinner message="Loading note..." />;
+
+  return (
+    <form className="part-note-form" onSubmit={saveNote}>
+      {error && <ErrorMessage message={error} />}
+      <label className="field-label">
+        <textarea
+          className="form-control form-control--textarea part-note-form__textarea"
+          aria-label="Your note"
+          value={note}
+          maxLength={20_000}
+          placeholder="Add sourcing context, review reminders, or decisions about this part..."
+          onChange={(event) => setNote(event.target.value)}
+          disabled={saving}
+        />
+      </label>
+      <span className="part-note-form__count">
+        {note.length.toLocaleString()} / 20,000
+      </span>
+
+      {partpilotPoints.length > 0 && (
+        <section
+          className="part-note-form__insights"
+          aria-labelledby="part-note-card-insights-title"
+        >
+          <h3 id="part-note-card-insights-title">PartPilot points</h3>
+          <ul>
+            {partpilotPoints.map((point, index) => (
+              <li key={`${point}-${index}`}>{point}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <div className="part-note-form__actions">
+        <button
+          type="submit"
+          className="button button--primary"
+          disabled={saving}
+        >
+          {saving ? "Saving..." : "Save note"}
+        </button>
+      </div>
+    </form>
   );
 }
 

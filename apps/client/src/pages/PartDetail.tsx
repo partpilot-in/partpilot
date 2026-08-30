@@ -11,6 +11,10 @@ import {
   BookOpen,
   Box,
   Bug,
+  ChevronDown,
+  ChevronRight,
+  ChevronsDown,
+  ChevronsUp,
   CircuitBoard,
   ClipboardList,
   Cpu,
@@ -40,7 +44,6 @@ import {
   lifecycleFromCharacteristics,
   fieldsForCddSection,
   formatCddValue,
-  overviewCharacteristicFields,
   referencePriceFromCharacteristics,
   resolveDesignatorCategory,
   type CddSectionKey,
@@ -53,13 +56,11 @@ import {
   EmptyState,
   ErrorMessage,
   LifecycleBadge,
-  PartNoteButton,
-  PartNoteModal,
+  PartNoteEditor,
   ScoreRing,
   Spinner,
   useToast,
   type Column,
-  type NoteTarget,
 } from "../components/ui";
 import { currencyFormatter } from "../lib/format";
 import { partLookupPath } from "../lib/partRoutes";
@@ -80,8 +81,12 @@ const hiddenCharacteristicFields: Partial<
   ]),
 };
 
+const identificationSection = CDD_SECTION_DEFINITIONS.find(
+  (section) => section.key === "identification",
+);
 const characteristicSections = CDD_SECTION_DEFINITIONS.filter(
-  (section) => section.key !== "documentation",
+  (section) =>
+    section.key !== "identification" && section.key !== "documentation",
 );
 
 const documentationFields = [
@@ -143,7 +148,7 @@ function ResourceGrid({
           const content = (
             <>
               <span className="resource-tile__icon">
-                <Icon size={26} aria-hidden="true" />
+                <Icon size={24} aria-hidden="true" />
               </span>
               <span className="resource-tile__label">{numberedLabel}</span>
             </>
@@ -288,10 +293,13 @@ export function PartDetail() {
   );
   const { showToast } = useToast();
   const [actionsOpen, setActionsOpen] = useState(false);
-  const [activeCharacteristicTab, setActiveCharacteristicTab] =
-    useState<CddSectionKey>("electrical");
-  const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
+  const [expandedCharacteristicSections, setExpandedCharacteristicSections] =
+    useState<Set<CddSectionKey> | null>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setExpandedCharacteristicSections(null);
+  }, [part?.id]);
 
   useEffect(() => {
     function closeActionsMenu(event: MouseEvent) {
@@ -450,23 +458,46 @@ export function PartDetail() {
     ...documentationMetadata,
     ...edaModelsMetadata,
   };
-  const activeCharacteristicSection =
-    characteristicSections.find(
-      (section) => section.key === activeCharacteristicTab,
-    ) ?? characteristicSections[0];
-  const overviewFields = overviewCharacteristicFields(designatorCategory);
+  const characteristicSectionData = characteristicSections.map((section) => {
+    const fields = fieldsForCddSection(section, designatorCategory)
+      .filter((field) => !hiddenCharacteristicFields[section.key]?.has(field))
+      .map((field) => ({
+        field,
+        value: cddValueAtPath(componentMetadata, section.key, field),
+      }))
+      .filter(({ value }) => formatCddValue(value) !== "—");
+    return { section, fields };
+  });
+  const populatedCharacteristicSectionKeys = characteristicSectionData
+    .filter(({ fields }) => fields.length > 0)
+    .map(({ section }) => section.key);
+  const defaultExpandedCharacteristicSections = new Set(
+    populatedCharacteristicSectionKeys,
+  );
+  const visibleCharacteristicSections =
+    expandedCharacteristicSections ?? defaultExpandedCharacteristicSections;
+  const allCharacteristicSectionsExpanded =
+    populatedCharacteristicSectionKeys.length > 0 &&
+    populatedCharacteristicSectionKeys.every((sectionKey) =>
+      visibleCharacteristicSections.has(sectionKey),
+    );
+  const overviewFields = identificationSection
+    ? fieldsForCddSection(identificationSection, designatorCategory)
+        .filter(
+          (field) => !hiddenCharacteristicFields.identification?.has(field),
+        )
+        .map((field) => ({
+          field,
+          value: cddValueAtPath(componentMetadata, "identification", field),
+        }))
+        .filter(({ value }) => formatCddValue(value) !== "—")
+    : [];
 
   return (
     <div className="stack">
       <div className="page-header detail-page-header">
         <div className="detail-page-heading">
-          <div className="project-title-row">
-            <h1 className="page-title">{part.mpn}</h1>
-            <PartNoteButton
-              part={{ id: part.id, label: part.mpn }}
-              onOpen={setNoteTarget}
-            />
-          </div>
+          <h1 className="page-title">{part.mpn}</h1>
           <p className="page-subtitle">
             {part.manufacturer} – {part.description}
           </p>
@@ -529,24 +560,21 @@ export function PartDetail() {
           </div>
         </Card>
         <Card title="Overview" className="overview-card">
-          <dl className="property-list overview-list">
-            {overviewFields.map(({ section, field }) => {
-              const value = cddValueAtPath(componentMetadata, section, field);
-              return (
-                <Fragment key={`${section}.${field}`}>
-                  <dt>{cddFieldLabel(field)}</dt>
-                  <dd>
-                    {section === "commercial" && field === "lifecycleStatus" ? (
-                      <LifecycleBadge
-                        stage={lifecycleFromCharacteristics(componentMetadata)}
-                      />
-                    ) : (
-                      formatCddValue(value)
-                    )}
-                  </dd>
-                </Fragment>
-              );
-            })}
+          <dl className="overview-list">
+            {overviewFields.map(({ field, value }) => (
+              <div
+                className={[
+                  "overview-stat",
+                  field === "description" && "overview-stat--wide",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                key={field}
+              >
+                <dt>{cddFieldLabel(field)}</dt>
+                <dd>{formatCddValue(value)}</dd>
+              </div>
+            ))}
           </dl>
         </Card>
         <Card title="Documentation" className="documentation-card">
@@ -559,72 +587,114 @@ export function PartDetail() {
           title="Characteristics"
           className="characteristics-card"
           action={
-            designatorCategory && (
-              <span className="component-category-label">
-                {designatorCategory} ·{" "}
-                {DESIGNATOR_CATEGORY_LABELS[designatorCategory]}
-              </span>
-            )
+            <div className="characteristics-card__actions">
+              {designatorCategory && (
+                <span className="component-category-label">
+                  {designatorCategory} ·{" "}
+                  {DESIGNATOR_CATEGORY_LABELS[designatorCategory]}
+                </span>
+              )}
+              <button
+                type="button"
+                className="characteristics-expand-toggle"
+                onClick={() =>
+                  setExpandedCharacteristicSections(
+                    allCharacteristicSectionsExpanded
+                      ? new Set<CddSectionKey>()
+                      : new Set(populatedCharacteristicSectionKeys),
+                  )
+                }
+              >
+                {allCharacteristicSectionsExpanded ? (
+                  <ChevronsUp size={16} aria-hidden="true" />
+                ) : (
+                  <ChevronsDown size={16} aria-hidden="true" />
+                )}
+                <span>
+                  {allCharacteristicSectionsExpanded
+                    ? "Collapse all"
+                    : "Expand all"}
+                </span>
+              </button>
+            </div>
           }
         >
-          <div
-            className="characteristics-tabs"
-            role="tablist"
-            aria-label="Characteristic sections"
-          >
-            {characteristicSections.map((section) => (
-              <button
-                key={section.key}
-                type="button"
-                className={[
-                  "characteristics-tab",
-                  section.key === activeCharacteristicTab &&
-                    "characteristics-tab--active",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                role="tab"
-                aria-selected={section.key === activeCharacteristicTab}
-                aria-controls="characteristics-panel"
-                onClick={() => setActiveCharacteristicTab(section.key)}
-              >
-                {section.title}
-              </button>
-            ))}
-          </div>
-          <div
-            className="characteristics-panel"
-            id="characteristics-panel"
-            role="tabpanel"
-            aria-label={activeCharacteristicSection.title}
-          >
-            <dl className="property-list characteristics-list">
-              {fieldsForCddSection(
-                activeCharacteristicSection,
-                designatorCategory,
-              )
-                .filter(
-                  (field) =>
-                    !hiddenCharacteristicFields[
-                      activeCharacteristicSection.key
-                    ]?.has(field),
-                )
-                .map((field) => (
-                  <Fragment key={field}>
-                    <dt>{cddFieldLabel(field)}</dt>
-                    <dd>
-                      {formatCddValue(
-                        cddValueAtPath(
-                          componentMetadata,
-                          activeCharacteristicSection.key,
-                          field,
-                        ),
+          <div className="characteristics-sections">
+            {characteristicSectionData.map(({ section, fields }) => {
+              const expanded = visibleCharacteristicSections.has(section.key);
+              const hasData = fields.length > 0;
+              const panelId = `characteristics-${section.key}-panel`;
+              return (
+                <section
+                  className={[
+                    "characteristics-section",
+                    !hasData && "characteristics-section--empty",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  key={section.key}
+                >
+                  <button
+                    type="button"
+                    className="characteristics-section__toggle"
+                    aria-expanded={expanded}
+                    aria-controls={panelId}
+                    onClick={() =>
+                      setExpandedCharacteristicSections((current) => {
+                        const visible =
+                          current ?? defaultExpandedCharacteristicSections;
+                        return visible.size === 1 && visible.has(section.key)
+                          ? new Set<CddSectionKey>()
+                          : new Set<CddSectionKey>([section.key]);
+                      })
+                    }
+                  >
+                    {expanded ? (
+                      <ChevronDown size={18} aria-hidden="true" />
+                    ) : (
+                      <ChevronRight size={18} aria-hidden="true" />
+                    )}
+                    <span className="characteristics-section__title">
+                      {section.title}
+                    </span>
+                    {hasData ? (
+                      <span className="characteristics-section__count">
+                        {fields.length}
+                      </span>
+                    ) : (
+                      <span className="characteristics-section__no-data">
+                        No data (0)
+                      </span>
+                    )}
+                  </button>
+                  {expanded && (
+                    <div
+                      className="characteristics-section__panel"
+                      id={panelId}
+                    >
+                      {hasData ? (
+                        <dl className="characteristics-list">
+                          {fields.map(({ field, value }) => (
+                            <div className="characteristic-stat" key={field}>
+                              <dt>{cddFieldLabel(field)}</dt>
+                              <dd>{formatCddValue(value)}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      ) : (
+                        <p className="characteristics-section__empty-message">
+                          No populated characteristics in this section.
+                        </p>
                       )}
-                    </dd>
-                  </Fragment>
-                ))}
-            </dl>
+                    </div>
+                  )}
+                </section>
+              );
+            })}
           </div>
+        </Card>
+        <Card title="Notes" className="part-note-card">
+          <PartNoteEditor part={{ id: part.id, label: part.mpn }} />
         </Card>
       </section>
 
@@ -641,8 +711,6 @@ export function PartDetail() {
           />
         )}
       </section>
-
-      <PartNoteModal part={noteTarget} onClose={() => setNoteTarget(null)} />
     </div>
   );
 }
