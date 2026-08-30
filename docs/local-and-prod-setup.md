@@ -42,7 +42,7 @@ If you prefer to work on Rust/React code with instant hot-reloading:
 
 ### Prerequisites
 * **Rust 1.85+**: `rustup toolchain install stable`
-* **Node.js 20+**: `npm install -g npm`
+* **Node.js 20.19+** and **pnpm 11**
 * **PostgreSQL** or **Supabase CLI**
 * **Redis**
 
@@ -76,9 +76,8 @@ The feed server will listen on `http://127.0.0.1:8090`.
 ### 4. Run Frontend Client (`apps/client`)
 
 ```bash
-cd apps/client
-npm install
-npm run dev
+pnpm install
+pnpm dev:client
 ```
 Access the client at `http://localhost:5173`.
 
@@ -116,6 +115,5 @@ cargo check --workspace
 
 ### Build Client Production Bundle
 ```bash
-cd client
-npm run build
+pnpm build:client
 ```

@@ -1,0 +1,16 @@
+{
+  "name": "partpilot-workspace",
+  "private": true,
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev:client": "pnpm --filter @partpilot/client dev",
+    "dev:website": "pnpm --filter @partpilot/website dev",
+    "build": "pnpm --recursive run build",
+    "build:client": "pnpm --filter @partpilot/client build",
+    "build:website": "pnpm --filter @partpilot/website build",
+    "lint": "pnpm --recursive --if-present run lint"
+  }
+}

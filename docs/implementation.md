@@ -1049,7 +1049,7 @@ jobs:
           fi
 ```
 
-`.github/workflows/client-ci.yml` (path-filtered to `client/**`): `npm ci`, `npm run lint`, `npm run build`.
+`.github/workflows/client-ci.yml` (path-filtered to `apps/client/**`): `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm build:client`.
 
 `.github/workflows/deploy.yml`: on push to `main`, trigger Railway deploys for `server` and `worker` via Railway's GitHub integration (auto-deploy per service, scoped to its own root directory — no custom script needed beyond configuring each Railway service's source directory in the Railway dashboard).
 
