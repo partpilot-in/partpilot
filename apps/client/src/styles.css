@@ -2333,20 +2333,14 @@ a.news-list__title:hover {
 }
 
 .part-detail-grid {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.part-overview-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: stretch;
-  gap: inherit;
 }
 
 .part-score-card {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  height: 100%;
+  align-self: start;
 }
 
 .part-score-card .card__body {
@@ -2381,7 +2375,18 @@ a.news-list__title:hover {
 
 .overview-list {
   width: 100%;
+  min-width: 420px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.overview-card {
+  min-width: 0;
+}
+
+.overview-card .card__body {
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
 }
 
 .overview-list dt {
@@ -2414,7 +2419,9 @@ a.news-list__title:hover {
 }
 
 .characteristics-card {
+  grid-column: 1 / -1;
   min-width: 0;
+  height: 100%;
 }
 
 .characteristics-card .card__body {
@@ -2474,6 +2481,64 @@ a.news-list__title:hover {
   min-width: 0;
   overflow-wrap: anywhere;
   text-align: center;
+}
+
+.documentation-card {
+  min-width: 0;
+}
+
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
+  gap: 12px 8px;
+}
+
+.resource-tile {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+}
+
+.resource-tile__icon {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--surface-alt);
+}
+
+.resource-tile__label {
+  min-height: 2.4em;
+  overflow-wrap: anywhere;
+}
+
+.resource-tile--available {
+  color: var(--accent);
+  transition: color 120ms ease;
+}
+
+.resource-tile--available .resource-tile__icon {
+  background: var(--accent-surface);
+}
+
+.resource-tile--available:hover {
+  color: var(--accent-hover);
+}
+
+.resource-tile--available:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 @media (max-width: 900px) {
@@ -3109,11 +3174,6 @@ a.news-list__title:hover {
 
   .detail-grid.detail-grid--single {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .part-overview-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
   }
 
   .property-list {

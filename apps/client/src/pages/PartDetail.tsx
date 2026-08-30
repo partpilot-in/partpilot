@@ -5,7 +5,24 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { MoreVertical, Plus, Star } from "lucide-react";
+import {
+  Activity,
+  BellRing,
+  BookOpen,
+  Box,
+  Bug,
+  CircuitBoard,
+  ClipboardList,
+  Cpu,
+  FileText,
+  GitBranch,
+  Grid3x3,
+  MoreVertical,
+  Plus,
+  Shapes,
+  Star,
+  type LucideIcon,
+} from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
 import { useMyParts, useMyPartsMutations } from "../api/hooks/myParts";
 import {
@@ -55,8 +72,110 @@ const hiddenCharacteristicFields: Partial<
 > = {
   identification: new Set(["alternatePartNumbers"]),
   electrical: new Set(["additionalProperties"]),
-  commercial: new Set(["priceBreaks", "distributors", "obsolescenceRiskScore"]),
+  commercial: new Set([
+    "priceBreaks",
+    "distributors",
+    "alternateSources",
+    "obsolescenceRiskScore",
+  ]),
 };
+
+const characteristicSections = CDD_SECTION_DEFINITIONS.filter(
+  (section) => section.key !== "documentation",
+);
+
+const documentationFields = [
+  { key: "datasheetUrl", label: "Datasheet", icon: BookOpen },
+  { key: "applicationNote", label: "Application Note", icon: ClipboardList },
+  { key: "technicalNote", label: "Technical Note", icon: FileText },
+  { key: "errata", label: "Errata", icon: Bug },
+  { key: "pcn", label: "PCN", icon: BellRing },
+] satisfies ResourceField[];
+
+const edaModelFields = [
+  { key: "bsdl", label: "BSDL", icon: GitBranch },
+  { key: "ibis", label: "IBIS", icon: Activity },
+  { key: "spice", label: "SPICE", icon: CircuitBoard },
+  { key: "svd", label: "SVD", icon: Cpu },
+  { key: "symbol", label: "Symbol", icon: Shapes },
+  { key: "footprint", label: "Footprint", icon: Grid3x3 },
+  { key: "threeDModel", label: "3D Model", icon: Box },
+] satisfies ResourceField[];
+
+const documentationAndEdaFields = [...documentationFields, ...edaModelFields];
+
+interface ResourceField {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+function resourceUris(value: unknown): string[] {
+  if (typeof value === "string") {
+    const uri = value.trim();
+    return uri ? [uri] : [];
+  }
+  if (Array.isArray(value)) return value.flatMap(resourceUris);
+  if (value && typeof value === "object") {
+    const resource = value as Record<string, unknown>;
+    return resourceUris(resource.url ?? resource.value);
+  }
+  return [];
+}
+
+function ResourceGrid({
+  fields,
+  metadata,
+}: {
+  fields: ResourceField[];
+  metadata: Record<string, unknown>;
+}) {
+  return (
+    <div className="resource-grid">
+      {fields.flatMap(({ key, label, icon: Icon }) => {
+        const uris = resourceUris(metadata[key]);
+        const resources: Array<string | undefined> = uris.length
+          ? uris
+          : [undefined];
+        return resources.map((uri, index) => {
+          const numberedLabel =
+            resources.length > 1 ? `${label} ${index + 1}` : label;
+          const content = (
+            <>
+              <span className="resource-tile__icon">
+                <Icon size={26} aria-hidden="true" />
+              </span>
+              <span className="resource-tile__label">{numberedLabel}</span>
+            </>
+          );
+
+          return uri ? (
+            <a
+              className="resource-tile resource-tile--available"
+              href={uri}
+              key={`${key}-${uri}-${index}`}
+              target="_blank"
+              rel="noreferrer"
+              title={`Open ${numberedLabel}`}
+              aria-label={`Open ${numberedLabel}`}
+            >
+              {content}
+            </a>
+          ) : (
+            <span
+              className="resource-tile resource-tile--missing"
+              key={key}
+              title={`${label} unavailable`}
+              aria-label={`${label} unavailable`}
+            >
+              {content}
+            </span>
+          );
+        });
+      })}
+    </div>
+  );
+}
 
 function alternatePartNumbersFrom(part: Part | undefined) {
   const value = cddValueAtPath(
@@ -319,10 +438,22 @@ export function PartDetail() {
     part.description,
   );
   const componentMetadata = part.component_metadata ?? {};
+  const documentationMetadata = componentMetadata.documentation ?? {};
+  const nestedEdaModels = documentationMetadata.edaModels;
+  const edaModelsMetadata =
+    nestedEdaModels &&
+    typeof nestedEdaModels === "object" &&
+    !Array.isArray(nestedEdaModels)
+      ? (nestedEdaModels as Record<string, unknown>)
+      : documentationMetadata;
+  const documentationAndEdaMetadata = {
+    ...documentationMetadata,
+    ...edaModelsMetadata,
+  };
   const activeCharacteristicSection =
-    CDD_SECTION_DEFINITIONS.find(
+    characteristicSections.find(
       (section) => section.key === activeCharacteristicTab,
-    ) ?? CDD_SECTION_DEFINITIONS[0];
+    ) ?? characteristicSections[0];
   const overviewFields = overviewCharacteristicFields(designatorCategory);
 
   return (
@@ -392,37 +523,38 @@ export function PartDetail() {
       </div>
 
       <section className="detail-grid part-detail-grid">
-        <div className="part-overview-grid">
-          <Card title="PartPilot score" className="part-score-card">
-            <div className="part-score-summary">
-              <ScoreRing value={part.score} size="xl" />
-            </div>
-          </Card>
-          <Card title="Overview">
-            <dl className="property-list overview-list">
-              {overviewFields.map(({ section, field }) => {
-                const value = cddValueAtPath(componentMetadata, section, field);
-                return (
-                  <Fragment key={`${section}.${field}`}>
-                    <dt>{cddFieldLabel(field)}</dt>
-                    <dd>
-                      {section === "commercial" &&
-                      field === "lifecycleStatus" ? (
-                        <LifecycleBadge
-                          stage={lifecycleFromCharacteristics(
-                            componentMetadata,
-                          )}
-                        />
-                      ) : (
-                        formatCddValue(value)
-                      )}
-                    </dd>
-                  </Fragment>
-                );
-              })}
-            </dl>
-          </Card>
-        </div>
+        <Card title="PartPilot score" className="part-score-card">
+          <div className="part-score-summary">
+            <ScoreRing value={part.score} size="xl" />
+          </div>
+        </Card>
+        <Card title="Overview" className="overview-card">
+          <dl className="property-list overview-list">
+            {overviewFields.map(({ section, field }) => {
+              const value = cddValueAtPath(componentMetadata, section, field);
+              return (
+                <Fragment key={`${section}.${field}`}>
+                  <dt>{cddFieldLabel(field)}</dt>
+                  <dd>
+                    {section === "commercial" && field === "lifecycleStatus" ? (
+                      <LifecycleBadge
+                        stage={lifecycleFromCharacteristics(componentMetadata)}
+                      />
+                    ) : (
+                      formatCddValue(value)
+                    )}
+                  </dd>
+                </Fragment>
+              );
+            })}
+          </dl>
+        </Card>
+        <Card title="Documentation" className="documentation-card">
+          <ResourceGrid
+            fields={documentationAndEdaFields}
+            metadata={documentationAndEdaMetadata}
+          />
+        </Card>
         <Card
           title="Characteristics"
           className="characteristics-card"
@@ -440,7 +572,7 @@ export function PartDetail() {
             role="tablist"
             aria-label="Characteristic sections"
           >
-            {CDD_SECTION_DEFINITIONS.map((section) => (
+            {characteristicSections.map((section) => (
               <button
                 key={section.key}
                 type="button"
