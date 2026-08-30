@@ -14,7 +14,10 @@ export interface UserProfile {
   billing_plan: "hobby" | "startup" | "scale" | "enterprise";
 }
 
-export type EditableUserProfile = Omit<UserProfile, "organization_slug" | "billing_plan">;
+export type EditableUserProfile = Omit<
+  UserProfile,
+  "organization_slug" | "billing_plan"
+>;
 
 const billingPlans: ReadonlySet<UserProfile["billing_plan"]> = new Set([
   "hobby",
@@ -28,7 +31,10 @@ function readString(data: Record<string, unknown>, key: string) {
 }
 
 function normalizeProfile(value: unknown): UserProfile {
-  const data = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const data =
+    value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : {};
   const plan = data.billing_plan;
 
   return {
@@ -42,7 +48,8 @@ function normalizeProfile(value: unknown): UserProfile {
     github: readString(data, "github"),
     linkedin: readString(data, "linkedin"),
     billing_plan:
-      typeof plan === "string" && billingPlans.has(plan as UserProfile["billing_plan"])
+      typeof plan === "string" &&
+      billingPlans.has(plan as UserProfile["billing_plan"])
         ? (plan as UserProfile["billing_plan"])
         : "hobby",
   };
@@ -50,13 +57,18 @@ function normalizeProfile(value: unknown): UserProfile {
 
 export function useProfile() {
   return useAsync<UserProfile>(
-    () => api.get("/v1/settings/profile").then((response) => normalizeProfile(response.data)),
+    () =>
+      api
+        .get("/v1/settings/profile")
+        .then((response) => normalizeProfile(response.data)),
     [],
   );
 }
 
 export function useSettingsMutations() {
-  async function updateProfile(profile: EditableUserProfile): Promise<UserProfile> {
+  async function updateProfile(
+    profile: EditableUserProfile,
+  ): Promise<UserProfile> {
     const response = await api.patch("/v1/settings/profile", profile);
     return normalizeProfile(response.data);
   }

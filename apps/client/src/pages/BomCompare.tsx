@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useCompareBoms, useProject } from "../api/hooks/boms";
-import { complianceFromCharacteristics, lifecycleFromCharacteristics } from "../api/componentMetadata";
+import {
+  complianceFromCharacteristics,
+  lifecycleFromCharacteristics,
+} from "../api/componentMetadata";
 import type { BomDiffLine } from "../api/types";
 import {
   Card,
@@ -51,15 +54,26 @@ export function BomCompare() {
       key: "compliance",
       header: "Compliance",
       sortable: true,
-      sortValue: (row) => complianceFromCharacteristics(row.component_metadata).map((item) => item.status).join(","),
-      render: (row) => <ComplianceBadge statuses={complianceFromCharacteristics(row.component_metadata)} />,
+      sortValue: (row) =>
+        complianceFromCharacteristics(row.component_metadata)
+          .map((item) => item.status)
+          .join(","),
+      render: (row) => (
+        <ComplianceBadge
+          statuses={complianceFromCharacteristics(row.component_metadata)}
+        />
+      ),
     },
     {
       key: "lifecycle_stage",
       header: "Lifecycle",
       sortable: true,
       sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
-      render: (row) => <LifecycleBadge stage={lifecycleFromCharacteristics(row.component_metadata)} />,
+      render: (row) => (
+        <LifecycleBadge
+          stage={lifecycleFromCharacteristics(row.component_metadata)}
+        />
+      ),
     },
     {
       key: "score",
@@ -87,7 +101,8 @@ export function BomCompare() {
         <div>
           <h1 className="page-title">BOM diff</h1>
           <p className="page-subtitle">
-            {left?.name ?? "Project A"} compared with {right?.name ?? "Project B"}
+            {left?.name ?? "Project A"} compared with{" "}
+            {right?.name ?? "Project B"}
           </p>
         </div>
         <Link className="button" to="/projects">
@@ -97,7 +112,10 @@ export function BomCompare() {
       </div>
       <Card>
         {!a || !b ? (
-          <EmptyState title="Choose two BOMs" body="Select two project cards to open a line-level diff." />
+          <EmptyState
+            title="Choose two BOMs"
+            body="Select two project cards to open a line-level diff."
+          />
         ) : loading ? (
           <Spinner message="Comparing BOMs..." />
         ) : error ? (

@@ -1,13 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import './BomScanner.css';
+import React, { useState, useEffect } from "react";
+import "./BomScanner.css";
 
 const bomData = [
-  { mpn: 'RC0805FR-07100KL', qty: 1, price: '$0.02', score: 'Low Risk', color: 'green' },
-  { mpn: '0805B103K160CT', qty: 3, price: '$0.06', score: 'Low Risk', color: 'green' },
-  { mpn: 'ABS06-32.768KHZ', qty: 1, price: '$0.98', score: 'High Risk', color: 'red' },
-  { mpn: 'BC547C', qty: 2, price: '$0.09', score: 'Medium', color: 'orange' },
-  { mpn: 'LM358ADR', qty: 1, price: '$0.15', score: 'Low Risk', color: 'green' },
-  { mpn: 'TLV1117-33IDCYR', qty: 1, price: '$0.37', score: 'High Risk', color: 'red' }
+  {
+    mpn: "RC0805FR-07100KL",
+    qty: 1,
+    price: "$0.02",
+    score: "Low Risk",
+    color: "green",
+  },
+  {
+    mpn: "0805B103K160CT",
+    qty: 3,
+    price: "$0.06",
+    score: "Low Risk",
+    color: "green",
+  },
+  {
+    mpn: "ABS06-32.768KHZ",
+    qty: 1,
+    price: "$0.98",
+    score: "High Risk",
+    color: "red",
+  },
+  { mpn: "BC547C", qty: 2, price: "$0.09", score: "Medium", color: "orange" },
+  {
+    mpn: "LM358ADR",
+    qty: 1,
+    price: "$0.15",
+    score: "Low Risk",
+    color: "green",
+  },
+  {
+    mpn: "TLV1117-33IDCYR",
+    qty: 1,
+    price: "$0.37",
+    score: "High Risk",
+    color: "red",
+  },
 ];
 
 export const BomScanner: React.FC = () => {
@@ -15,7 +45,7 @@ export const BomScanner: React.FC = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveIndex(prev => {
+      setActiveIndex((prev) => {
         // Stop for a moment at the end, then restart
         if (prev >= bomData.length) return -1;
         return prev + 1;
@@ -51,13 +81,18 @@ export const BomScanner: React.FC = () => {
                 const isScanned = i <= activeIndex;
                 const isActive = i === activeIndex;
                 return (
-                  <tr key={i} className={`bom-row ${isActive ? 'active-row' : ''}`}>
+                  <tr
+                    key={i}
+                    className={`bom-row ${isActive ? "active-row" : ""}`}
+                  >
                     <td>{row.mpn}</td>
                     <td>{row.qty}</td>
                     <td>{row.price}</td>
                     <td className="score-cell">
                       {isScanned ? (
-                        <span className={`score-badge score-${row.color} animate-fade-in`}>
+                        <span
+                          className={`score-badge score-${row.color} animate-fade-in`}
+                        >
                           {row.score}
                         </span>
                       ) : (
@@ -65,7 +100,7 @@ export const BomScanner: React.FC = () => {
                       )}
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>

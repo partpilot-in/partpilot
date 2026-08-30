@@ -15,7 +15,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, envDir, "");
   const missing = requiredClientEnv.filter((name) => !env[name]?.trim());
   if (missing.length) {
-    throw new Error(`Missing required client environment variables: ${missing.join(", ")}`);
+    throw new Error(
+      `Missing required client environment variables: ${missing.join(", ")}`,
+    );
   }
 
   return {

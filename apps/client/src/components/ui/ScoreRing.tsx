@@ -18,7 +18,11 @@ function scoreColor(value: number) {
   return "var(--signal-critical)";
 }
 
-export function ScoreRing({ value, size = "md", showLabel = false }: ScoreRingProps) {
+export function ScoreRing({
+  value,
+  size = "md",
+  showLabel = false,
+}: ScoreRingProps) {
   const dimension = sizeMap[size];
   const stroke = size === "xl" ? 9 : size === "lg" ? 5 : 4;
   const radius = (dimension - stroke) / 2;
@@ -29,15 +33,25 @@ export function ScoreRing({ value, size = "md", showLabel = false }: ScoreRingPr
   return (
     <span
       className={`score-ring score-ring--${size}`}
-      style={{
-        "--score-color": scoreColor(normalized),
-        "--score-circumference": circumference,
-        "--score-offset": dashOffset,
-      } as React.CSSProperties}
+      style={
+        {
+          "--score-color": scoreColor(normalized),
+          "--score-circumference": circumference,
+          "--score-offset": dashOffset,
+        } as React.CSSProperties
+      }
       aria-label={`PartPilot score ${normalized} out of 100`}
     >
-      <span className="score-ring__figure" style={{ width: dimension, height: dimension }}>
-        <svg width={dimension} height={dimension} viewBox={`0 0 ${dimension} ${dimension}`} aria-hidden="true">
+      <span
+        className="score-ring__figure"
+        style={{ width: dimension, height: dimension }}
+      >
+        <svg
+          width={dimension}
+          height={dimension}
+          viewBox={`0 0 ${dimension} ${dimension}`}
+          aria-hidden="true"
+        >
           <circle
             className="score-ring__track"
             cx={dimension / 2}

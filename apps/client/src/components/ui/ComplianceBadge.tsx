@@ -26,7 +26,11 @@ export function ComplianceBadge({ statuses }: ComplianceBadgeProps) {
   return (
     <span className="compliance-badge" aria-label="Compliance statuses">
       {safeStatuses.map((item, index) => (
-        <span key={`${item.standard ?? "unknown"}-${index}`} className="compliance-badge__item" data-status={item.status ?? "unknown"}>
+        <span
+          key={`${item.standard ?? "unknown"}-${index}`}
+          className="compliance-badge__item"
+          data-status={item.status ?? "unknown"}
+        >
           <StatusIcon status={item.status ?? "unknown"} />
           {item.standard ?? "Unknown"}
         </span>

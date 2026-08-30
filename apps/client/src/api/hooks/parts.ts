@@ -25,19 +25,25 @@ function itemsFromResponse<T>(payload: unknown, key = "data"): T[] {
 export function useSearchParts(query: string, filters: PartFilters) {
   const q = query.trim();
 
-  return useAsync<Part[]>(
-    () => {
-      const params: Record<string, string> = {};
-      if (q) params.q = q;
-      if (filters.category?.length) params.category = filters.category.join(",");
-      if (filters.manufacturer?.length) params.manufacturer = filters.manufacturer.join(",");
-      if (filters.lifecycle?.length) params.lifecycle = filters.lifecycle.join(",");
-      params.limit = "25";
+  return useAsync<Part[]>(() => {
+    const params: Record<string, string> = {};
+    if (q) params.q = q;
+    if (filters.category?.length) params.category = filters.category.join(",");
+    if (filters.manufacturer?.length)
+      params.manufacturer = filters.manufacturer.join(",");
+    if (filters.lifecycle?.length)
+      params.lifecycle = filters.lifecycle.join(",");
+    params.limit = "25";
 
-      return api.get("/v1/parts/search", { params }).then((res) => itemsFromResponse<Part>(res.data));
-    },
-    [q, filters.category?.join(","), filters.manufacturer?.join(","), filters.lifecycle?.join(",")],
-  );
+    return api
+      .get("/v1/parts/search", { params })
+      .then((res) => itemsFromResponse<Part>(res.data));
+  }, [
+    q,
+    filters.category?.join(","),
+    filters.manufacturer?.join(","),
+    filters.lifecycle?.join(","),
+  ]);
 }
 
 /**
@@ -51,7 +57,10 @@ export function usePart(id: string | undefined) {
 }
 
 function comparableMpn(value: string) {
-  return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
 }
 
 /**
@@ -66,16 +75,16 @@ export function usePartByMpn(mpn: string | undefined, manufacturer?: string) {
   const state = useAsync<{ requestKey: string; part: Part | undefined }>(
     q
       ? () => {
-        const params: Record<string, string> = { q, limit: "25" };
-        if (manufacturerFilter) params.manufacturer = manufacturerFilter;
-        return api.get("/v1/parts/search", { params }).then((res) => {
-          const expectedMpn = comparableMpn(q);
-          const part = itemsFromResponse<Part>(res.data).find(
-            (candidate) => comparableMpn(candidate.mpn) === expectedMpn,
-          );
-          return { requestKey, part };
-        });
-      }
+          const params: Record<string, string> = { q, limit: "25" };
+          if (manufacturerFilter) params.manufacturer = manufacturerFilter;
+          return api.get("/v1/parts/search", { params }).then((res) => {
+            const expectedMpn = comparableMpn(q);
+            const part = itemsFromResponse<Part>(res.data).find(
+              (candidate) => comparableMpn(candidate.mpn) === expectedMpn,
+            );
+            return { requestKey, part };
+          });
+        }
       : null,
     [q, manufacturerFilter],
   );
@@ -83,7 +92,9 @@ export function usePartByMpn(mpn: string | undefined, manufacturer?: string) {
   return {
     ...state,
     data: state.data?.requestKey === requestKey ? state.data.part : undefined,
-    loading: state.loading || (!!q && !state.error && state.data?.requestKey !== requestKey),
+    loading:
+      state.loading ||
+      (!!q && !state.error && state.data?.requestKey !== requestKey),
   };
 }
 
@@ -110,30 +121,34 @@ export function usePartAlternates(
   return useAsync<Part[]>(
     uniquePartNumbers.length
       ? async () => {
-        const searchResults = await Promise.allSettled(
-          uniquePartNumbers.map((mpn) =>
-            api.get("/v1/parts/search", { params: { q: mpn } }).then((res) => {
-              const candidates = itemsFromResponse<Part>(res.data);
-              const expectedMpn = comparableMpn(mpn);
-              const resolvedPart = candidates.find(
-                (candidate) => comparableMpn(candidate.mpn) === expectedMpn,
-              ) ?? candidates[0];
-              return resolvedPart ? { ...resolvedPart, mpn } : undefined;
-            }),
-          ),
-        );
-        const alternates = searchResults.flatMap((result) =>
-          result.status === "fulfilled" && result.value ? [result.value] : []
-        );
-        const seen = new Set<string>();
+          const searchResults = await Promise.allSettled(
+            uniquePartNumbers.map((mpn) =>
+              api
+                .get("/v1/parts/search", { params: { q: mpn } })
+                .then((res) => {
+                  const candidates = itemsFromResponse<Part>(res.data);
+                  const expectedMpn = comparableMpn(mpn);
+                  const resolvedPart =
+                    candidates.find(
+                      (candidate) =>
+                        comparableMpn(candidate.mpn) === expectedMpn,
+                    ) ?? candidates[0];
+                  return resolvedPart ? { ...resolvedPart, mpn } : undefined;
+                }),
+            ),
+          );
+          const alternates = searchResults.flatMap((result) =>
+            result.status === "fulfilled" && result.value ? [result.value] : [],
+          );
+          const seen = new Set<string>();
 
-        return alternates.filter((candidate) => {
-          const key = comparableMpn(candidate.mpn) || candidate.id;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-      }
+          return alternates.filter((candidate) => {
+            const key = comparableMpn(candidate.mpn) || candidate.id;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+        }
       : null,
     [currentMpn, alternatePartNumbersKey],
   );
@@ -145,19 +160,27 @@ export function usePartAlternates(
 export function useComparePartsProperties(ids: string[]) {
   const idsKey = ids.filter(Boolean).join(",");
 
-  return useAsync<{ id: string; label: string; parameters: Record<string, string | number | boolean> }[]>(
+  return useAsync<
+    {
+      id: string;
+      label: string;
+      parameters: Record<string, string | number | boolean>;
+    }[]
+  >(
     idsKey
       ? () =>
-        api
-          .get("/v1/parts/compare", { params: { ids: idsKey } })
-          .then((res) => {
-            const parts = itemsFromResponse<Part>(res.data, "parts");
-            return parts.map((part) => ({
-              id: part.id,
-              label: `${part.mpn} - ${part.manufacturer}`,
-              parameters: flattenCharacteristics(part.component_metadata ?? {}),
-            }));
-          })
+          api
+            .get("/v1/parts/compare", { params: { ids: idsKey } })
+            .then((res) => {
+              const parts = itemsFromResponse<Part>(res.data, "parts");
+              return parts.map((part) => ({
+                id: part.id,
+                label: `${part.mpn} - ${part.manufacturer}`,
+                parameters: flattenCharacteristics(
+                  part.component_metadata ?? {},
+                ),
+              }));
+            })
       : null,
     [idsKey],
   );
@@ -169,7 +192,22 @@ export function useComparePartsProperties(ids: string[]) {
  * — there's no dedicated server endpoint.
  */
 export function useProjectParts(
-  projects: { name: string; lines: { part_id: string; qty: number; mpn: string; manufacturer: string; category: string; description: string; score: number; unit_price: number; component_metadata?: Part["component_metadata"] }[] }[] | undefined,
+  projects:
+    | {
+        name: string;
+        lines: {
+          part_id: string;
+          qty: number;
+          mpn: string;
+          manufacturer: string;
+          category: string;
+          description: string;
+          score: number;
+          unit_price: number;
+          component_metadata?: Part["component_metadata"];
+        }[];
+      }[]
+    | undefined,
 ) {
   return useMemo(() => {
     if (!projects) return [];

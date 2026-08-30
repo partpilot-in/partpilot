@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { CheckCircle2, Info, X } from "lucide-react";
 
 type ToastTone = "info" | "success";
@@ -22,7 +28,8 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 function createId() {
-  if ("crypto" in window && "randomUUID" in window.crypto) return window.crypto.randomUUID();
+  if ("crypto" in window && "randomUUID" in window.crypto)
+    return window.crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
@@ -52,7 +59,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => (
           <div key={toast.id} className="toast">
             {toast.tone === "success" ? (
-              <CheckCircle2 size={18} color="var(--signal-good)" aria-hidden="true" />
+              <CheckCircle2
+                size={18}
+                color="var(--signal-good)"
+                aria-hidden="true"
+              />
             ) : (
               <Info size={18} color="var(--accent)" aria-hidden="true" />
             )}
@@ -60,7 +71,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <p className="toast__title">{toast.title}</p>
               {toast.body && <p className="toast__body">{toast.body}</p>}
             </div>
-            <button type="button" className="icon-button" aria-label="Dismiss notification" onClick={() => dismiss(toast.id)}>
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Dismiss notification"
+              onClick={() => dismiss(toast.id)}
+            >
               <X size={16} />
             </button>
           </div>

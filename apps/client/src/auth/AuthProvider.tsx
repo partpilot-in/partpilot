@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 
@@ -53,14 +60,17 @@ function readAuthCallbackParameters(): AuthCallbackParameters {
   const hashParameters = new URLSearchParams(window.location.hash.slice(1));
   const queryParameters = new URLSearchParams(window.location.search);
   const type = hashParameters.get("type") ?? queryParameters.get("type");
-  const error = hashParameters.get("error_description") ?? queryParameters.get("error_description");
+  const error =
+    hashParameters.get("error_description") ??
+    queryParameters.get("error_description");
   const accessToken = hashParameters.get("access_token");
   const refreshToken = hashParameters.get("refresh_token");
 
   return {
     accessToken,
     refreshToken,
-    recovery: type === "recovery" || window.location.pathname === "/reset-password",
+    recovery:
+      type === "recovery" || window.location.pathname === "/reset-password",
     error,
     hasAuthParameters: Boolean(accessToken || refreshToken || type || error),
   };
@@ -68,7 +78,11 @@ function readAuthCallbackParameters(): AuthCallbackParameters {
 
 function clearAuthCallbackParameters() {
   if (!window.location.hash) return;
-  window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}`);
+  window.history.replaceState(
+    window.history.state,
+    "",
+    `${window.location.pathname}${window.location.search}`,
+  );
 }
 
 function readPasswordRecoveryState() {
@@ -142,8 +156,12 @@ function syncAccessToken(session: Session | null) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [passwordRecovery, setPasswordRecovery] = useState(readPasswordRecoveryState);
-  const [passwordRecoveryError, setPasswordRecoveryError] = useState<string | null>(null);
+  const [passwordRecovery, setPasswordRecovery] = useState(
+    readPasswordRecoveryState,
+  );
+  const [passwordRecoveryError, setPasswordRecoveryError] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     const authClient = supabase;
@@ -173,7 +191,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setSession(nextSession);
       syncAccessToken(nextSession);
-      if (!callback.recovery || event === "PASSWORD_RECOVERY") setLoading(false);
+      if (!callback.recovery || event === "PASSWORD_RECOVERY")
+        setLoading(false);
     });
 
     async function initializeSession() {
@@ -183,7 +202,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let nextSession: Session | null;
         if (callback.accessToken || callback.refreshToken) {
           if (!callback.accessToken || !callback.refreshToken) {
-            throw new Error("This password reset link is incomplete. Please request a new one.");
+            throw new Error(
+              "This password reset link is incomplete. Please request a new one.",
+            );
           }
           const { data, error } = await auth.setSession({
             access_token: callback.accessToken,
@@ -200,7 +221,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!active) return;
 
         if (callback.recovery) {
-          if (!nextSession) throw new Error("This password reset link is invalid or has expired.");
+          if (!nextSession)
+            throw new Error(
+              "This password reset link is invalid or has expired.",
+            );
           storePasswordRecoveryState(true);
           setPasswordRecovery(true);
           setPasswordRecoveryError(null);
@@ -220,7 +244,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           storePasswordRecoveryState(true);
           setPasswordRecovery(true);
           setPasswordRecoveryError(
-            caught instanceof Error ? caught.message : "This password reset link is invalid or has expired.",
+            caught instanceof Error
+              ? caught.message
+              : "This password reset link is invalid or has expired.",
           );
         }
       } finally {
@@ -240,7 +266,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     if (!supabase) throw new Error("Supabase is not configured.");
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) throw error;
 
     setSession(data.session);
@@ -250,36 +279,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPasswordRecoveryError(null);
   }, []);
 
-  const signUp = useCallback(async ({ email, password, name, organizationName }: SignUpInput) => {
-    if (!supabase) throw new Error("Supabase is not configured.");
+  const signUp = useCallback(
+    async ({ email, password, name, organizationName }: SignUpInput) => {
+      if (!supabase) throw new Error("Supabase is not configured.");
 
-    const organization = organizationName.trim();
-    const slug = organizationNameToSlug(organization) || "personal";
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name.trim(),
-          organization_name: organization,
-          organization_slug: slug,
+      const organization = organizationName.trim();
+      const slug = organizationNameToSlug(organization) || "personal";
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name.trim(),
+            organization_name: organization,
+            organization_slug: slug,
+          },
         },
-      },
-    });
+      });
 
-    if (error) throw error;
+      if (error) throw error;
 
-    setSession(data.session);
-    syncAccessToken(data.session);
-    return { needsEmailConfirmation: !data.session };
-  }, []);
+      setSession(data.session);
+      syncAccessToken(data.session);
+      return { needsEmailConfirmation: !data.session };
+    },
+    [],
+  );
 
-  const requestPasswordReset = useCallback(async (email: string, redirectTo: string) => {
-    if (!supabase) throw new Error("Supabase is not configured.");
+  const requestPasswordReset = useCallback(
+    async (email: string, redirectTo: string) => {
+      if (!supabase) throw new Error("Supabase is not configured.");
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-    if (error) throw error;
-  }, []);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+      });
+      if (error) throw error;
+    },
+    [],
+  );
 
   const updatePassword = useCallback(async (password: string) => {
     if (!supabase) throw new Error("Supabase is not configured.");
@@ -287,7 +324,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.updateUser({ password });
     if (error) throw error;
 
-    setSession((current) => (current ? { ...current, user: data.user } : current));
+    setSession((current) =>
+      current ? { ...current, user: data.user } : current,
+    );
     storePasswordRecoveryState(false);
     setPasswordRecovery(false);
     setPasswordRecoveryError(null);
@@ -343,7 +382,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       refreshUser,
     }),
-    [cancelPasswordRecovery, loading, passwordRecovery, passwordRecoveryError, refreshUser, requestPasswordReset, session, signIn, signOut, signUp, updatePassword],
+    [
+      cancelPasswordRecovery,
+      loading,
+      passwordRecovery,
+      passwordRecoveryError,
+      refreshUser,
+      requestPasswordReset,
+      session,
+      signIn,
+      signOut,
+      signUp,
+      updatePassword,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

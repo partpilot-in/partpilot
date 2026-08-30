@@ -22,12 +22,17 @@ interface PartNoteModalProps {
 }
 
 function normalizeNote(payload: unknown, partId: string): PartNote {
-  const value = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
+  const value =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : {};
   return {
     part_id: typeof value.part_id === "string" ? value.part_id : partId,
     note: typeof value.note === "string" ? value.note : "",
     partpilot_points: Array.isArray(value.partpilot_points)
-      ? value.partpilot_points.filter((point): point is string => typeof point === "string")
+      ? value.partpilot_points.filter(
+          (point): point is string => typeof point === "string",
+        )
       : [],
   };
 }
@@ -65,7 +70,8 @@ export function PartNoteModal({ part, onClose }: PartNoteModalProps) {
     setError(undefined);
     setLoading(true);
 
-    api.get(`/v1/part-notes/${part.id}`)
+    api
+      .get(`/v1/part-notes/${part.id}`)
       .then((response) => {
         if (!active) return;
         const value = normalizeNote(response.data, part.id);
@@ -74,7 +80,11 @@ export function PartNoteModal({ part, onClose }: PartNoteModalProps) {
       })
       .catch((loadError) => {
         if (!active) return;
-        setError(loadError instanceof Error ? loadError.message : "Could not load this note.");
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Could not load this note.",
+        );
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -98,14 +108,22 @@ export function PartNoteModal({ part, onClose }: PartNoteModalProps) {
       showToast({ title: "Note saved", body: part.label, tone: "success" });
       onClose();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save this note.");
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Could not save this note.",
+      );
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Modal open={!!part} title={part ? `${part.label} note` : "Part note"} onClose={onClose}>
+    <Modal
+      open={!!part}
+      title={part ? `${part.label} note` : "Part note"}
+      onClose={onClose}
+    >
       {loading ? (
         <Spinner message="Loading note..." />
       ) : (
@@ -123,20 +141,38 @@ export function PartNoteModal({ part, onClose }: PartNoteModalProps) {
               autoFocus
             />
           </label>
-          <span className="part-note-form__count">{note.length.toLocaleString()} / 20,000</span>
+          <span className="part-note-form__count">
+            {note.length.toLocaleString()} / 20,000
+          </span>
 
           {partpilotPoints.length > 0 && (
-            <section className="part-note-form__insights" aria-labelledby="part-note-insights-title">
+            <section
+              className="part-note-form__insights"
+              aria-labelledby="part-note-insights-title"
+            >
               <h3 id="part-note-insights-title">PartPilot points</h3>
               <ul>
-                {partpilotPoints.map((point, index) => <li key={`${point}-${index}`}>{point}</li>)}
+                {partpilotPoints.map((point, index) => (
+                  <li key={`${point}-${index}`}>{point}</li>
+                ))}
               </ul>
             </section>
           )}
 
           <div className="part-note-form__actions">
-            <button type="button" className="button" onClick={onClose} disabled={saving}>Cancel</button>
-            <button type="submit" className="button button--primary" disabled={saving || !!error}>
+            <button
+              type="button"
+              className="button"
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="button button--primary"
+              disabled={saving || !!error}
+            >
               {saving ? "Saving..." : "Save note"}
             </button>
           </div>

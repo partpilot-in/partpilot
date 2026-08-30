@@ -1,5 +1,8 @@
 import { Plus, Trash2 } from "lucide-react";
-import { countryOfOriginFromCharacteristics, withCharacteristicSummary } from "../api/componentMetadata";
+import {
+  countryOfOriginFromCharacteristics,
+  withCharacteristicSummary,
+} from "../api/componentMetadata";
 import type { BomLine } from "../api/types";
 
 export interface EditableBomLine {
@@ -39,14 +42,19 @@ export function bomLineToEditable(line: BomLine): EditableBomLine {
     mpn: line.mpn,
     description: line.description,
     manufacturer: line.manufacturer,
-    country_of_origin: countryOfOriginFromCharacteristics(line.component_metadata),
+    country_of_origin: countryOfOriginFromCharacteristics(
+      line.component_metadata,
+    ),
     category: line.category,
     qty: line.qty,
     unit_price: line.unit_price,
   };
 }
 
-export function editableToBomLines(rows: EditableBomLine[], prefix: string): BomLine[] {
+export function editableToBomLines(
+  rows: EditableBomLine[],
+  prefix: string,
+): BomLine[] {
   return rows
     .filter((row) => row.mpn.trim() || row.description.trim())
     .map((row, index) => ({
@@ -58,16 +66,31 @@ export function editableToBomLines(rows: EditableBomLine[], prefix: string): Bom
       manufacturer: row.manufacturer.trim() || "Unknown",
       category: row.category.trim() || "Uncategorized",
       qty: Number.isFinite(row.qty) && row.qty > 0 ? row.qty : 1,
-      unit_price: Number.isFinite(row.unit_price) && row.unit_price >= 0 ? row.unit_price : 0,
+      unit_price:
+        Number.isFinite(row.unit_price) && row.unit_price >= 0
+          ? row.unit_price
+          : 0,
       score: 72,
-      component_metadata: withCharacteristicSummary({}, {
-        countryOfOrigin: row.country_of_origin.trim() || "Unknown",
-      }),
+      component_metadata: withCharacteristicSummary(
+        {},
+        {
+          countryOfOrigin: row.country_of_origin.trim() || "Unknown",
+        },
+      ),
     }));
 }
 
 export function exportBomCsv(filename: string, rows: BomLine[]) {
-  const headers = ["Line", "MPN", "Description", "Manufacturer", "Made In", "Category", "Qty", "Unit Price"];
+  const headers = [
+    "Line",
+    "MPN",
+    "Description",
+    "Manufacturer",
+    "Made In",
+    "Category",
+    "Qty",
+    "Unit Price",
+  ];
   const csvRows = rows.map((line) => [
     line.line_no,
     line.mpn,
@@ -145,30 +168,47 @@ export function BomEditor({ rows, onRowsChange }: BomEditorProps) {
                 <tr key={row.id}>
                   <td>{index + 1}</td>
                   <td>
-                    <input value={row.mpn} onChange={(event) => updateRow(row.id, "mpn", event.target.value)} />
+                    <input
+                      value={row.mpn}
+                      onChange={(event) =>
+                        updateRow(row.id, "mpn", event.target.value)
+                      }
+                    />
                   </td>
                   <td>
                     <input
                       value={row.description}
-                      onChange={(event) => updateRow(row.id, "description", event.target.value)}
+                      onChange={(event) =>
+                        updateRow(row.id, "description", event.target.value)
+                      }
                     />
                   </td>
                   <td>
                     <input
                       value={row.manufacturer}
-                      onChange={(event) => updateRow(row.id, "manufacturer", event.target.value)}
+                      onChange={(event) =>
+                        updateRow(row.id, "manufacturer", event.target.value)
+                      }
                     />
                   </td>
                   <td>
                     <input
                       value={row.country_of_origin}
-                      onChange={(event) => updateRow(row.id, "country_of_origin", event.target.value)}
+                      onChange={(event) =>
+                        updateRow(
+                          row.id,
+                          "country_of_origin",
+                          event.target.value,
+                        )
+                      }
                     />
                   </td>
                   <td>
                     <input
                       value={row.category}
-                      onChange={(event) => updateRow(row.id, "category", event.target.value)}
+                      onChange={(event) =>
+                        updateRow(row.id, "category", event.target.value)
+                      }
                     />
                   </td>
                   <td>
@@ -176,7 +216,9 @@ export function BomEditor({ rows, onRowsChange }: BomEditorProps) {
                       type="number"
                       min="1"
                       value={row.qty}
-                      onChange={(event) => updateRow(row.id, "qty", event.target.value)}
+                      onChange={(event) =>
+                        updateRow(row.id, "qty", event.target.value)
+                      }
                     />
                   </td>
                   <td>
@@ -185,11 +227,18 @@ export function BomEditor({ rows, onRowsChange }: BomEditorProps) {
                       min="0"
                       step="0.01"
                       value={row.unit_price}
-                      onChange={(event) => updateRow(row.id, "unit_price", event.target.value)}
+                      onChange={(event) =>
+                        updateRow(row.id, "unit_price", event.target.value)
+                      }
                     />
                   </td>
                   <td>
-                    <button type="button" className="icon-button" aria-label={`Remove line ${index + 1}`} onClick={() => removeRow(row.id)}>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={`Remove line ${index + 1}`}
+                      onClick={() => removeRow(row.id)}
+                    >
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -198,7 +247,11 @@ export function BomEditor({ rows, onRowsChange }: BomEditorProps) {
             </tbody>
           </table>
         </div>
-        <button type="button" className="bom-editor__insert-row" onClick={addRow}>
+        <button
+          type="button"
+          className="bom-editor__insert-row"
+          onClick={addRow}
+        >
           <span className="bom-editor__insert-row-icon" aria-hidden="true">
             <Plus size={15} />
           </span>

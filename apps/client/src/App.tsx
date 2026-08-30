@@ -17,14 +17,34 @@ import { BomUpload } from "./pages/BomUpload";
 import { SettingsPage } from "./pages/Settings";
 
 const tabs = [
-  { key: "dashboard", label: "Dashboard", to: "/dashboard", icon: <LayoutDashboard size={22} /> },
-  { key: "my-parts", label: "My Parts", to: "/my-parts", icon: <Package size={22} /> },
-  { key: "projects", label: "Projects", to: "/projects", icon: <ClipboardList size={22} /> },
+  {
+    key: "dashboard",
+    label: "Dashboard",
+    to: "/dashboard",
+    icon: <LayoutDashboard size={22} />,
+  },
+  {
+    key: "my-parts",
+    label: "My Parts",
+    to: "/my-parts",
+    icon: <Package size={22} />,
+  },
+  {
+    key: "projects",
+    label: "Projects",
+    to: "/projects",
+    icon: <ClipboardList size={22} />,
+  },
 ];
 
 function activeTabForPath(pathname: string) {
   if (pathname.startsWith("/settings")) return "settings";
-  if (pathname.startsWith("/my-parts") || pathname.startsWith("/search") || pathname.startsWith("/parts")) return "my-parts";
+  if (
+    pathname.startsWith("/my-parts") ||
+    pathname.startsWith("/search") ||
+    pathname.startsWith("/parts")
+  )
+    return "my-parts";
   if (pathname.startsWith("/projects")) return "projects";
   return "dashboard";
 }
@@ -52,7 +72,8 @@ function AuthenticatedRoutes() {
   const location = useLocation();
   const { loading, passwordRecovery, user } = useAuth();
 
-  if (passwordRecovery || location.pathname === "/reset-password") return <ResetPassword />;
+  if (passwordRecovery || location.pathname === "/reset-password")
+    return <ResetPassword />;
 
   if (loading) {
     return (

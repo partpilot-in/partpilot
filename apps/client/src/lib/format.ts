@@ -26,10 +26,14 @@ export function readCurrencyPreference(): CurrencyCode {
 
 export function saveCurrencyPreference(currency: CurrencyCode) {
   window.localStorage.setItem(currencyPreferenceStorageKey, currency);
-  window.dispatchEvent(new CustomEvent(currencyPreferenceChangeEvent, { detail: { currency } }));
+  window.dispatchEvent(
+    new CustomEvent(currencyPreferenceChangeEvent, { detail: { currency } }),
+  );
 }
 
-export function createCurrencyFormatter(currency: CurrencyCode = defaultCurrency) {
+export function createCurrencyFormatter(
+  currency: CurrencyCode = defaultCurrency,
+) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,

@@ -1,9 +1,25 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Download, FileSpreadsheet, MoreVertical, Plus, Search, Star, Trash2 } from "lucide-react";
+import {
+  Download,
+  FileSpreadsheet,
+  MoreVertical,
+  Plus,
+  Search,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
-import { useMyParts, useMyPartsMutations, type MyPartInput } from "../api/hooks/myParts";
-import { useProjectParts, useSearchParts, type ProjectPartRow } from "../api/hooks/parts";
+import {
+  useMyParts,
+  useMyPartsMutations,
+  type MyPartInput,
+} from "../api/hooks/myParts";
+import {
+  useProjectParts,
+  useSearchParts,
+  type ProjectPartRow,
+} from "../api/hooks/parts";
 import {
   complianceFromCharacteristics,
   countryOfOriginFromCharacteristics,
@@ -29,7 +45,11 @@ import {
   type NoteTarget,
 } from "../components/ui";
 import { useImportantParts } from "../lib/useImportantParts";
-import { exportTableCsv, exportTableXlsx, type ExportCell } from "../lib/exportTable";
+import {
+  exportTableCsv,
+  exportTableXlsx,
+  type ExportCell,
+} from "../lib/exportTable";
 import { partLookupPath } from "../lib/partRoutes";
 
 const recentSearchesStorageKey = "partpilot.recentPartSearches";
@@ -87,13 +107,13 @@ function readRecentSearches(): RecentSearchPart[] {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed)
       ? parsed.filter(
-        (item): item is RecentSearchPart =>
-          item &&
-          typeof item === "object" &&
-          (item.id === undefined || typeof item.id === "string") &&
-          typeof item.mpn === "string" &&
-          typeof item.manufacturer === "string",
-      )
+          (item): item is RecentSearchPart =>
+            item &&
+            typeof item === "object" &&
+            (item.id === undefined || typeof item.id === "string") &&
+            typeof item.mpn === "string" &&
+            typeof item.manufacturer === "string",
+        )
       : [];
   } catch {
     return [];
@@ -101,12 +121,16 @@ function readRecentSearches(): RecentSearchPart[] {
 }
 
 function saveRecentSearches(searches: RecentSearchPart[]) {
-  window.localStorage.setItem(recentSearchesStorageKey, JSON.stringify(searches));
+  window.localStorage.setItem(
+    recentSearchesStorageKey,
+    JSON.stringify(searches),
+  );
 }
 
 function errorMessage(error: unknown) {
   if (error && typeof error === "object" && "response" in error) {
-    const response = (error as { response?: { data?: { error?: unknown } } }).response;
+    const response = (error as { response?: { data?: { error?: unknown } } })
+      .response;
     if (typeof response?.data?.error === "string") return response.data.error;
   }
   return error instanceof Error ? error.message : "Please try again.";
@@ -115,24 +139,38 @@ function errorMessage(error: unknown) {
 function descriptionWithoutDesignator(description: string) {
   const separator = " — ";
   const separatorIndex = description.indexOf(separator);
-  return separatorIndex > 0 ? description.slice(separatorIndex + separator.length) : description;
+  return separatorIndex > 0
+    ? description.slice(separatorIndex + separator.length)
+    : description;
 }
 
 export function MyParts() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
-  const { data: projects, loading: projectsLoading, error: projectsError } = useProjects();
-  const { data: storedParts, loading: partsLoading, error: partsError, refetch: refetchParts } = useMyParts();
+  const {
+    data: projects,
+    loading: projectsLoading,
+    error: projectsError,
+  } = useProjects();
+  const {
+    data: storedParts,
+    loading: partsLoading,
+    error: partsError,
+    refetch: refetchParts,
+  } = useMyParts();
   const { createMyPart, updateMyPart, deleteMyPart } = useMyPartsMutations();
   const projectRows = useProjectParts(projects);
   const { ids: importantIds, toggleImportant } = useImportantParts();
-  const [recentSearches, setRecentSearches] = useState<RecentSearchPart[]>(() => readRecentSearches());
+  const [recentSearches, setRecentSearches] = useState<RecentSearchPart[]>(() =>
+    readRecentSearches(),
+  );
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [addPartOpen, setAddPartOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<MyPartRow | null>(null);
   const [savingPart, setSavingPart] = useState(false);
-  const [manualForm, setManualForm] = useState<ManualPartForm>(emptyManualPartForm);
+  const [manualForm, setManualForm] =
+    useState<ManualPartForm>(emptyManualPartForm);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
@@ -162,7 +200,11 @@ export function MyParts() {
   }, []);
 
   const activeQuery = searchParams.get("q")?.trim() ?? "";
-  const { data: searchRows, loading: searchLoading, error: searchError } = useSearchParts(activeQuery, {});
+  const {
+    data: searchRows,
+    loading: searchLoading,
+    error: searchError,
+  } = useSearchParts(activeQuery, {});
   const myRows: MyPartRow[] = useMemo(
     () => [
       ...(storedParts ?? []),
@@ -189,13 +231,21 @@ export function MyParts() {
         return (
           <button
             type="button"
-            className={["star-button", important && "star-button--active"].filter(Boolean).join(" ")}
-            aria-label={important ? `Unmark ${row.mpn} as important` : `Mark ${row.mpn} as important`}
+            className={["star-button", important && "star-button--active"]
+              .filter(Boolean)
+              .join(" ")}
+            aria-label={
+              important
+                ? `Unmark ${row.mpn} as important`
+                : `Mark ${row.mpn} as important`
+            }
             onClick={(event) => {
               event.stopPropagation();
               const nextImportant = toggleImportant(row);
               showToast({
-                title: nextImportant ? "Marked important" : "Removed important mark",
+                title: nextImportant
+                  ? "Marked important"
+                  : "Removed important mark",
                 body: row.mpn,
                 tone: "success",
               });
@@ -212,8 +262,10 @@ export function MyParts() {
       key: "country_of_origin",
       header: "Made In",
       sortable: true,
-      sortValue: (row) => countryOfOriginFromCharacteristics(row.component_metadata),
-      render: (row) => countryOfOriginFromCharacteristics(row.component_metadata),
+      sortValue: (row) =>
+        countryOfOriginFromCharacteristics(row.component_metadata),
+      render: (row) =>
+        countryOfOriginFromCharacteristics(row.component_metadata),
     },
     { key: "category", header: "Category", sortable: true },
     {
@@ -227,15 +279,26 @@ export function MyParts() {
       key: "compliance",
       header: "Compliance",
       sortable: true,
-      sortValue: (row) => complianceFromCharacteristics(row.component_metadata).map((item) => item.status).join(","),
-      render: (row) => <ComplianceBadge statuses={complianceFromCharacteristics(row.component_metadata)} />,
+      sortValue: (row) =>
+        complianceFromCharacteristics(row.component_metadata)
+          .map((item) => item.status)
+          .join(","),
+      render: (row) => (
+        <ComplianceBadge
+          statuses={complianceFromCharacteristics(row.component_metadata)}
+        />
+      ),
     },
     {
       key: "lifecycle_stage",
       header: "Lifecycle",
       sortable: true,
       sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
-      render: (row) => <LifecycleBadge stage={lifecycleFromCharacteristics(row.component_metadata)} />,
+      render: (row) => (
+        <LifecycleBadge
+          stage={lifecycleFromCharacteristics(row.component_metadata)}
+        />
+      ),
     },
     {
       key: "score",
@@ -259,8 +322,9 @@ export function MyParts() {
   useEffect(() => {
     setRecentSearches((current) => {
       const next = current.filter(
-        (part) => (!part.id || !myPartKeys.ids.has(part.id))
-          && !myPartKeys.mpns.has(part.mpn.trim().toLowerCase()),
+        (part) =>
+          (!part.id || !myPartKeys.ids.has(part.id)) &&
+          !myPartKeys.mpns.has(part.mpn.trim().toLowerCase()),
       );
       if (next.length === current.length) return current;
       saveRecentSearches(next);
@@ -282,12 +346,18 @@ export function MyParts() {
   }
 
   function selectSearchResult(part: Part) {
-    const inMyParts = myPartKeys.ids.has(part.id) || myPartKeys.mpns.has(part.mpn.trim().toLowerCase());
+    const inMyParts =
+      myPartKeys.ids.has(part.id) ||
+      myPartKeys.mpns.has(part.mpn.trim().toLowerCase());
     if (!inMyParts) {
       setRecentSearches((current) => {
         const next = [
           { id: part.id, mpn: part.mpn, manufacturer: part.manufacturer },
-          ...current.filter((item) => item.id !== part.id && item.mpn.toLowerCase() !== part.mpn.toLowerCase()),
+          ...current.filter(
+            (item) =>
+              item.id !== part.id &&
+              item.mpn.toLowerCase() !== part.mpn.toLowerCase(),
+          ),
         ].slice(0, maxRecentSearches);
         saveRecentSearches(next);
         return next;
@@ -296,7 +366,10 @@ export function MyParts() {
     navigate(partLookupPath(part));
   }
 
-  function updateManualForm<K extends keyof ManualPartForm>(key: K, value: ManualPartForm[K]) {
+  function updateManualForm<K extends keyof ManualPartForm>(
+    key: K,
+    value: ManualPartForm[K],
+  ) {
     setManualForm((current) => ({ ...current, [key]: value }));
   }
 
@@ -314,23 +387,38 @@ export function MyParts() {
       category: row.category,
       description: row.description,
       qty: String(row.total_qty),
-      unit_price: String(referencePriceFromCharacteristics(row.component_metadata)),
-      country_of_origin: countryOfOriginFromCharacteristics(row.component_metadata),
+      unit_price: String(
+        referencePriceFromCharacteristics(row.component_metadata),
+      ),
+      country_of_origin: countryOfOriginFromCharacteristics(
+        row.component_metadata,
+      ),
     });
     setAddPartOpen(true);
   }
 
   async function removeEditingPart() {
-    if (!editingPart || !window.confirm(`Remove ${editingPart.mpn} from My Parts?`)) return;
+    if (
+      !editingPart ||
+      !window.confirm(`Remove ${editingPart.mpn} from My Parts?`)
+    )
+      return;
     setSavingPart(true);
     try {
       await deleteMyPart(editingPart.id);
       refetchParts();
       setAddPartOpen(false);
       setEditingPart(null);
-      showToast({ title: "Part removed", body: editingPart.mpn, tone: "success" });
+      showToast({
+        title: "Part removed",
+        body: editingPart.mpn,
+        tone: "success",
+      });
     } catch (deleteError) {
-      showToast({ title: "Could not remove part", body: errorMessage(deleteError) });
+      showToast({
+        title: "Could not remove part",
+        body: errorMessage(deleteError),
+      });
     } finally {
       setSavingPart(false);
     }
@@ -356,7 +444,10 @@ export function MyParts() {
 
   function exportParts(format: "csv" | "xlsx") {
     if (!myRows.length) {
-      showToast({ title: "No parts to export", body: "Add a part or upload a BOM first." });
+      showToast({
+        title: "No parts to export",
+        body: "Add a part or upload a BOM first.",
+      });
       return;
     }
 
@@ -384,11 +475,14 @@ export function MyParts() {
       category: manualForm.category.trim() || "Uncategorized",
       description: manualForm.description.trim() || "Manually added part",
       score: 80,
-      component_metadata: withCharacteristicSummary(editingPart?.component_metadata ?? {}, {
-        countryOfOrigin: manualForm.country_of_origin.trim() || "Unknown",
-        lifecycleStatus: "Active",
-        unitPrice: Number.isFinite(unitPrice) ? Math.max(0, unitPrice) : 0,
-      }),
+      component_metadata: withCharacteristicSummary(
+        editingPart?.component_metadata ?? {},
+        {
+          countryOfOrigin: manualForm.country_of_origin.trim() || "Unknown",
+          lifecycleStatus: "Active",
+          unitPrice: Number.isFinite(unitPrice) ? Math.max(0, unitPrice) : 0,
+        },
+      ),
       total_qty: Number.isFinite(qty) ? Math.max(1, qty) : 1,
     };
     setSavingPart(true);
@@ -400,9 +494,16 @@ export function MyParts() {
       setManualForm(emptyManualPartForm);
       setEditingPart(null);
       setAddPartOpen(false);
-      showToast({ title: editingPart ? "Part updated" : "Part added", body: part.mpn, tone: "success" });
+      showToast({
+        title: editingPart ? "Part updated" : "Part added",
+        body: part.mpn,
+        tone: "success",
+      });
     } catch (saveError) {
-      showToast({ title: "Could not save part", body: errorMessage(saveError) });
+      showToast({
+        title: "Could not save part",
+        body: errorMessage(saveError),
+      });
     } finally {
       setSavingPart(false);
     }
@@ -413,7 +514,9 @@ export function MyParts() {
       <section className="page-header detail-page-header">
         <div className="detail-page-heading">
           <h1 className="page-title">My Parts</h1>
-          <p className="page-subtitle">Manage existing parts and search for new parts to procure.</p>
+          <p className="page-subtitle">
+            Manage existing parts and search for new parts to procure.
+          </p>
         </div>
         <div className="account-menu detail-actions-menu" ref={actionsMenuRef}>
           <button
@@ -428,7 +531,10 @@ export function MyParts() {
             <span className="detail-action-label">Actions</span>
           </button>
           {actionsOpen && (
-            <div className="account-menu__panel detail-actions-menu__panel" role="menu">
+            <div
+              className="account-menu__panel detail-actions-menu__panel"
+              role="menu"
+            >
               <button
                 type="button"
                 className="account-menu__item"
@@ -441,11 +547,21 @@ export function MyParts() {
                 <Plus size={18} />
                 <span>Add Part</span>
               </button>
-              <button type="button" className="account-menu__item" role="menuitem" onClick={() => exportParts("csv")}>
+              <button
+                type="button"
+                className="account-menu__item"
+                role="menuitem"
+                onClick={() => exportParts("csv")}
+              >
                 <Download size={18} />
                 <span>Export CSV</span>
               </button>
-              <button type="button" className="account-menu__item" role="menuitem" onClick={() => exportParts("xlsx")}>
+              <button
+                type="button"
+                className="account-menu__item"
+                role="menuitem"
+                onClick={() => exportParts("xlsx")}
+              >
                 <FileSpreadsheet size={18} />
                 <span>Export XLSX</span>
               </button>
@@ -466,11 +582,17 @@ export function MyParts() {
         </form>
 
         {activeQuery && (
-          <div className="part-search__dropdown" role="listbox" aria-label="Search results">
+          <div
+            className="part-search__dropdown"
+            role="listbox"
+            aria-label="Search results"
+          >
             {searchLoading ? (
               <div className="part-search__status">Searching parts...</div>
             ) : searchError ? (
-              <div className="part-search__status part-search__status--error">{searchError}</div>
+              <div className="part-search__status part-search__status--error">
+                {searchError}
+              </div>
             ) : (searchRows ?? []).length === 0 ? (
               <div className="part-search__status">No results</div>
             ) : (
@@ -512,7 +634,9 @@ export function MyParts() {
       {projectsLoading || partsLoading ? (
         <Spinner message="Loading parts..." />
       ) : projectsError || partsError ? (
-        <ErrorMessage message={projectsError ?? partsError ?? "Could not load parts"} />
+        <ErrorMessage
+          message={projectsError ?? partsError ?? "Could not load parts"}
+        />
       ) : (
         <div className="my-parts-table">
           <DataTable
@@ -523,17 +647,26 @@ export function MyParts() {
               if (row.source === "manual") openEditPart(row);
               else navigate(`/parts/${row.id}`);
             }}
-            emptyState={<EmptyState title="No parts yet" body="Upload a BOM or add a part manually to start building your inventory." />}
+            emptyState={
+              <EmptyState
+                title="No parts yet"
+                body="Upload a BOM or add a part manually to start building your inventory."
+              />
+            }
           />
         </div>
       )}
 
       <PartNoteModal part={noteTarget} onClose={() => setNoteTarget(null)} />
 
-      <Modal open={addPartOpen} title={editingPart ? "Edit Part" : "Add Part"} onClose={() => {
-        setAddPartOpen(false);
-        setEditingPart(null);
-      }}>
+      <Modal
+        open={addPartOpen}
+        title={editingPart ? "Edit Part" : "Add Part"}
+        onClose={() => {
+          setAddPartOpen(false);
+          setEditingPart(null);
+        }}
+      >
         <form className="part-form" onSubmit={submitManualPart}>
           <label className="field-label">
             MPN
@@ -549,7 +682,9 @@ export function MyParts() {
             <input
               className="form-control"
               value={manualForm.manufacturer}
-              onChange={(event) => updateManualForm("manufacturer", event.target.value)}
+              onChange={(event) =>
+                updateManualForm("manufacturer", event.target.value)
+              }
               required
             />
           </label>
@@ -558,7 +693,9 @@ export function MyParts() {
             <input
               className="form-control"
               value={manualForm.category}
-              onChange={(event) => updateManualForm("category", event.target.value)}
+              onChange={(event) =>
+                updateManualForm("category", event.target.value)
+              }
             />
           </label>
           <label className="field-label part-form__wide">
@@ -566,7 +703,9 @@ export function MyParts() {
             <textarea
               className="form-control form-control--textarea"
               value={manualForm.description}
-              onChange={(event) => updateManualForm("description", event.target.value)}
+              onChange={(event) =>
+                updateManualForm("description", event.target.value)
+              }
             />
           </label>
           <label className="field-label">
@@ -588,7 +727,9 @@ export function MyParts() {
               min="0"
               step="0.01"
               value={manualForm.unit_price}
-              onChange={(event) => updateManualForm("unit_price", event.target.value)}
+              onChange={(event) =>
+                updateManualForm("unit_price", event.target.value)
+              }
             />
           </label>
           <label className="field-label">
@@ -596,7 +737,9 @@ export function MyParts() {
             <input
               className="form-control"
               value={manualForm.country_of_origin}
-              onChange={(event) => updateManualForm("country_of_origin", event.target.value)}
+              onChange={(event) =>
+                updateManualForm("country_of_origin", event.target.value)
+              }
             />
           </label>
           <div className="part-form__actions">
@@ -611,14 +754,26 @@ export function MyParts() {
                 Delete
               </button>
             )}
-            <button type="button" className="button" onClick={() => {
-              setAddPartOpen(false);
-              setEditingPart(null);
-            }}>
+            <button
+              type="button"
+              className="button"
+              onClick={() => {
+                setAddPartOpen(false);
+                setEditingPart(null);
+              }}
+            >
               Cancel
             </button>
-            <button type="submit" className="button button--primary" disabled={savingPart}>
-              {savingPart ? "Saving..." : editingPart ? "Save Changes" : "Add Part"}
+            <button
+              type="submit"
+              className="button button--primary"
+              disabled={savingPart}
+            >
+              {savingPart
+                ? "Saving..."
+                : editingPart
+                  ? "Save Changes"
+                  : "Add Part"}
             </button>
           </div>
         </form>

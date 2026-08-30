@@ -7,7 +7,9 @@ import {
 } from "./format";
 
 export function useCurrencyPreference() {
-  const [currency, setCurrency] = useState<CurrencyCode>(() => readCurrencyPreference());
+  const [currency, setCurrency] = useState<CurrencyCode>(() =>
+    readCurrencyPreference(),
+  );
 
   useEffect(() => {
     function syncCurrency() {

@@ -130,7 +130,6 @@
 }
 
 @media (min-width: 768px) {
-
   .agentic-container,
   .reverse-split-container {
     flex-direction: row-reverse;
@@ -610,7 +609,9 @@
   cursor: pointer;
   height: 0.4rem;
   padding: 0;
-  transition: background-color 0.25s ease, transform 0.25s ease;
+  transition:
+    background-color 0.25s ease,
+    transform 0.25s ease;
   width: 0.4rem;
 }
 

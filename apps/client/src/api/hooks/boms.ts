@@ -4,7 +4,9 @@ import type { BomDiffLine, BomLine, Project } from "../types";
 import { useAsync } from "./useAsync";
 
 function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  return value && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function asString(value: unknown, fallback = "") {
@@ -17,7 +19,8 @@ function asNumber(value: unknown, fallback = 0) {
 }
 
 function asDateString(value: unknown, fallback = new Date()) {
-  const date = typeof value === "string" && value.trim() ? new Date(value) : fallback;
+  const date =
+    typeof value === "string" && value.trim() ? new Date(value) : fallback;
   const safeDate = Number.isFinite(date.getTime()) ? date : fallback;
   return safeDate.toISOString().slice(0, 10);
 }
@@ -28,16 +31,26 @@ function asProjectName(value: unknown, fallback = "Untitled") {
   return name;
 }
 
-function normalizeBomLine(value: unknown, index: number, projectId: string): BomLine {
+function normalizeBomLine(
+  value: unknown,
+  index: number,
+  projectId: string,
+): BomLine {
   const line = asRecord(value);
   const lineNo = Math.max(1, Math.floor(asNumber(line.line_no, index + 1)));
-  const partId = asString(line.part_id, asString(line.matched_part_id, `${projectId}-part-${lineNo}`));
+  const partId = asString(
+    line.part_id,
+    asString(line.matched_part_id, `${projectId}-part-${lineNo}`),
+  );
 
   return {
     id: asString(line.id, `${projectId}-line-${lineNo}`),
     part_id: partId,
     line_no: lineNo,
-    mpn: asString(line.mpn, asString(line.manufacturer_part_number, `UNKNOWN-${lineNo}`)),
+    mpn: asString(
+      line.mpn,
+      asString(line.manufacturer_part_number, `UNKNOWN-${lineNo}`),
+    ),
     description: asString(line.description, `BOM line ${lineNo}`),
     manufacturer: asString(line.manufacturer, "Unknown"),
     category: asString(line.category, "Uncategorized"),
@@ -48,18 +61,30 @@ function normalizeBomLine(value: unknown, index: number, projectId: string): Bom
   };
 }
 
-function normalizeProject(value: unknown, fallback?: { name?: string; lines?: BomLine[] }): Project {
+function normalizeProject(
+  value: unknown,
+  fallback?: { name?: string; lines?: BomLine[] },
+): Project {
   const project = asRecord(value);
   const id = asString(project.id, `bom-upload-${Date.now()}`);
-  const rawLines = Array.isArray(project.lines) && project.lines.length ? project.lines : fallback?.lines ?? [];
-  const lines = rawLines.map((line, index) => normalizeBomLine(line, index, id));
+  const rawLines =
+    Array.isArray(project.lines) && project.lines.length
+      ? project.lines
+      : (fallback?.lines ?? []);
+  const lines = rawLines.map((line, index) =>
+    normalizeBomLine(line, index, id),
+  );
   const uploadedAt = asDateString(project.uploaded_at);
-  const lowestScore = lines.length ? Math.min(...lines.map((line) => line.score)) : asNumber(project.lowest_score, 0);
+  const lowestScore = lines.length
+    ? Math.min(...lines.map((line) => line.score))
+    : asNumber(project.lowest_score, 0);
 
   return {
     id,
     name: asProjectName(project.name, fallback?.name ?? "Untitled"),
-    part_count: lines.length || asNumber(project.part_count, asNumber(project.line_count, 0)),
+    part_count:
+      lines.length ||
+      asNumber(project.part_count, asNumber(project.line_count, 0)),
     uploaded_at: uploadedAt,
     owner: asString(project.owner, "You"),
     lowest_score: lowestScore,
@@ -72,11 +97,12 @@ function normalizeProject(value: unknown, fallback?: { name?: string; lines?: Bo
  */
 export function useProjects() {
   return useAsync<Project[]>(
-    () => api.get("/v1/boms").then((res) => {
-      const payload = asRecord(res.data);
-      const projects = Array.isArray(payload.data) ? payload.data : [];
-      return projects.map((project) => normalizeProject(project));
-    }),
+    () =>
+      api.get("/v1/boms").then((res) => {
+        const payload = asRecord(res.data);
+        const projects = Array.isArray(payload.data) ? payload.data : [];
+        return projects.map((project) => normalizeProject(project));
+      }),
     [],
   );
 }
@@ -88,10 +114,12 @@ export function useProject(id: string | undefined) {
   return useAsync<Project>(
     id
       ? async () => {
-        return api
-          .get(`/v1/boms/${id}`, { params: { sort: "risk_score", order: "desc" } })
-          .then((res) => normalizeProject(res.data));
-      }
+          return api
+            .get(`/v1/boms/${id}`, {
+              params: { sort: "risk_score", order: "desc" },
+            })
+            .then((res) => normalizeProject(res.data));
+        }
       : null,
     [id],
   );
@@ -101,9 +129,18 @@ export function useProject(id: string | undefined) {
  * Upload a BOM file via `POST /v1/boms` (multipart/form-data).
  */
 export function useUploadBom() {
-  async function uploadBom(file: File, options?: { name?: string; lines?: BomLine[] }): Promise<Project> {
+  async function uploadBom(
+    file: File,
+    options?: { name?: string; lines?: BomLine[] },
+  ): Promise<Project> {
     const parsed = options?.lines
-      ? { name: options.name?.trim() || file.name.replace(/\.[^.]+$/, "") || "Uploaded BOM", lines: options.lines }
+      ? {
+          name:
+            options.name?.trim() ||
+            file.name.replace(/\.[^.]+$/, "") ||
+            "Uploaded BOM",
+          lines: options.lines,
+        }
       : await parseBomFile(file);
     const formData = new FormData();
     formData.append("file", file);
@@ -124,7 +161,13 @@ export function useUploadBom() {
  * The project and all lines are persisted atomically by the server.
  */
 export function useCreateBom() {
-  async function createBom({ name, lines }: { name: string; lines: BomLine[] }): Promise<Project> {
+  async function createBom({
+    name,
+    lines,
+  }: {
+    name: string;
+    lines: BomLine[];
+  }): Promise<Project> {
     const res = await api.post("/v1/boms", { name, lines });
     return normalizeProject(res.data, { name, lines });
   }
@@ -136,7 +179,10 @@ export function useCreateBom() {
  * Update a project's name and/or BOM lines.
  */
 export function useUpdateBom() {
-  async function updateBom(projectId: string, input: { name?: string; lines?: BomLine[] }): Promise<Project> {
+  async function updateBom(
+    projectId: string,
+    input: { name?: string; lines?: BomLine[] },
+  ): Promise<Project> {
     const res = await api.patch(`/v1/boms/${projectId}`, input);
     return normalizeProject(res.data, input);
   }
@@ -169,9 +215,9 @@ export function useCompareBoms(a: string | null, b: string | null) {
   return useAsync<BomDiffLine[]>(
     a && b
       ? () =>
-        api
-          .get(`/v1/boms/${a}/compare`, { params: { with: b } })
-          .then((res) => res.data?.items ?? res.data ?? [])
+          api
+            .get(`/v1/boms/${a}/compare`, { params: { with: b } })
+            .then((res) => res.data?.items ?? res.data ?? [])
       : null,
     [a, b],
   );

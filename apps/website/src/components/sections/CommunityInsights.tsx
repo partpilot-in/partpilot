@@ -1,22 +1,22 @@
-import React from 'react';
-import './sections.css';
+import React from "react";
+import "./sections.css";
 
 const communitySignals = [
   {
-    source: 'Engineer forum',
-    insight: 'Thermal derating reported above 85°C',
-    evidence: '18 corroborations'
+    source: "Engineer forum",
+    insight: "Thermal derating reported above 85°C",
+    evidence: "18 corroborations",
   },
   {
-    source: 'Design community',
-    insight: 'Drop-in footprint confirmed in production',
-    evidence: '7 verified designs'
+    source: "Design community",
+    insight: "Drop-in footprint confirmed in production",
+    evidence: "7 verified designs",
   },
   {
-    source: 'Independent lab',
-    insight: 'EMI performance validated against reference',
-    evidence: 'Test report linked'
-  }
+    source: "Independent lab",
+    insight: "EMI performance validated against reference",
+    evidence: "Test report linked",
+  },
 ];
 
 export const CommunityInsights: React.FC = () => {
@@ -29,7 +29,9 @@ export const CommunityInsights: React.FC = () => {
               <span>Integrated part insights</span>
               <span className="signal-status">3 new</span>
             </div>
-            <div className="insight-part">TPS62130RGTR <span>Power management IC</span></div>
+            <div className="insight-part">
+              TPS62130RGTR <span>Power management IC</span>
+            </div>
             <div className="insight-list">
               {communitySignals.map((signal) => (
                 <div className="insight-row" key={signal.source}>
@@ -43,10 +45,17 @@ export const CommunityInsights: React.FC = () => {
         </div>
 
         <div className="agentic-content">
-          <div className="section-label">Third-party + community intelligence</div>
-          <h2 className="section-title">See what part data sheets do not tell you</h2>
+          <div className="section-label">
+            Third-party + community intelligence
+          </div>
+          <h2 className="section-title">
+            See what part data sheets do not tell you
+          </h2>
           <p className="agentic-text compact-section-text">
-            PartPilot brings trusted third-party research, engineering communities, independent test results, and field experience into each part record. Every insight stays linked to its source, so teams can validate real-world behavior before committing to a component.
+            PartPilot brings trusted third-party research, engineering
+            communities, independent test results, and field experience into
+            each part record. Every insight stays linked to its source, so teams
+            can validate real-world behavior before committing to a component.
           </p>
         </div>
       </div>

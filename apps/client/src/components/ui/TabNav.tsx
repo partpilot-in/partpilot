@@ -20,7 +20,10 @@ export function TabNav({ tabs, activeKey }: TabNavProps) {
         {tabs.map((tab) => (
           <Link
             key={tab.key}
-            className={["tab-nav__link", activeKey === tab.key && "tab-nav__link--active"]
+            className={[
+              "tab-nav__link",
+              activeKey === tab.key && "tab-nav__link--active",
+            ]
               .filter(Boolean)
               .join(" ")}
             to={tab.to}

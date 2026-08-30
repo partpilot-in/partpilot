@@ -7,11 +7,18 @@ interface FilterChipProps {
   showActiveIcon?: boolean;
 }
 
-export function FilterChip({ label, active, onToggle, showActiveIcon = true }: FilterChipProps) {
+export function FilterChip({
+  label,
+  active,
+  onToggle,
+  showActiveIcon = true,
+}: FilterChipProps) {
   return (
     <button
       type="button"
-      className={["filter-chip", active && "filter-chip--active"].filter(Boolean).join(" ")}
+      className={["filter-chip", active && "filter-chip--active"]
+        .filter(Boolean)
+        .join(" ")}
       aria-pressed={active}
       onClick={onToggle}
     >

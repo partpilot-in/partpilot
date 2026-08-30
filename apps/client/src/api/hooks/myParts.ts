@@ -20,12 +20,13 @@ export interface MyPartInput {
 function responseItems(payload: unknown): MyPart[] {
   if (!payload || typeof payload !== "object") return [];
   const data = (payload as { data?: unknown }).data;
-  return Array.isArray(data) ? data as MyPart[] : [];
+  return Array.isArray(data) ? (data as MyPart[]) : [];
 }
 
 export function useMyParts() {
   return useAsync<MyPart[]>(
-    () => api.get("/v1/my-parts").then((response) => responseItems(response.data)),
+    () =>
+      api.get("/v1/my-parts").then((response) => responseItems(response.data)),
     [],
   );
 }

@@ -1,6 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Building2, Check, ChevronDown, ChevronLeft, DollarSign, LogOut, Moon, Settings, Sun, UserCircle } from "lucide-react";
+import {
+  Building2,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  DollarSign,
+  LogOut,
+  Moon,
+  Settings,
+  Sun,
+  UserCircle,
+} from "lucide-react";
 import { supportedCurrencies, type CurrencyCode } from "../../lib/format";
 import { useCurrencyPreference } from "../../lib/useCurrencyPreference";
 
@@ -10,7 +21,11 @@ interface TopAppBarProps {
   onSignOut?: () => void | Promise<void>;
 }
 
-export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps) {
+export function TopAppBar({
+  organizationSlug,
+  user,
+  onSignOut,
+}: TopAppBarProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false);
@@ -73,7 +88,11 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
     <header className="top-app-bar">
       <div className="top-app-bar__inner">
         <div className="top-app-bar__identity">
-          <Link className="brand-link" to="/dashboard" aria-label="PartPilot dashboard">
+          <Link
+            className="brand-link"
+            to="/dashboard"
+            aria-label="PartPilot dashboard"
+          >
             <img className="brand-mark" src={logoSrc} alt="" />
             <span>PartPilot</span>
           </Link>
@@ -89,7 +108,9 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
               className="user-chip"
               aria-haspopup="menu"
               aria-expanded={accountMenuOpen}
-              aria-label={user ? `${user.name} account menu` : "Guest account menu"}
+              aria-label={
+                user ? `${user.name} account menu` : "Guest account menu"
+              }
               onClick={() => {
                 setAccountMenuOpen((open) => !open);
                 setCurrencyMenuOpen(false);
@@ -97,7 +118,11 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
             >
               <span className="user-chip__name">{user?.name ?? "Guest"}</span>
               <span className="avatar">
-                {user?.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initials || <UserCircle size={18} />}
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" />
+                ) : (
+                  initials || <UserCircle size={18} />
+                )}
               </span>
               <ChevronDown size={16} aria-hidden="true" />
             </button>
@@ -117,7 +142,9 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
                   onClick={selectThemeMenuItem}
                 >
                   {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
-                  <span>{theme === "light" ? "Dark theme" : "Light theme"}</span>
+                  <span>
+                    {theme === "light" ? "Dark theme" : "Light theme"}
+                  </span>
                 </button>
                 <div className="account-menu__submenu-wrap">
                   <button
@@ -132,12 +159,17 @@ export function TopAppBar({ organizationSlug, user, onSignOut }: TopAppBarProps)
                     <DollarSign size={18} />
                     <span className="account-menu__item-main">
                       <span>Default Currency:</span>
-                      <span className="account-menu__item-meta">{currency}</span>
+                      <span className="account-menu__item-meta">
+                        {currency}
+                      </span>
                     </span>
                     <ChevronLeft size={16} aria-hidden="true" />
                   </button>
                   {currencyMenuOpen && (
-                    <div className="account-menu__panel account-menu__submenu account-menu__submenu--left" role="menu">
+                    <div
+                      className="account-menu__panel account-menu__submenu account-menu__submenu--left"
+                      role="menu"
+                    >
                       {supportedCurrencies.map((option) => (
                         <button
                           key={option.code}

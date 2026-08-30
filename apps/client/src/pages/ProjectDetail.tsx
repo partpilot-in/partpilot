@@ -1,8 +1,24 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Check, Download, GitCompareArrows, MoreVertical, Pencil, Trash2, X } from "lucide-react";
-import { useDeleteBom, useProject, useProjects, useRenameBom } from "../api/hooks/boms";
-import { complianceFromCharacteristics, lifecycleFromCharacteristics } from "../api/componentMetadata";
+import {
+  Check,
+  Download,
+  GitCompareArrows,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
+import {
+  useDeleteBom,
+  useProject,
+  useProjects,
+  useRenameBom,
+} from "../api/hooks/boms";
+import {
+  complianceFromCharacteristics,
+  lifecycleFromCharacteristics,
+} from "../api/componentMetadata";
 import type { BomLine } from "../api/types";
 import { exportBomCsv } from "../components/BomEditor";
 import {
@@ -44,7 +60,10 @@ export function ProjectDetail() {
   const { showToast } = useToast();
   const { currency } = useCurrencyPreference();
   const exchangeRate = useUsdExchangeRate(currency);
-  const exchangeRateReady = exchangeRate.currency === currency && !exchangeRate.loading && !exchangeRate.error;
+  const exchangeRateReady =
+    exchangeRate.currency === currency &&
+    !exchangeRate.loading &&
+    !exchangeRate.error;
   const displayCurrency = exchangeRateReady ? currency : "USD";
   const displayRate = exchangeRateReady ? exchangeRate.rate : 1;
   const bomCurrencyFormatter = createCurrencyFormatter(displayCurrency);
@@ -102,21 +121,33 @@ export function ProjectDetail() {
       header: "Price",
       sortable: true,
       numeric: true,
-      render: (row) => bomCurrencyFormatter.format(row.unit_price * displayRate),
+      render: (row) =>
+        bomCurrencyFormatter.format(row.unit_price * displayRate),
     },
     {
       key: "compliance",
       header: "Compliance",
       sortable: true,
-      sortValue: (row) => complianceFromCharacteristics(row.component_metadata).map((item) => item.status).join(","),
-      render: (row) => <ComplianceBadge statuses={complianceFromCharacteristics(row.component_metadata)} />,
+      sortValue: (row) =>
+        complianceFromCharacteristics(row.component_metadata)
+          .map((item) => item.status)
+          .join(","),
+      render: (row) => (
+        <ComplianceBadge
+          statuses={complianceFromCharacteristics(row.component_metadata)}
+        />
+      ),
     },
     {
       key: "lifecycle_stage",
       header: "Lifecycle",
       sortable: true,
       sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
-      render: (row) => <LifecycleBadge stage={lifecycleFromCharacteristics(row.component_metadata)} />,
+      render: (row) => (
+        <LifecycleBadge
+          stage={lifecycleFromCharacteristics(row.component_metadata)}
+        />
+      ),
     },
     {
       key: "score",
@@ -139,8 +170,15 @@ export function ProjectDetail() {
 
   function exportProjectBom() {
     if (!project) return;
-    exportBomCsv(project.name, Array.isArray(project.lines) ? project.lines : []);
-    showToast({ title: "CSV exported", body: `${project.name} downloaded.`, tone: "success" });
+    exportBomCsv(
+      project.name,
+      Array.isArray(project.lines) ? project.lines : [],
+    );
+    showToast({
+      title: "CSV exported",
+      body: `${project.name} downloaded.`,
+      tone: "success",
+    });
   }
 
   async function saveProjectName(event: FormEvent) {
@@ -151,9 +189,19 @@ export function ProjectDetail() {
       setRenaming(false);
       setProjectName(renamed.name);
       refetch();
-      showToast({ title: "Project renamed", body: renamed.name, tone: "success" });
+      showToast({
+        title: "Project renamed",
+        body: renamed.name,
+        tone: "success",
+      });
     } catch (renameError) {
-      showToast({ title: "Could not rename project", body: renameError instanceof Error ? renameError.message : "Please try again." });
+      showToast({
+        title: "Could not rename project",
+        body:
+          renameError instanceof Error
+            ? renameError.message
+            : "Please try again.",
+      });
     }
   }
 
@@ -167,10 +215,20 @@ export function ProjectDetail() {
     try {
       await deleteBom(project.id);
       setDeleteOpen(false);
-      showToast({ title: "Project deleted", body: `${project.name} was removed.`, tone: "success" });
+      showToast({
+        title: "Project deleted",
+        body: `${project.name} was removed.`,
+        tone: "success",
+      });
       navigate("/projects");
     } catch (deleteError) {
-      showToast({ title: "Could not delete project", body: deleteError instanceof Error ? deleteError.message : "Please try again." });
+      showToast({
+        title: "Could not delete project",
+        body:
+          deleteError instanceof Error
+            ? deleteError.message
+            : "Please try again.",
+      });
     }
   }
 
@@ -197,7 +255,10 @@ export function ProjectDetail() {
   }
 
   const projectLines = Array.isArray(project.lines) ? project.lines : [];
-  const totalCost = projectLines.reduce((total, line) => total + line.qty * line.unit_price, 0);
+  const totalCost = projectLines.reduce(
+    (total, line) => total + line.qty * line.unit_price,
+    0,
+  );
   const convertedTotalCost = totalCost * displayRate;
 
   return (
@@ -213,23 +274,38 @@ export function ProjectDetail() {
                 aria-label="Project name"
                 autoFocus
               />
-              <button type="submit" className="icon-button" aria-label="Save project name">
+              <button
+                type="submit"
+                className="icon-button"
+                aria-label="Save project name"
+              >
                 <Check size={18} />
               </button>
-              <button type="button" className="icon-button" aria-label="Cancel project name edit" onClick={cancelRename}>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Cancel project name edit"
+                onClick={cancelRename}
+              >
                 <X size={18} />
               </button>
             </form>
           ) : (
             <div className="project-title-row">
               <h1 className="page-title">{project.name}</h1>
-              <button type="button" className="icon-button" aria-label="Edit project name" onClick={() => setRenaming(true)}>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Edit project name"
+                onClick={() => setRenaming(true)}
+              >
                 <Pencil size={18} />
               </button>
             </div>
           )}
           <p className="page-subtitle">
-            {projectLines.length || project.part_count} parts – uploaded {formatDate(project.uploaded_at)}
+            {projectLines.length || project.part_count} parts – uploaded{" "}
+            {formatDate(project.uploaded_at)}
           </p>
           {currency !== "USD" && (
             <p className="page-subtitle currency-note">
@@ -242,69 +318,72 @@ export function ProjectDetail() {
           )}
         </div>
         <div className="account-menu detail-actions-menu" ref={actionsMenuRef}>
-            <button
-              type="button"
-              className="button detail-actions-button"
-              aria-label="Project actions"
-              aria-haspopup="menu"
-              aria-expanded={actionsOpen}
-              onClick={() => setActionsOpen((open) => !open)}
+          <button
+            type="button"
+            className="button detail-actions-button"
+            aria-label="Project actions"
+            aria-haspopup="menu"
+            aria-expanded={actionsOpen}
+            onClick={() => setActionsOpen((open) => !open)}
+          >
+            <MoreVertical size={16} />
+            <span className="detail-action-label">Actions</span>
+          </button>
+          {actionsOpen && (
+            <div
+              className="account-menu__panel detail-actions-menu__panel"
+              role="menu"
             >
-              <MoreVertical size={16} />
-              <span className="detail-action-label">Actions</span>
-            </button>
-            {actionsOpen && (
-              <div className="account-menu__panel detail-actions-menu__panel" role="menu">
-                <button
-                  type="button"
-                  className="account-menu__item"
-                  role="menuitem"
-                  onClick={() => {
-                    setActionsOpen(false);
-                    setCompareOpen(true);
-                  }}
-                >
-                  <GitCompareArrows size={18} />
-                  <span>Compare BOM</span>
-                </button>
-                <button
-                  type="button"
-                  className="account-menu__item"
-                  role="menuitem"
-                  onClick={() => {
-                    setActionsOpen(false);
-                    navigate(`/projects/${project.id}/edit`);
-                  }}
-                >
-                  <Pencil size={18} />
-                  <span>Edit BOM</span>
-                </button>
-                <button
-                  type="button"
-                  className="account-menu__item"
-                  role="menuitem"
-                  onClick={() => {
-                    setActionsOpen(false);
-                    exportProjectBom();
-                  }}
-                >
-                  <Download size={18} />
-                  <span>Export BOM</span>
-                </button>
-                <button
-                  type="button"
-                  className="account-menu__item account-menu__item--danger"
-                  role="menuitem"
-                  onClick={() => {
-                    setActionsOpen(false);
-                    setDeleteOpen(true);
-                  }}
-                >
-                  <Trash2 size={18} />
-                  <span>Delete Project</span>
-                </button>
-              </div>
-            )}
+              <button
+                type="button"
+                className="account-menu__item"
+                role="menuitem"
+                onClick={() => {
+                  setActionsOpen(false);
+                  setCompareOpen(true);
+                }}
+              >
+                <GitCompareArrows size={18} />
+                <span>Compare BOM</span>
+              </button>
+              <button
+                type="button"
+                className="account-menu__item"
+                role="menuitem"
+                onClick={() => {
+                  setActionsOpen(false);
+                  navigate(`/projects/${project.id}/edit`);
+                }}
+              >
+                <Pencil size={18} />
+                <span>Edit BOM</span>
+              </button>
+              <button
+                type="button"
+                className="account-menu__item"
+                role="menuitem"
+                onClick={() => {
+                  setActionsOpen(false);
+                  exportProjectBom();
+                }}
+              >
+                <Download size={18} />
+                <span>Export BOM</span>
+              </button>
+              <button
+                type="button"
+                className="account-menu__item account-menu__item--danger"
+                role="menuitem"
+                onClick={() => {
+                  setActionsOpen(false);
+                  setDeleteOpen(true);
+                }}
+              >
+                <Trash2 size={18} />
+                <span>Delete Project</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -334,7 +413,11 @@ export function ProjectDetail() {
 
       <PartNoteModal part={noteTarget} onClose={() => setNoteTarget(null)} />
 
-      <Modal open={compareOpen} title="Compare with another BOM" onClose={() => setCompareOpen(false)}>
+      <Modal
+        open={compareOpen}
+        title="Compare with another BOM"
+        onClose={() => setCompareOpen(false)}
+      >
         <div className="stack" style={{ gap: 16 }}>
           <select
             className="form-control"
@@ -358,7 +441,9 @@ export function ProjectDetail() {
               disabled={!compareTarget}
               onClick={() => {
                 if (compareTarget) {
-                  navigate(`/projects/compare?a=${project.id}&b=${compareTarget}`);
+                  navigate(
+                    `/projects/compare?a=${project.id}&b=${compareTarget}`,
+                  );
                 }
               }}
             >
@@ -369,17 +454,30 @@ export function ProjectDetail() {
         </div>
       </Modal>
 
-      <Modal open={deleteOpen} title="Delete project" onClose={() => setDeleteOpen(false)}>
+      <Modal
+        open={deleteOpen}
+        title="Delete project"
+        onClose={() => setDeleteOpen(false)}
+      >
         <div className="stack" style={{ gap: 16 }}>
           <p className="modal-copy">
-            Delete {project.name}? This removes the project and its BOM lines from My Parts.
+            Delete {project.name}? This removes the project and its BOM lines
+            from My Parts.
           </p>
           <div className="inline-stack">
-            <button type="button" className="button button--danger" onClick={confirmDeleteProject}>
+            <button
+              type="button"
+              className="button button--danger"
+              onClick={confirmDeleteProject}
+            >
               <Trash2 size={16} />
               Delete Project
             </button>
-            <button type="button" className="button" onClick={() => setDeleteOpen(false)}>
+            <button
+              type="button"
+              className="button"
+              onClick={() => setDeleteOpen(false)}
+            >
               Cancel
             </button>
           </div>

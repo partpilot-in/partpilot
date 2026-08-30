@@ -1,9 +1,19 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { MoreVertical, Plus, Star } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
 import { useMyParts, useMyPartsMutations } from "../api/hooks/myParts";
-import { usePart, usePartAlternates, usePartByMpn, useProjectParts } from "../api/hooks/parts";
+import {
+  usePart,
+  usePartAlternates,
+  usePartByMpn,
+  useProjectParts,
+} from "../api/hooks/parts";
 import {
   CDD_SECTION_DEFINITIONS,
   DESIGNATOR_CATEGORY_LABELS,
@@ -40,7 +50,9 @@ import { useImportantParts } from "../lib/useImportantParts";
 
 const recentSearchesStorageKey = "partpilot.recentPartSearches";
 
-const hiddenCharacteristicFields: Partial<Record<CddSectionKey, ReadonlySet<string>>> = {
+const hiddenCharacteristicFields: Partial<
+  Record<CddSectionKey, ReadonlySet<string>>
+> = {
   identification: new Set(["alternatePartNumbers"]),
   electrical: new Set(["additionalProperties"]),
   commercial: new Set(["priceBreaks", "distributors", "obsolescenceRiskScore"]),
@@ -53,7 +65,9 @@ function alternatePartNumbersFrom(part: Part | undefined) {
     "alternatePartNumbers",
   );
   if (!Array.isArray(value)) return [];
-  return value.filter((partNumber): partNumber is string => typeof partNumber === "string");
+  return value.filter(
+    (partNumber): partNumber is string => typeof partNumber === "string",
+  );
 }
 
 function recentSearchForId(id: string | undefined) {
@@ -65,11 +79,12 @@ function recentSearchForId(id: string | undefined) {
     if (!Array.isArray(parsed)) return undefined;
     return parsed.find(
       (item): item is { id: string; mpn: string; manufacturer?: string } =>
-        item
-        && typeof item === "object"
-        && item.id === id
-        && typeof item.mpn === "string"
-        && (item.manufacturer === undefined || typeof item.manufacturer === "string"),
+        item &&
+        typeof item === "object" &&
+        item.id === id &&
+        typeof item.mpn === "string" &&
+        (item.manufacturer === undefined ||
+          typeof item.manufacturer === "string"),
     );
   } catch {
     return undefined;
@@ -85,7 +100,10 @@ function removeRecentSearch(part: Part) {
     const next = parsed.filter((item) => {
       if (!item || typeof item !== "object") return false;
       const record = item as { id?: unknown; mpn?: unknown };
-      return record.id !== part.id && String(record.mpn ?? "").toLowerCase() !== part.mpn.toLowerCase();
+      return (
+        record.id !== part.id &&
+        String(record.mpn ?? "").toLowerCase() !== part.mpn.toLowerCase()
+      );
     });
     window.localStorage.setItem(recentSearchesStorageKey, JSON.stringify(next));
   } catch {
@@ -98,10 +116,18 @@ export function PartDetail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { data: projects, loading: projectsLoading } = useProjects();
-  const { data: manualParts, loading: manualPartsLoading, refetch: refetchMyParts } = useMyParts();
+  const {
+    data: manualParts,
+    loading: manualPartsLoading,
+    refetch: refetchMyParts,
+  } = useMyParts();
   const { createMyPart } = useMyPartsMutations();
   const projectParts = useProjectParts(projects);
-  const { parts: importantParts, isImportant, toggleImportant } = useImportantParts();
+  const {
+    parts: importantParts,
+    isImportant,
+    toggleImportant,
+  } = useImportantParts();
   const recentSearchPart = useMemo(() => recentSearchForId(id), [id]);
   const localPart = useMemo(
     () =>
@@ -119,11 +145,13 @@ export function PartDetail() {
     [id, importantParts, manualParts, projectParts],
   );
   const requestedMpn = searchParams.get("mpn")?.trim() || recentSearchPart?.mpn;
-  const requestedManufacturer = searchParams.get("manufacturer")?.trim()
-    || recentSearchPart?.manufacturer;
-  const { data: catalogPart, loading, error } = usePart(
-    localPart || requestedMpn ? undefined : id,
-  );
+  const requestedManufacturer =
+    searchParams.get("manufacturer")?.trim() || recentSearchPart?.manufacturer;
+  const {
+    data: catalogPart,
+    loading,
+    error,
+  } = usePart(localPart || requestedMpn ? undefined : id);
   const catalogPartForRoute = catalogPart?.id === id ? catalogPart : undefined;
   const lookupPart = localPart ?? catalogPartForRoute;
   const lookupMpn = lookupPart?.mpn ?? requestedMpn;
@@ -141,7 +169,8 @@ export function PartDetail() {
   );
   const { showToast } = useToast();
   const [actionsOpen, setActionsOpen] = useState(false);
-  const [activeCharacteristicTab, setActiveCharacteristicTab] = useState<CddSectionKey>("electrical");
+  const [activeCharacteristicTab, setActiveCharacteristicTab] =
+    useState<CddSectionKey>("electrical");
   const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -173,24 +202,37 @@ export function PartDetail() {
       header: "Price",
       sortable: true,
       numeric: true,
-      sortValue: (row) => referencePriceFromCharacteristics(row.component_metadata),
-      render: (row) => currencyFormatter.format(referencePriceFromCharacteristics(row.component_metadata)),
+      sortValue: (row) =>
+        referencePriceFromCharacteristics(row.component_metadata),
+      render: (row) =>
+        currencyFormatter.format(
+          referencePriceFromCharacteristics(row.component_metadata),
+        ),
     },
     {
       key: "compliance",
       header: "Compliance",
       sortable: true,
-      sortValue: (row) => complianceFromCharacteristics(row.component_metadata)
-        .map((item) => item.status)
-        .join(","),
-      render: (row) => <ComplianceBadge statuses={complianceFromCharacteristics(row.component_metadata)} />,
+      sortValue: (row) =>
+        complianceFromCharacteristics(row.component_metadata)
+          .map((item) => item.status)
+          .join(","),
+      render: (row) => (
+        <ComplianceBadge
+          statuses={complianceFromCharacteristics(row.component_metadata)}
+        />
+      ),
     },
     {
       key: "lifecycle_stage",
       header: "Lifecycle",
       sortable: true,
       sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
-      render: (row) => <LifecycleBadge stage={lifecycleFromCharacteristics(row.component_metadata)} />,
+      render: (row) => (
+        <LifecycleBadge
+          stage={lifecycleFromCharacteristics(row.component_metadata)}
+        />
+      ),
     },
     {
       key: "score",
@@ -213,9 +255,12 @@ export function PartDetail() {
 
   async function addToMyParts() {
     if (!part) return;
-    const exists = (manualParts ?? []).some(
-      (item) => item.id === part.id || item.mpn.trim().toLowerCase() === part.mpn.trim().toLowerCase(),
-    ) || !!localPart;
+    const exists =
+      (manualParts ?? []).some(
+        (item) =>
+          item.id === part.id ||
+          item.mpn.trim().toLowerCase() === part.mpn.trim().toLowerCase(),
+      ) || !!localPart;
 
     if (exists) {
       showToast({ title: "Already in My Parts", body: part.mpn });
@@ -226,24 +271,33 @@ export function PartDetail() {
       await createMyPart({ ...part, total_qty: 1 });
       refetchMyParts();
       removeRecentSearch(part);
-      showToast({ title: "Added to My Parts", body: part.mpn, tone: "success" });
+      showToast({
+        title: "Added to My Parts",
+        body: part.mpn,
+        tone: "success",
+      });
     } catch (addError) {
       showToast({
         title: "Could not add part",
-        body: addError instanceof Error ? addError.message : "Please try again.",
+        body:
+          addError instanceof Error ? addError.message : "Please try again.",
       });
     }
   }
 
   if (
-    (!localPart && (loading || projectsLoading || manualPartsLoading))
-    || (!!lookupMpn && searchLoading)
+    (!localPart && (loading || projectsLoading || manualPartsLoading)) ||
+    (!!lookupMpn && searchLoading)
   ) {
     return <Spinner message="Loading part details..." />;
   }
 
   if (!part && (searchError || (!lookupMpn && error))) {
-    return <ErrorMessage message={searchError ?? error ?? "Could not load part details"} />;
+    return (
+      <ErrorMessage
+        message={searchError ?? error ?? "Could not load part details"}
+      />
+    );
   }
 
   if (!part) {
@@ -260,11 +314,15 @@ export function PartDetail() {
     );
   }
 
-  const designatorCategory = resolveDesignatorCategory(part.category, part.description);
+  const designatorCategory = resolveDesignatorCategory(
+    part.category,
+    part.description,
+  );
   const componentMetadata = part.component_metadata ?? {};
-  const activeCharacteristicSection = CDD_SECTION_DEFINITIONS.find(
-    (section) => section.key === activeCharacteristicTab,
-  ) ?? CDD_SECTION_DEFINITIONS[0];
+  const activeCharacteristicSection =
+    CDD_SECTION_DEFINITIONS.find(
+      (section) => section.key === activeCharacteristicTab,
+    ) ?? CDD_SECTION_DEFINITIONS[0];
   const overviewFields = overviewCharacteristicFields(designatorCategory);
 
   return (
@@ -295,7 +353,10 @@ export function PartDetail() {
             <span className="detail-action-label">Actions</span>
           </button>
           {actionsOpen && (
-            <div className="account-menu__panel detail-actions-menu__panel" role="menu">
+            <div
+              className="account-menu__panel detail-actions-menu__panel"
+              role="menu"
+            >
               <button
                 type="button"
                 className="account-menu__item"
@@ -317,8 +378,13 @@ export function PartDetail() {
                   markImportant();
                 }}
               >
-                <Star size={18} fill={isImportant(part.id) ? "currentColor" : "none"} />
-                <span>{isImportant(part.id) ? "Remove Important" : "Mark Important"}</span>
+                <Star
+                  size={18}
+                  fill={isImportant(part.id) ? "currentColor" : "none"}
+                />
+                <span>
+                  {isImportant(part.id) ? "Remove Important" : "Mark Important"}
+                </span>
               </button>
             </div>
           )}
@@ -340,9 +406,16 @@ export function PartDetail() {
                   <Fragment key={`${section}.${field}`}>
                     <dt>{cddFieldLabel(field)}</dt>
                     <dd>
-                      {section === "commercial" && field === "lifecycleStatus"
-                        ? <LifecycleBadge stage={lifecycleFromCharacteristics(componentMetadata)} />
-                        : formatCddValue(value)}
+                      {section === "commercial" &&
+                      field === "lifecycleStatus" ? (
+                        <LifecycleBadge
+                          stage={lifecycleFromCharacteristics(
+                            componentMetadata,
+                          )}
+                        />
+                      ) : (
+                        formatCddValue(value)
+                      )}
                     </dd>
                   </Fragment>
                 );
@@ -353,21 +426,31 @@ export function PartDetail() {
         <Card
           title="Characteristics"
           className="characteristics-card"
-          action={designatorCategory && (
-            <span className="component-category-label">
-              {designatorCategory} · {DESIGNATOR_CATEGORY_LABELS[designatorCategory]}
-            </span>
-          )}
+          action={
+            designatorCategory && (
+              <span className="component-category-label">
+                {designatorCategory} ·{" "}
+                {DESIGNATOR_CATEGORY_LABELS[designatorCategory]}
+              </span>
+            )
+          }
         >
-          <div className="characteristics-tabs" role="tablist" aria-label="Characteristic sections">
+          <div
+            className="characteristics-tabs"
+            role="tablist"
+            aria-label="Characteristic sections"
+          >
             {CDD_SECTION_DEFINITIONS.map((section) => (
               <button
                 key={section.key}
                 type="button"
                 className={[
                   "characteristics-tab",
-                  section.key === activeCharacteristicTab && "characteristics-tab--active",
-                ].filter(Boolean).join(" ")}
+                  section.key === activeCharacteristicTab &&
+                    "characteristics-tab--active",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 role="tab"
                 aria-selected={section.key === activeCharacteristicTab}
                 aria-controls="characteristics-panel"
@@ -384,12 +467,28 @@ export function PartDetail() {
             aria-label={activeCharacteristicSection.title}
           >
             <dl className="property-list characteristics-list">
-              {fieldsForCddSection(activeCharacteristicSection, designatorCategory)
-                .filter((field) => !hiddenCharacteristicFields[activeCharacteristicSection.key]?.has(field))
+              {fieldsForCddSection(
+                activeCharacteristicSection,
+                designatorCategory,
+              )
+                .filter(
+                  (field) =>
+                    !hiddenCharacteristicFields[
+                      activeCharacteristicSection.key
+                    ]?.has(field),
+                )
                 .map((field) => (
                   <Fragment key={field}>
                     <dt>{cddFieldLabel(field)}</dt>
-                    <dd>{formatCddValue(cddValueAtPath(componentMetadata, activeCharacteristicSection.key, field))}</dd>
+                    <dd>
+                      {formatCddValue(
+                        cddValueAtPath(
+                          componentMetadata,
+                          activeCharacteristicSection.key,
+                          field,
+                        ),
+                      )}
+                    </dd>
                   </Fragment>
                 ))}
             </dl>

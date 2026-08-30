@@ -12,8 +12,9 @@
   --secondary: #424242;
   --secondary-light: #eeeeee;
   --border-color: #e0e0e0;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1);
@@ -160,7 +161,8 @@ a:hover {
   width: min(100%, calc(var(--page-max) + var(--page-gutter) * 2));
   height: var(--topbar-height);
   margin: 0 auto;
-  padding: 0 max(var(--page-gutter), var(--safe-right)) 0 max(var(--page-gutter), var(--safe-left));
+  padding: 0 max(var(--page-gutter), var(--safe-right)) 0
+    max(var(--page-gutter), var(--safe-left));
 }
 
 .top-app-bar__identity {
@@ -426,9 +428,13 @@ a:hover {
 }
 
 .page-shell {
-  width: min(100%, calc(var(--page-max) + var(--page-gutter) * 2 + var(--nav-rail-width)));
+  width: min(
+    100%,
+    calc(var(--page-max) + var(--page-gutter) * 2 + var(--nav-rail-width))
+  );
   margin: 0 auto;
-  padding: calc(var(--topbar-safe-height) + 32px) var(--page-gutter) 96px calc(var(--page-gutter) + var(--nav-rail-width));
+  padding: calc(var(--topbar-safe-height) + 32px) var(--page-gutter) 96px
+    calc(var(--page-gutter) + var(--nav-rail-width));
 }
 
 .auth-shell {
@@ -437,7 +443,11 @@ a:hover {
   place-items: center;
   padding: 32px var(--page-gutter);
   background:
-    linear-gradient(180deg, rgba(245, 124, 0, 0.08), rgba(255, 255, 255, 0) 36%),
+    linear-gradient(
+      180deg,
+      rgba(245, 124, 0, 0.08),
+      rgba(255, 255, 255, 0) 36%
+    ),
     var(--surface);
 }
 
@@ -645,7 +655,10 @@ a:hover {
   color: var(--text-primary);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .button:hover {
@@ -1155,7 +1168,7 @@ a.news-list__title:hover {
 }
 
 .part-search__option span span,
-.part-search__option>span:last-child,
+.part-search__option > span:last-child,
 .part-search__status {
   color: var(--text-secondary);
   font-size: 13px;
@@ -1339,7 +1352,7 @@ a.news-list__title:hover {
   color: var(--accent);
 }
 
-.billing-current>span:nth-child(2) {
+.billing-current > span:nth-child(2) {
   display: grid;
 }
 
@@ -1406,7 +1419,7 @@ a.news-list__title:hover {
   width: 100%;
 }
 
-.billing-plan-list li>span {
+.billing-plan-list li > span {
   display: grid;
   text-align: center;
 }
@@ -1502,7 +1515,9 @@ a.news-list__title:hover {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 160ms ease, color 160ms ease;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
 }
 
 .bom-editor__insert-row:hover {
@@ -1685,7 +1700,12 @@ a.news-list__title:hover {
   width: 100%;
   height: 12px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--bg-color-muted), var(--bg-color-alt), var(--bg-color-muted));
+  background: linear-gradient(
+    90deg,
+    var(--bg-color-muted),
+    var(--bg-color-alt),
+    var(--bg-color-muted)
+  );
   background-size: 200% 100%;
   animation: skeleton 1.2s ease-in-out infinite;
 }
@@ -2036,7 +2056,10 @@ a.news-list__title:hover {
 
 .bom-mapping__row {
   display: grid;
-  grid-template-columns: minmax(180px, 0.85fr) minmax(180px, 1.15fr) minmax(210px, 1fr);
+  grid-template-columns: minmax(180px, 0.85fr) minmax(180px, 1.15fr) minmax(
+      210px,
+      1fr
+    );
   align-items: center;
   gap: 16px;
   min-height: 64px;
@@ -2526,7 +2549,10 @@ a.news-list__title:hover {
     position: fixed;
     top: calc(var(--topbar-safe-height) - 2px);
     right: max(8px, var(--safe-right));
-    width: min(224px, calc(100vw - max(8px, var(--safe-right)) - max(10px, var(--safe-left))));
+    width: min(
+      224px,
+      calc(100vw - max(8px, var(--safe-right)) - max(10px, var(--safe-left)))
+    );
   }
 
   .account-menu__item {
@@ -2599,7 +2625,8 @@ a.news-list__title:hover {
 
   .page-shell {
     width: 100%;
-    padding: calc(var(--topbar-safe-height) + 18px) var(--page-gutter) calc(var(--bottom-nav-safe-height) + 112px);
+    padding: calc(var(--topbar-safe-height) + 18px) var(--page-gutter)
+      calc(var(--bottom-nav-safe-height) + 112px);
   }
 
   .stack {
@@ -2694,7 +2721,7 @@ a.news-list__title:hover {
   }
 
   .page-header .inline-stack .button,
-  .page-header>.button {
+  .page-header > .button {
     flex: 1 1 140px;
   }
 
@@ -3164,7 +3191,7 @@ a.news-list__title:hover {
     padding: 12px;
   }
 
-  .floating-bar>span {
+  .floating-bar > span {
     width: 100%;
     font-weight: 500;
   }

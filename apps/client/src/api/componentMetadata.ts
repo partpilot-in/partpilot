@@ -1,8 +1,36 @@
 export type DesignatorCategory =
-  | "A" | "AE" | "BT" | "C" | "D" | "DS" | "F" | "FB" | "FD" | "FL"
-  | "H" | "J" | "JP" | "K" | "L" | "LS" | "M" | "MK" | "P" | "Q"
-  | "R" | "RN" | "RT" | "RV" | "SW" | "T" | "TC" | "TJ" | "TP" | "U"
-  | "Y" | "Z";
+  | "A"
+  | "AE"
+  | "BT"
+  | "C"
+  | "D"
+  | "DS"
+  | "F"
+  | "FB"
+  | "FD"
+  | "FL"
+  | "H"
+  | "J"
+  | "JP"
+  | "K"
+  | "L"
+  | "LS"
+  | "M"
+  | "MK"
+  | "P"
+  | "Q"
+  | "R"
+  | "RN"
+  | "RT"
+  | "RV"
+  | "SW"
+  | "T"
+  | "TC"
+  | "TJ"
+  | "TP"
+  | "U"
+  | "Y"
+  | "Z";
 
 export type CddSectionKey =
   | "identification"
@@ -97,38 +125,168 @@ const VCP = ["voltageRating", "currentRating", "powerRating"];
 const PASSIVE = [...VCP, "resistance", "tolerance", "temperatureCoefficient"];
 
 const ELECTRICAL_FIELDS_BY_CATEGORY: Record<DesignatorCategory, string[]> = {
-  A: [...VCP, "frequencyRange", "pinCount", "switchingCharacteristics", "additionalProperties"],
+  A: [
+    ...VCP,
+    "frequencyRange",
+    "pinCount",
+    "switchingCharacteristics",
+    "additionalProperties",
+  ],
   AE: ["powerRating", "impedance", "frequencyRange", "additionalProperties"],
   BT: [...VCP, "resistance", "temperatureCoefficient", "additionalProperties"],
-  C: ["voltageRating", "powerRating", "capacitance", "tolerance", "temperatureCoefficient", "dielectricType", "polarized", "insulationResistance", "dielectricWithstandingVoltage", "additionalProperties"],
-  D: [...VCP, "switchingCharacteristics", "polarized", "esdRating", "additionalProperties"],
+  C: [
+    "voltageRating",
+    "powerRating",
+    "capacitance",
+    "tolerance",
+    "temperatureCoefficient",
+    "dielectricType",
+    "polarized",
+    "insulationResistance",
+    "dielectricWithstandingVoltage",
+    "additionalProperties",
+  ],
+  D: [
+    ...VCP,
+    "switchingCharacteristics",
+    "polarized",
+    "esdRating",
+    "additionalProperties",
+  ],
   DS: [...VCP, "frequencyRange", "pinCount", "additionalProperties"],
   F: [...PASSIVE, "additionalProperties"],
-  FB: ["currentRating", "resistance", "impedance", "frequencyRange", "additionalProperties"],
+  FB: [
+    "currentRating",
+    "resistance",
+    "impedance",
+    "frequencyRange",
+    "additionalProperties",
+  ],
   FD: ["additionalProperties"],
   FL: [...VCP, "impedance", "frequencyRange", "additionalProperties"],
   H: ["additionalProperties"],
-  J: [...VCP, "pinCount", "insulationResistance", "dielectricWithstandingVoltage", "additionalProperties"],
-  JP: ["voltageRating", "currentRating", "resistance", "pinCount", "additionalProperties"],
-  K: [...VCP, "resistance", "pinCount", "switchingCharacteristics", "insulationResistance", "dielectricWithstandingVoltage", "additionalProperties"],
-  L: ["currentRating", "powerRating", "resistance", "inductance", "frequencyRange", "tolerance", "temperatureCoefficient", "additionalProperties"],
+  J: [
+    ...VCP,
+    "pinCount",
+    "insulationResistance",
+    "dielectricWithstandingVoltage",
+    "additionalProperties",
+  ],
+  JP: [
+    "voltageRating",
+    "currentRating",
+    "resistance",
+    "pinCount",
+    "additionalProperties",
+  ],
+  K: [
+    ...VCP,
+    "resistance",
+    "pinCount",
+    "switchingCharacteristics",
+    "insulationResistance",
+    "dielectricWithstandingVoltage",
+    "additionalProperties",
+  ],
+  L: [
+    "currentRating",
+    "powerRating",
+    "resistance",
+    "inductance",
+    "frequencyRange",
+    "tolerance",
+    "temperatureCoefficient",
+    "additionalProperties",
+  ],
   LS: [...VCP, "impedance", "frequencyRange", "additionalProperties"],
   M: [...VCP, "resistance", "additionalProperties"],
-  MK: ["voltageRating", "currentRating", "impedance", "frequencyRange", "additionalProperties"],
-  P: [...VCP, "pinCount", "insulationResistance", "dielectricWithstandingVoltage", "additionalProperties"],
-  Q: [...VCP, "pinCount", "switchingCharacteristics", "esdRating", "additionalProperties"],
+  MK: [
+    "voltageRating",
+    "currentRating",
+    "impedance",
+    "frequencyRange",
+    "additionalProperties",
+  ],
+  P: [
+    ...VCP,
+    "pinCount",
+    "insulationResistance",
+    "dielectricWithstandingVoltage",
+    "additionalProperties",
+  ],
+  Q: [
+    ...VCP,
+    "pinCount",
+    "switchingCharacteristics",
+    "esdRating",
+    "additionalProperties",
+  ],
   R: [...PASSIVE, "additionalProperties"],
   RN: [...PASSIVE, "pinCount", "additionalProperties"],
-  RT: ["voltageRating", "powerRating", "resistance", "tolerance", "temperatureCoefficient", "additionalProperties"],
+  RT: [
+    "voltageRating",
+    "powerRating",
+    "resistance",
+    "tolerance",
+    "temperatureCoefficient",
+    "additionalProperties",
+  ],
   RV: [...VCP, "resistance", "additionalProperties"],
-  SW: [...VCP, "resistance", "pinCount", "switchingCharacteristics", "insulationResistance", "dielectricWithstandingVoltage", "additionalProperties"],
-  T: [...VCP, "inductance", "impedance", "frequencyRange", "insulationResistance", "dielectricWithstandingVoltage", "additionalProperties"],
-  TC: ["voltageRating", "resistance", "temperatureCoefficient", "additionalProperties"],
-  TJ: ["currentRating", "resistance", "temperatureCoefficient", "additionalProperties"],
+  SW: [
+    ...VCP,
+    "resistance",
+    "pinCount",
+    "switchingCharacteristics",
+    "insulationResistance",
+    "dielectricWithstandingVoltage",
+    "additionalProperties",
+  ],
+  T: [
+    ...VCP,
+    "inductance",
+    "impedance",
+    "frequencyRange",
+    "insulationResistance",
+    "dielectricWithstandingVoltage",
+    "additionalProperties",
+  ],
+  TC: [
+    "voltageRating",
+    "resistance",
+    "temperatureCoefficient",
+    "additionalProperties",
+  ],
+  TJ: [
+    "currentRating",
+    "resistance",
+    "temperatureCoefficient",
+    "additionalProperties",
+  ],
   TP: ["voltageRating", "currentRating", "impedance", "additionalProperties"],
-  U: [...VCP, "frequencyRange", "pinCount", "logicFamily", "switchingCharacteristics", "esdRating", "additionalProperties"],
-  Y: [...VCP, "impedance", "frequencyRange", "tolerance", "temperatureCoefficient", "additionalProperties"],
-  Z: [...VCP, "switchingCharacteristics", "polarized", "esdRating", "additionalProperties"],
+  U: [
+    ...VCP,
+    "frequencyRange",
+    "pinCount",
+    "logicFamily",
+    "switchingCharacteristics",
+    "esdRating",
+    "additionalProperties",
+  ],
+  Y: [
+    ...VCP,
+    "impedance",
+    "frequencyRange",
+    "tolerance",
+    "temperatureCoefficient",
+    "additionalProperties",
+  ],
+  Z: [
+    ...VCP,
+    "switchingCharacteristics",
+    "polarized",
+    "esdRating",
+    "additionalProperties",
+  ],
 };
 
 export const DESIGNATOR_CATEGORY_LABELS: Record<DesignatorCategory, string> = {
@@ -167,24 +325,46 @@ export const DESIGNATOR_CATEGORY_LABELS: Record<DesignatorCategory, string> = {
 };
 
 export const CDD_SECTION_DEFINITIONS: CddSectionDefinition[] = [
-  { key: "identification", title: "Identification", fields: IDENTIFICATION_FIELDS },
+  {
+    key: "identification",
+    title: "Identification",
+    fields: IDENTIFICATION_FIELDS,
+  },
   { key: "electrical", title: "Electrical", fields: ALL_ELECTRICAL_FIELDS },
   {
     key: "mechanical",
     title: "Mechanical",
     fields: [
-      "packageType", "footprint", "dimensions.length", "dimensions.width", "dimensions.height",
-      "dimensions.diameter", "dimensions.leadPitch", "mass", "mountingType", "terminationStyle",
-      "mechanicalTolerance", "connectorGender", "keying", "actuationForce", "vibrationResistance",
-      "shockResistance", "cadModelRef",
+      "packageType",
+      "footprint",
+      "dimensions.length",
+      "dimensions.width",
+      "dimensions.height",
+      "dimensions.diameter",
+      "dimensions.leadPitch",
+      "mass",
+      "mountingType",
+      "terminationStyle",
+      "mechanicalTolerance",
+      "connectorGender",
+      "keying",
+      "actuationForce",
+      "vibrationResistance",
+      "shockResistance",
+      "cadModelRef",
     ],
   },
   {
     key: "thermal",
     title: "Thermal",
     fields: [
-      "operatingTemperatureRange", "storageTemperatureRange", "thermalResistanceJunctionAmbient",
-      "thermalResistanceJunctionCase", "maxJunctionTemperature", "derating", "thermalConductivity",
+      "operatingTemperatureRange",
+      "storageTemperatureRange",
+      "thermalResistanceJunctionAmbient",
+      "thermalResistanceJunctionCase",
+      "maxJunctionTemperature",
+      "derating",
+      "thermalConductivity",
       "reflowProfileCompatibility",
     ],
   },
@@ -192,8 +372,14 @@ export const CDD_SECTION_DEFINITIONS: CddSectionDefinition[] = [
     key: "material",
     title: "Material",
     fields: [
-      "bodyMaterial", "terminationFinish", "substrateMaterial", "encapsulantMaterial",
-      "flammabilityRating", "moistureSensitivityLevel", "colorFinish", "magneticProperties",
+      "bodyMaterial",
+      "terminationFinish",
+      "substrateMaterial",
+      "encapsulantMaterial",
+      "flammabilityRating",
+      "moistureSensitivityLevel",
+      "colorFinish",
+      "magneticProperties",
       "materialComposition",
     ],
   },
@@ -201,77 +387,142 @@ export const CDD_SECTION_DEFINITIONS: CddSectionDefinition[] = [
     key: "environmental",
     title: "Environmental",
     fields: [
-      "rohsCompliant", "rohsVersion", "reachCompliant", "reachSvhcListDate", "halogenFree",
-      "conflictMineralsStatus", "ingressProtectionRating", "humidityRating", "altitudeRating",
-      "chemicalResistance", "uvResistance", "californiaProp65",
+      "rohsCompliant",
+      "rohsVersion",
+      "reachCompliant",
+      "reachSvhcListDate",
+      "halogenFree",
+      "conflictMineralsStatus",
+      "ingressProtectionRating",
+      "humidityRating",
+      "altitudeRating",
+      "chemicalResistance",
+      "uvResistance",
+      "californiaProp65",
     ],
   },
   {
     key: "reliability",
     title: "Reliability",
     fields: [
-      "mtbf", "failureRate", "ratedLifetime", "qualificationStandard", "gradeLevel", "burnInTested",
-      "predictedFailureModes", "endurance.cycleCount", "endurance.testMethod",
+      "mtbf",
+      "failureRate",
+      "ratedLifetime",
+      "qualificationStandard",
+      "gradeLevel",
+      "burnInTested",
+      "predictedFailureModes",
+      "endurance.cycleCount",
+      "endurance.testMethod",
     ],
   },
   {
     key: "regulatory",
     title: "Regulatory",
     fields: [
-      "certifications", "certificateNumbers", "eccn", "htsCode", "countryOfOrigin",
-      "exportLicenseRequired", "ituCompliance", "iecStandardRef",
+      "certifications",
+      "certificateNumbers",
+      "eccn",
+      "htsCode",
+      "countryOfOrigin",
+      "exportLicenseRequired",
+      "ituCompliance",
+      "iecStandardRef",
     ],
   },
   {
     key: "manufacturing",
     title: "Manufacturing",
     fields: [
-      "assemblyProcess", "solderReflowProfile", "leadFreeProcessCompatible", "peakReflowTemperature",
-      "solderabilityStandard", "placementOrientation", "testCoverage", "yieldRate",
-      "processCapabilityIndex", "traceabilityMethod",
+      "assemblyProcess",
+      "solderReflowProfile",
+      "leadFreeProcessCompatible",
+      "peakReflowTemperature",
+      "solderabilityStandard",
+      "placementOrientation",
+      "testCoverage",
+      "yieldRate",
+      "processCapabilityIndex",
+      "traceabilityMethod",
     ],
   },
   {
     key: "commercial",
     title: "Commercial",
     fields: [
-      "lifecycleStatus", "lastTimeBuyDate", "endOfLifeDate", "leadTimeWeeks", "minimumOrderQuantity",
-      "standardPackQuantity", "priceBreaks", "distributors", "alternateSources", "obsolescenceRiskScore",
+      "lifecycleStatus",
+      "lastTimeBuyDate",
+      "endOfLifeDate",
+      "leadTimeWeeks",
+      "minimumOrderQuantity",
+      "standardPackQuantity",
+      "priceBreaks",
+      "distributors",
+      "alternateSources",
+      "obsolescenceRiskScore",
     ],
   },
   {
     key: "packaging",
     title: "Packaging",
     fields: [
-      "packingMethod", "reelSize", "quantityPerReel", "tapeWidth", "tapePitch", "orientation",
-      "dryPackRequired", "packagingMaterial", "labelingStandard",
+      "packingMethod",
+      "reelSize",
+      "quantityPerReel",
+      "tapeWidth",
+      "tapePitch",
+      "orientation",
+      "dryPackRequired",
+      "packagingMaterial",
+      "labelingStandard",
     ],
   },
   {
     key: "documentation",
     title: "Documentation",
     fields: [
-      "datasheetUrl", "datasheetRevision", "applicationNotes", "cadModels", "complianceCertificates",
-      "changeNotifications", "safetyDataSheet", "revisionHistory",
+      "datasheetUrl",
+      "datasheetRevision",
+      "applicationNotes",
+      "cadModels",
+      "complianceCertificates",
+      "changeNotifications",
+      "safetyDataSheet",
+      "revisionHistory",
     ],
   },
 ];
 
-export function resolveDesignatorCategory(category: string, description: string): DesignatorCategory | undefined {
+export function resolveDesignatorCategory(
+  category: string,
+  description: string,
+): DesignatorCategory | undefined {
   const normalizedCategory = category.trim().toLowerCase();
-  const categoryMatch = (Object.entries(DESIGNATOR_CATEGORY_LABELS) as [DesignatorCategory, string][])
-    .find(([code, label]) => code.toLowerCase() === normalizedCategory || label.toLowerCase() === normalizedCategory);
+  const categoryMatch = (
+    Object.entries(DESIGNATOR_CATEGORY_LABELS) as [DesignatorCategory, string][]
+  ).find(
+    ([code, label]) =>
+      code.toLowerCase() === normalizedCategory ||
+      label.toLowerCase() === normalizedCategory,
+  );
   if (categoryMatch) return categoryMatch[0];
 
-  const token = description.trim().match(/^([A-Za-z]+)\d/)?.[1].toUpperCase();
+  const token = description
+    .trim()
+    .match(/^([A-Za-z]+)\d/)?.[1]
+    .toUpperCase();
   if (!token) return undefined;
   return (Object.keys(DESIGNATOR_CATEGORY_LABELS) as DesignatorCategory[])
     .filter((code) => token.startsWith(code))
     .sort((left, right) => right.length - left.length)[0];
 }
 
-export function fieldsForCddSection(section: CddSectionDefinition, category?: DesignatorCategory) {
-  if (section.key === "electrical" && category) return ELECTRICAL_FIELDS_BY_CATEGORY[category];
+export function fieldsForCddSection(
+  section: CddSectionDefinition,
+  category?: DesignatorCategory,
+) {
+  if (section.key === "electrical" && category)
+    return ELECTRICAL_FIELDS_BY_CATEGORY[category];
   return section.fields;
 }
 
@@ -283,10 +534,15 @@ export function cddFieldLabel(path: string) {
     .replace(/^./, (character) => character.toUpperCase());
 }
 
-export function cddValueAtPath(metadata: ComponentMetadata, section: CddSectionKey, path: string): unknown {
+export function cddValueAtPath(
+  metadata: ComponentMetadata,
+  section: CddSectionKey,
+  path: string,
+): unknown {
   let value: unknown = metadata[section];
   for (const key of path.split(".")) {
-    if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      return undefined;
     value = (value as Record<string, unknown>)[key];
   }
   return value;
@@ -294,7 +550,8 @@ export function cddValueAtPath(metadata: ComponentMetadata, section: CddSectionK
 
 function scalarText(value: unknown) {
   if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (typeof value === "string" || typeof value === "number")
+    return String(value);
   return "";
 }
 
@@ -302,14 +559,19 @@ export function formatCddValue(value: unknown): string {
   if (value === undefined || value === null || value === "") return "—";
   if (Array.isArray(value)) {
     if (!value.length) return "—";
-    return value.map((item) => scalarText(item) || JSON.stringify(item)).join(", ");
+    return value
+      .map((item) => scalarText(item) || JSON.stringify(item))
+      .join(", ");
   }
   if (typeof value !== "object") return scalarText(value) || "—";
 
   const property = value as CddProperty;
   const measured = property.value ?? property.typValue;
   let text = scalarText(measured);
-  if (!text && (property.minValue !== undefined || property.maxValue !== undefined)) {
+  if (
+    !text &&
+    (property.minValue !== undefined || property.maxValue !== undefined)
+  ) {
     text = `${property.minValue ?? "…"} – ${property.maxValue ?? "…"}`;
   }
   if (text) {
@@ -338,18 +600,22 @@ export function lifecycleFromCharacteristics(metadata: ComponentMetadata) {
   }
 }
 
-export function countryOfOriginFromCharacteristics(metadata: ComponentMetadata) {
+export function countryOfOriginFromCharacteristics(
+  metadata: ComponentMetadata,
+) {
   const value = metadata.regulatory?.countryOfOrigin;
   return typeof value === "string" && value.trim() ? value.trim() : "Unknown";
 }
 
 export function complianceFromCharacteristics(metadata: ComponentMetadata) {
   const environmental = metadata.environmental ?? {};
-  const records: { standard: string; status: "pass" | "fail" | "unknown" }[] = [];
+  const records: { standard: string; status: "pass" | "fail" | "unknown" }[] =
+    [];
   const add = (standard: string, value: unknown) => {
     records.push({
       standard,
-      status: typeof value === "boolean" ? (value ? "pass" : "fail") : "unknown",
+      status:
+        typeof value === "boolean" ? (value ? "pass" : "fail") : "unknown",
     });
   };
   add("RoHS", environmental.rohsCompliant);
@@ -360,7 +626,9 @@ export function complianceFromCharacteristics(metadata: ComponentMetadata) {
 export function referencePriceFromCharacteristics(metadata: ComponentMetadata) {
   const priceBreaks = metadata.commercial?.priceBreaks;
   if (!Array.isArray(priceBreaks)) return 0;
-  const first = priceBreaks.find((entry) => entry && typeof entry === "object") as Record<string, unknown> | undefined;
+  const first = priceBreaks.find(
+    (entry) => entry && typeof entry === "object",
+  ) as Record<string, unknown> | undefined;
   const value = Number(first?.unitPrice);
   return Number.isFinite(value) && value >= 0 ? value : 0;
 }
@@ -369,7 +637,8 @@ export function withCharacteristicSummary(
   current: ComponentMetadata,
   input: {
     countryOfOrigin?: string;
-    lifecycleStatus?: "Active" | "NRND" | "EOL" | "Obsolete" | "Preview" | "Unknown";
+    lifecycleStatus?:
+      "Active" | "NRND" | "EOL" | "Obsolete" | "Preview" | "Unknown";
     unitPrice?: number;
   },
 ): ComponentMetadata {
@@ -382,9 +651,16 @@ export function withCharacteristicSummary(
   }
   if (input.lifecycleStatus || input.unitPrice !== undefined) {
     next.commercial = { ...(current.commercial ?? {}) };
-    if (input.lifecycleStatus) next.commercial.lifecycleStatus = input.lifecycleStatus;
-    if (input.unitPrice !== undefined && Number.isFinite(input.unitPrice) && input.unitPrice >= 0) {
-      next.commercial.priceBreaks = [{ quantity: 1, unitPrice: input.unitPrice }];
+    if (input.lifecycleStatus)
+      next.commercial.lifecycleStatus = input.lifecycleStatus;
+    if (
+      input.unitPrice !== undefined &&
+      Number.isFinite(input.unitPrice) &&
+      input.unitPrice >= 0
+    ) {
+      next.commercial.priceBreaks = [
+        { quantity: 1, unitPrice: input.unitPrice },
+      ];
     }
   }
   return next;
@@ -396,7 +672,8 @@ export function flattenCharacteristics(metadata: ComponentMetadata) {
     section.fields.forEach((field) => {
       const value = cddValueAtPath(metadata, section.key, field);
       const formatted = formatCddValue(value);
-      if (formatted !== "—") entries[`${section.title} · ${cddFieldLabel(field)}`] = formatted;
+      if (formatted !== "—")
+        entries[`${section.title} · ${cddFieldLabel(field)}`] = formatted;
     });
   });
   return entries;
@@ -404,10 +681,15 @@ export function flattenCharacteristics(metadata: ComponentMetadata) {
 
 export function overviewCharacteristicFields(category?: DesignatorCategory) {
   const categoryElectrical = category
-    ? ELECTRICAL_FIELDS_BY_CATEGORY[category].filter((field) => field !== "additionalProperties").slice(0, 3)
+    ? ELECTRICAL_FIELDS_BY_CATEGORY[category]
+        .filter((field) => field !== "additionalProperties")
+        .slice(0, 3)
     : [];
   return [
-    ...categoryElectrical.map((field) => ({ section: "electrical" as const, field })),
+    ...categoryElectrical.map((field) => ({
+      section: "electrical" as const,
+      field,
+    })),
     { section: "mechanical" as const, field: "packageType" },
     { section: "thermal" as const, field: "operatingTemperatureRange" },
     { section: "commercial" as const, field: "lifecycleStatus" },

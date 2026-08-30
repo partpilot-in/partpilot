@@ -14,7 +14,11 @@ const crcTable = Array.from({ length: 256 }, (_, index) => {
   return value >>> 0;
 });
 
-export function exportTableCsv(filename: string, headers: string[], rows: ExportCell[][]) {
+export function exportTableCsv(
+  filename: string,
+  headers: string[],
+  rows: ExportCell[][],
+) {
   const csv = [headers, ...rows]
     .map((row) => row.map(csvCell).join(","))
     .join("\r\n");
@@ -25,7 +29,12 @@ export function exportTableCsv(filename: string, headers: string[], rows: Export
   );
 }
 
-export function exportTableXlsx(filename: string, sheetName: string, headers: string[], rows: ExportCell[][]) {
+export function exportTableXlsx(
+  filename: string,
+  sheetName: string,
+  headers: string[],
+  rows: ExportCell[][],
+) {
   const allRows = [headers, ...rows];
   const lastCell = `${columnName(headers.length - 1)}${Math.max(allRows.length, 1)}`;
   const worksheetRows = allRows
@@ -40,12 +49,20 @@ export function exportTableXlsx(filename: string, sheetName: string, headers: st
     .map((header, columnIndex) => {
       const width = Math.min(
         42,
-        Math.max(10, String(header).length + 2, ...rows.map((row) => String(row[columnIndex] ?? "").length + 2)),
+        Math.max(
+          10,
+          String(header).length + 2,
+          ...rows.map((row) => String(row[columnIndex] ?? "").length + 2),
+        ),
       );
       return `<col min="${columnIndex + 1}" max="${columnIndex + 1}" width="${width}" customWidth="1"/>`;
     })
     .join("");
-  const safeSheetName = sheetName.replace(/[\\/*?:\[\]]/g, " ").trim().slice(0, 31) || "Sheet1";
+  const safeSheetName =
+    sheetName
+      .replace(/[\\/*?:\[\]]/g, " ")
+      .trim()
+      .slice(0, 31) || "Sheet1";
 
   const files: ZipFile[] = [
     xmlFile(
@@ -93,7 +110,9 @@ export function exportTableXlsx(filename: string, sheetName: string, headers: st
   const workbook = createZip(files);
   downloadBlob(
     filenameWithExtension(filename, "xlsx"),
-    new Blob([workbook.buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+    new Blob([workbook.buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    }),
   );
 }
 
@@ -142,16 +161,28 @@ function xmlFile(name: string, xml: string): ZipFile {
 
 function createZip(files: ZipFile[]) {
   const now = new Date();
-  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
-  const dosDate = ((Math.max(1980, now.getFullYear()) - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  const dosTime =
+    (now.getHours() << 11) |
+    (now.getMinutes() << 5) |
+    Math.floor(now.getSeconds() / 2);
+  const dosDate =
+    ((Math.max(1980, now.getFullYear()) - 1980) << 9) |
+    ((now.getMonth() + 1) << 5) |
+    now.getDate();
   const prepared = files.map((file) => ({
     ...file,
     nameBytes: textEncoder.encode(file.name),
     crc: crc32(file.data),
     offset: 0,
   }));
-  const localSize = prepared.reduce((total, file) => total + 30 + file.nameBytes.length + file.data.length, 0);
-  const centralSize = prepared.reduce((total, file) => total + 46 + file.nameBytes.length, 0);
+  const localSize = prepared.reduce(
+    (total, file) => total + 30 + file.nameBytes.length + file.data.length,
+    0,
+  );
+  const centralSize = prepared.reduce(
+    (total, file) => total + 46 + file.nameBytes.length,
+    0,
+  );
   const output = new Uint8Array(localSize + centralSize + 22);
   const view = new DataView(output.buffer);
   let offset = 0;
@@ -218,7 +249,8 @@ function crc32(bytes: Uint8Array) {
 }
 
 function filenameWithExtension(filename: string, extension: string) {
-  const safeName = filename.replace(/[^a-z0-9-_]+/gi, "-").replace(/^-|-$/g, "") || "export";
+  const safeName =
+    filename.replace(/[^a-z0-9-_]+/gi, "-").replace(/^-|-$/g, "") || "export";
   return `${safeName}.${extension}`;
 }
 

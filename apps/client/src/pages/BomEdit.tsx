@@ -9,7 +9,13 @@ import {
   exportBomCsv,
   type EditableBomLine,
 } from "../components/BomEditor";
-import { Card, EmptyState, ErrorMessage, Spinner, useToast } from "../components/ui";
+import {
+  Card,
+  EmptyState,
+  ErrorMessage,
+  Spinner,
+  useToast,
+} from "../components/ui";
 
 export function BomEdit() {
   const { id } = useParams();
@@ -57,21 +63,39 @@ export function BomEdit() {
   async function saveBom() {
     const lines = buildLines();
     if (!lines.length) {
-      showToast({ title: "Add at least one line", body: "Enter an MPN or description before saving." });
+      showToast({
+        title: "Add at least one line",
+        body: "Enter an MPN or description before saving.",
+      });
       return;
     }
     try {
-      const updated = await updateBom(activeProject.id, { name: bomName, lines });
-      showToast({ title: "BOM updated", body: `${updated.name} now has ${updated.part_count} parts.`, tone: "success" });
+      const updated = await updateBom(activeProject.id, {
+        name: bomName,
+        lines,
+      });
+      showToast({
+        title: "BOM updated",
+        body: `${updated.name} now has ${updated.part_count} parts.`,
+        tone: "success",
+      });
       navigate(`/projects/${updated.id}`);
     } catch (saveError) {
-      showToast({ title: "Could not save BOM", body: saveError instanceof Error ? saveError.message : "Please try again." });
+      showToast({
+        title: "Could not save BOM",
+        body:
+          saveError instanceof Error ? saveError.message : "Please try again.",
+      });
     }
   }
 
   function exportBom() {
     exportBomCsv(bomName || activeProject.name, buildLines());
-    showToast({ title: "CSV exported", body: `${bomName || activeProject.name} downloaded.`, tone: "success" });
+    showToast({
+      title: "CSV exported",
+      body: `${bomName || activeProject.name} downloaded.`,
+      tone: "success",
+    });
   }
 
   return (
@@ -79,7 +103,9 @@ export function BomEdit() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Edit BOM</h1>
-          <p className="page-subtitle">Update BOM lines directly in PartPilot.</p>
+          <p className="page-subtitle">
+            Update BOM lines directly in PartPilot.
+          </p>
         </div>
         <Link className="button" to={`/projects/${activeProject.id}`}>
           <ArrowLeft size={16} />
@@ -95,7 +121,11 @@ export function BomEdit() {
               <Download size={16} />
               Export CSV
             </button>
-            <button type="button" className="button button--primary" onClick={saveBom}>
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={saveBom}
+            >
               <Save size={16} />
               Save BOM
             </button>
@@ -105,7 +135,11 @@ export function BomEdit() {
         <div className="stack" style={{ gap: 16 }}>
           <label className="field-label">
             BOM name
-            <input className="form-control" value={bomName} onChange={(event) => setBomName(event.target.value)} />
+            <input
+              className="form-control"
+              value={bomName}
+              onChange={(event) => setBomName(event.target.value)}
+            />
           </label>
           <BomEditor rows={rows} onRowsChange={setRows} />
         </div>

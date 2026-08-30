@@ -9,19 +9,26 @@ function readImportantRecords(): Record<string, Part> {
     const raw = window.localStorage.getItem(importantPartsStorageKey);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : {};
   } catch {
     return {};
   }
 }
 
 function writeImportantRecords(records: Record<string, Part>) {
-  window.localStorage.setItem(importantPartsStorageKey, JSON.stringify(records));
+  window.localStorage.setItem(
+    importantPartsStorageKey,
+    JSON.stringify(records),
+  );
   window.dispatchEvent(new CustomEvent(importantPartsChangeEvent));
 }
 
 export function useImportantParts() {
-  const [records, setRecords] = useState<Record<string, Part>>(() => readImportantRecords());
+  const [records, setRecords] = useState<Record<string, Part>>(() =>
+    readImportantRecords(),
+  );
 
   useEffect(() => {
     function syncImportantParts() {

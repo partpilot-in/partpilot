@@ -1,6 +1,7 @@
 import type { ComponentMetadata } from "./componentMetadata";
 
-export type LifecycleStage = "active" | "nrnd" | "last_time_buy" | "obsolete" | "unknown";
+export type LifecycleStage =
+  "active" | "nrnd" | "last_time_buy" | "obsolete" | "unknown";
 
 export type ComplianceStatus = "pass" | "fail" | "unknown";
 

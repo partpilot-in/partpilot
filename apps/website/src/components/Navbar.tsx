@@ -1,13 +1,17 @@
-import React from 'react';
+import React from "react";
 
-import './Navbar.css';
+import "./Navbar.css";
 
 export const Navbar: React.FC = () => {
   return (
     <nav className="navbar">
       <div className="container navbar-container">
         <a href="/" className="navbar-logo">
-          <img src="/pp-logo-light.png" alt="PartPilot Logo" style={{ height: '24px', width: 'auto' }} />
+          <img
+            src="/pp-logo-light.png"
+            alt="PartPilot Logo"
+            style={{ height: "24px", width: "auto" }}
+          />
           <span>PartPilot</span>
         </a>
 

@@ -23,7 +23,9 @@ export function Login() {
     setNotice(null);
 
     if (!isConfigured) {
-      setError("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to the deployment environment or repository .env file.");
+      setError(
+        "Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to the deployment environment or repository .env file.",
+      );
       return;
     }
 
@@ -32,14 +34,25 @@ export function Login() {
       if (mode === "login") {
         await signIn(email, password);
       } else {
-        const result = await signUp({ email, password, name, organizationName });
+        const result = await signUp({
+          email,
+          password,
+          name,
+          organizationName,
+        });
         if (result.needsEmailConfirmation) {
           setMode("login");
-          setNotice("Account created. Check your email to confirm it before signing in.");
+          setNotice(
+            "Account created. Check your email to confirm it before signing in.",
+          );
         }
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unable to continue. Check the details and try again.");
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to continue. Check the details and try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -50,7 +63,9 @@ export function Login() {
     setNotice(null);
 
     if (!isConfigured) {
-      setError("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to the deployment environment or repository .env file.");
+      setError(
+        "Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to the deployment environment or repository .env file.",
+      );
       return;
     }
 
@@ -62,10 +77,19 @@ export function Login() {
 
     setResettingPassword(true);
     try {
-      await requestPasswordReset(normalizedEmail, `${window.location.origin}/reset-password`);
-      setNotice("If an account exists for that email, you’ll receive a password reset link shortly.");
+      await requestPasswordReset(
+        normalizedEmail,
+        `${window.location.origin}/reset-password`,
+      );
+      setNotice(
+        "If an account exists for that email, you’ll receive a password reset link shortly.",
+      );
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unable to send the reset email. Please try again.");
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to send the reset email. Please try again.",
+      );
     } finally {
       setResettingPassword(false);
     }
@@ -80,8 +104,14 @@ export function Login() {
         </div>
         <div className="auth-card">
           <div className="auth-copy">
-            <h1 id="auth-title">{mode === "login" ? "Sign in" : "Create account"}</h1>
-            <p>{mode === "login" ? "Use your PartPilot account to open the workspace." : "Create a PartPilot account for this workspace."}</p>
+            <h1 id="auth-title">
+              {mode === "login" ? "Sign in" : "Create account"}
+            </h1>
+            <p>
+              {mode === "login"
+                ? "Use your PartPilot account to open the workspace."
+                : "Create a PartPilot account for this workspace."}
+            </p>
           </div>
 
           <form className="auth-form" onSubmit={submit}>
@@ -102,11 +132,17 @@ export function Login() {
                   <input
                     className="form-control"
                     value={organizationName}
-                    onChange={(event) => setOrganizationName(event.target.value)}
+                    onChange={(event) =>
+                      setOrganizationName(event.target.value)
+                    }
                     autoComplete="organization"
                     required
                   />
-                  {organizationSlug && <span className="auth-slug-preview">Used slug {organizationSlug}</span>}
+                  {organizationSlug && (
+                    <span className="auth-slug-preview">
+                      Used slug {organizationSlug}
+                    </span>
+                  )}
                 </label>
               </>
             )}
@@ -130,7 +166,9 @@ export function Login() {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                autoComplete={
+                  mode === "login" ? "current-password" : "new-password"
+                }
                 minLength={6}
                 required
               />
@@ -139,9 +177,17 @@ export function Login() {
             {notice && <p className="auth-notice">{notice}</p>}
             {error && <p className="auth-error">{error}</p>}
 
-            <button type="submit" className="button button--primary auth-submit" disabled={submitting || resettingPassword}>
+            <button
+              type="submit"
+              className="button button--primary auth-submit"
+              disabled={submitting || resettingPassword}
+            >
               <LogIn size={18} />
-              {submitting ? "Working..." : mode === "login" ? "Sign in" : "Create account"}
+              {submitting
+                ? "Working..."
+                : mode === "login"
+                  ? "Sign in"
+                  : "Create account"}
             </button>
           </form>
 
@@ -153,10 +199,14 @@ export function Login() {
               onClick={() => {
                 setError(null);
                 setNotice(null);
-                setMode((current) => (current === "login" ? "signup" : "login"));
+                setMode((current) =>
+                  current === "login" ? "signup" : "login",
+                );
               }}
             >
-              {mode === "login" ? "Create a new account" : "Use an existing account"}
+              {mode === "login"
+                ? "Create a new account"
+                : "Use an existing account"}
             </button>
             {mode === "login" && (
               <button
@@ -165,7 +215,9 @@ export function Login() {
                 disabled={submitting || resettingPassword}
                 onClick={forgotPassword}
               >
-                {resettingPassword ? "Sending reset link..." : "Forgot password?"}
+                {resettingPassword
+                  ? "Sending reset link..."
+                  : "Forgot password?"}
               </button>
             )}
           </div>

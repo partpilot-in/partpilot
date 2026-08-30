@@ -22,7 +22,10 @@ export function ResetPassword() {
     event.preventDefault();
 
     if (newPassword !== confirmedPassword) {
-      showToast({ title: "Passwords do not match", body: "Enter the same password in both fields." });
+      showToast({
+        title: "Passwords do not match",
+        body: "Enter the same password in both fields.",
+      });
       return;
     }
 
@@ -38,7 +41,10 @@ export function ResetPassword() {
     } catch (caught) {
       showToast({
         title: "Could not update password",
-        body: caught instanceof Error ? caught.message : "Please request a new password reset link and try again.",
+        body:
+          caught instanceof Error
+            ? caught.message
+            : "Please request a new password reset link and try again.",
       });
     } finally {
       setSubmitting(false);
@@ -58,7 +64,9 @@ export function ResetPassword() {
     );
   }
 
-  const linkError = passwordRecoveryError ?? (!session ? "This password reset link is invalid or has expired." : null);
+  const linkError =
+    passwordRecoveryError ??
+    (!session ? "This password reset link is invalid or has expired." : null);
 
   return (
     <main className="auth-shell">
@@ -78,7 +86,11 @@ export function ResetPassword() {
               <p className="auth-error" role="alert">
                 {linkError}
               </p>
-              <button type="button" className="button auth-submit" onClick={returnToSignIn}>
+              <button
+                type="button"
+                className="button auth-submit"
+                onClick={returnToSignIn}
+              >
                 Return to sign in
               </button>
             </>
@@ -108,7 +120,11 @@ export function ResetPassword() {
                   required
                 />
               </label>
-              <button type="submit" className="button button--primary auth-submit" disabled={submitting}>
+              <button
+                type="submit"
+                className="button button--primary auth-submit"
+                disabled={submitting}
+              >
                 <KeyRound size={18} />
                 {submitting ? "Updating..." : "Set new password"}
               </button>

@@ -13,8 +13,26 @@ const ZIP_CENTRAL_DIRECTORY_HEADER = 0x02014b50;
 const ZIP_END_OF_CENTRAL_DIRECTORY = 0x06054b50;
 
 const FIELD_ALIASES = {
-  line_no: ["#", "line", "line no", "line number", "item", "item no", "item number"],
-  designator: ["designator", "designators", "reference", "references", "reference designator", "reference designators", "refdes", "ref des", "ref"],
+  line_no: [
+    "#",
+    "line",
+    "line no",
+    "line number",
+    "item",
+    "item no",
+    "item number",
+  ],
+  designator: [
+    "designator",
+    "designators",
+    "reference",
+    "references",
+    "reference designator",
+    "reference designators",
+    "refdes",
+    "ref des",
+    "ref",
+  ],
   mpn: [
     "mpn",
     "mfg pn",
@@ -35,12 +53,56 @@ const FIELD_ALIASES = {
     "order code",
     "material number",
   ],
-  description: ["description", "desc", "assembly instructions", "item description", "component description"],
-  manufacturer: ["manufacturer", "mfg", "mfr", "vendor", "supplier", "brand", "maker"],
-  country_of_origin: ["country", "country of origin", "origin country", "coo", "made in", "origin"],
-  category: ["category", "type", "part type", "component type", "package", "footprint"],
-  qty: ["qty", "quantity", "unit qty", "unit quantity", "bom qty", "usage", "amount", "count"],
-  unit_price: ["unit price", "price", "unit cost", "cost", "price each", "cost each"],
+  description: [
+    "description",
+    "desc",
+    "assembly instructions",
+    "item description",
+    "component description",
+  ],
+  manufacturer: [
+    "manufacturer",
+    "mfg",
+    "mfr",
+    "vendor",
+    "supplier",
+    "brand",
+    "maker",
+  ],
+  country_of_origin: [
+    "country",
+    "country of origin",
+    "origin country",
+    "coo",
+    "made in",
+    "origin",
+  ],
+  category: [
+    "category",
+    "type",
+    "part type",
+    "component type",
+    "package",
+    "footprint",
+  ],
+  qty: [
+    "qty",
+    "quantity",
+    "unit qty",
+    "unit quantity",
+    "bom qty",
+    "usage",
+    "amount",
+    "count",
+  ],
+  unit_price: [
+    "unit price",
+    "price",
+    "unit cost",
+    "cost",
+    "price each",
+    "cost each",
+  ],
 } as const;
 
 export type BomField = keyof typeof FIELD_ALIASES;
@@ -58,7 +120,11 @@ export const BOM_FIELD_OPTIONS: { value: BomField; label: string }[] = [
 ];
 
 export const REQUIRED_BOM_FIELDS: BomField[] = ["designator", "mpn"];
-export const RECOMMENDED_BOM_FIELDS: BomField[] = ["manufacturer", "description", "qty"];
+export const RECOMMENDED_BOM_FIELDS: BomField[] = [
+  "manufacturer",
+  "description",
+  "qty",
+];
 
 export type BomFieldMapping = Record<number, BomField | undefined>;
 
@@ -104,10 +170,16 @@ export async function parseBomFile(file: File): Promise<ParsedBom> {
 
 export async function inspectBomFile(file: File): Promise<BomImportPreview> {
   const extension = file.name.split(".").pop()?.toLowerCase();
-  const rows = extension === "xlsx" ? await readXlsxRows(file) : parseCsv(await file.text());
+  const rows =
+    extension === "xlsx"
+      ? await readXlsxRows(file)
+      : parseCsv(await file.text());
   const headerIndex = findHeaderIndex(rows);
   const headerRow = rows[headerIndex] ?? [];
-  const columnCount = Math.max(headerRow.length, ...rows.slice(headerIndex + 1, headerIndex + 6).map((row) => row.length));
+  const columnCount = Math.max(
+    headerRow.length,
+    ...rows.slice(headerIndex + 1, headerIndex + 6).map((row) => row.length),
+  );
   const candidates = Array.from({ length: columnCount }, (_, index) => {
     const header = cleanText(headerRow[index]) || `Column ${index + 1}`;
     const match = bestFieldMatch(header);
@@ -134,38 +206,56 @@ export async function inspectBomFile(file: File): Promise<BomImportPreview> {
       }
     });
 
-  const columns = candidates.map<BomImportColumn>(({ index, header, samples, match }) => ({
-    index,
-    header,
-    samples,
-    suggestedField: suggestedMapping[index],
-    confidence: match.score >= 0.88 ? "high" : match.score >= 0.58 ? "medium" : "low",
-  }));
+  const columns = candidates.map<BomImportColumn>(
+    ({ index, header, samples, match }) => ({
+      index,
+      header,
+      samples,
+      suggestedField: suggestedMapping[index],
+      confidence:
+        match.score >= 0.88 ? "high" : match.score >= 0.58 ? "medium" : "low",
+    }),
+  );
 
   if (!columns.length || rows.length <= headerIndex + 1) {
-    throw new Error("The selected file does not contain a header and BOM data rows.");
+    throw new Error(
+      "The selected file does not contain a header and BOM data rows.",
+    );
   }
 
   return {
     name: filenameToBomName(file.name),
     rows,
     headerIndex,
-    dataRowCount: rows.slice(headerIndex + 1).filter((row) => row.some((cell) => cleanText(cell))).length,
+    dataRowCount: rows
+      .slice(headerIndex + 1)
+      .filter((row) => row.some((cell) => cleanText(cell))).length,
     columns,
     suggestedMapping,
   };
 }
 
-export function buildBomLines(preview: BomImportPreview, mapping: BomFieldMapping): BomLine[] {
+export function buildBomLines(
+  preview: BomImportPreview,
+  mapping: BomFieldMapping,
+): BomLine[] {
   const fieldIndexes: Partial<Record<BomField, number>> = {};
   Object.entries(mapping).forEach(([columnIndex, field]) => {
     if (field) fieldIndexes[field] = Number(columnIndex);
   });
 
-  return rowsToBomLines(preview.rows, preview.name, preview.headerIndex, fieldIndexes);
+  return rowsToBomLines(
+    preview.rows,
+    preview.name,
+    preview.headerIndex,
+    fieldIndexes,
+  );
 }
 
-export function validateBomMapping(preview: BomImportPreview, mapping: BomFieldMapping): BomMappingValidation {
+export function validateBomMapping(
+  preview: BomImportPreview,
+  mapping: BomFieldMapping,
+): BomMappingValidation {
   const dataRows = preview.rows
     .slice(preview.headerIndex + 1)
     .filter((row) => row.some((cell) => cleanText(cell)));
@@ -174,14 +264,24 @@ export function validateBomMapping(preview: BomImportPreview, mapping: BomFieldM
     if (field) mappedIndexes.set(field, Number(columnIndex));
   });
 
-  const issuesFor = (fields: BomField[]) => fields.flatMap<BomMappingIssue>((field) => {
-    const columnIndex = mappedIndexes.get(field);
-    const label = BOM_FIELD_OPTIONS.find((option) => option.value === field)?.label ?? field;
-    if (columnIndex === undefined) return [{ field, label, missingRows: dataRows.length, mappingMissing: true }];
+  const issuesFor = (fields: BomField[]) =>
+    fields.flatMap<BomMappingIssue>((field) => {
+      const columnIndex = mappedIndexes.get(field);
+      const label =
+        BOM_FIELD_OPTIONS.find((option) => option.value === field)?.label ??
+        field;
+      if (columnIndex === undefined)
+        return [
+          { field, label, missingRows: dataRows.length, mappingMissing: true },
+        ];
 
-    const missingRows = dataRows.filter((row) => !cleanText(row[columnIndex])).length;
-    return missingRows ? [{ field, label, missingRows, mappingMissing: false }] : [];
-  });
+      const missingRows = dataRows.filter(
+        (row) => !cleanText(row[columnIndex]),
+      ).length;
+      return missingRows
+        ? [{ field, label, missingRows, mappingMissing: false }]
+        : [];
+    });
 
   return {
     errors: issuesFor(REQUIRED_BOM_FIELDS),
@@ -260,9 +360,9 @@ function findFirstWorksheetPath(entries: Map<string, Uint8Array>) {
     const relationshipId = firstSheet?.getAttribute("r:id");
 
     if (relationshipId) {
-      const relationship = Array.from(relsDoc.getElementsByTagName("Relationship")).find(
-        (node) => node.getAttribute("Id") === relationshipId,
-      );
+      const relationship = Array.from(
+        relsDoc.getElementsByTagName("Relationship"),
+      ).find((node) => node.getAttribute("Id") === relationshipId);
       const target = relationship?.getAttribute("Target");
       if (target) return normalizeWorksheetPath(target);
     }
@@ -304,7 +404,9 @@ async function readZipEntries(buffer: ArrayBuffer) {
     const extraLength = view.getUint16(offset + 30, true);
     const commentLength = view.getUint16(offset + 32, true);
     const localHeaderOffset = view.getUint32(offset + 42, true);
-    const filename = decodeBytes(bytes.slice(offset + 46, offset + 46 + filenameLength));
+    const filename = decodeBytes(
+      bytes.slice(offset + 46, offset + 46 + filenameLength),
+    );
 
     if (!filename.endsWith("/")) {
       const localHeader = localHeaderOffset;
@@ -314,9 +416,13 @@ async function readZipEntries(buffer: ArrayBuffer) {
 
       const localFilenameLength = view.getUint16(localHeader + 26, true);
       const localExtraLength = view.getUint16(localHeader + 28, true);
-      const dataOffset = localHeader + 30 + localFilenameLength + localExtraLength;
+      const dataOffset =
+        localHeader + 30 + localFilenameLength + localExtraLength;
       const compressed = bytes.slice(dataOffset, dataOffset + compressedSize);
-      entries.set(filename, await inflateZipEntry(compressed, compressionMethod));
+      entries.set(
+        filename,
+        await inflateZipEntry(compressed, compressionMethod),
+      );
     }
 
     offset += 46 + filenameLength + extraLength + commentLength;
@@ -329,7 +435,8 @@ function findEndOfCentralDirectory(view: DataView) {
   const minOffset = Math.max(0, view.byteLength - 65557);
 
   for (let offset = view.byteLength - 22; offset >= minOffset; offset -= 1) {
-    if (view.getUint32(offset, true) === ZIP_END_OF_CENTRAL_DIRECTORY) return offset;
+    if (view.getUint32(offset, true) === ZIP_END_OF_CENTRAL_DIRECTORY)
+      return offset;
   }
 
   throw new Error("The workbook ZIP directory could not be read.");
@@ -343,9 +450,14 @@ async function inflateZipEntry(compressed: Uint8Array, method: number) {
 
   const buffer =
     compressed.buffer instanceof ArrayBuffer
-      ? compressed.buffer.slice(compressed.byteOffset, compressed.byteOffset + compressed.byteLength)
+      ? compressed.buffer.slice(
+          compressed.byteOffset,
+          compressed.byteOffset + compressed.byteLength,
+        )
       : new Uint8Array(compressed).buffer;
-  const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  const stream = new Blob([buffer])
+    .stream()
+    .pipeThrough(new DecompressionStream("deflate-raw"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
@@ -369,7 +481,9 @@ function parseWorksheet(xml: string, sharedStrings: string[]) {
 
     Array.from(rowNode.getElementsByTagName("c")).forEach((cellNode) => {
       const ref = cellNode.getAttribute("r");
-      const columnIndex = ref ? columnNameToIndex(ref.replace(/\d+$/, "")) : cells.length;
+      const columnIndex = ref
+        ? columnNameToIndex(ref.replace(/\d+$/, ""))
+        : cells.length;
       cells[columnIndex] = readCellValue(cellNode, sharedStrings);
     });
 
@@ -379,12 +493,16 @@ function parseWorksheet(xml: string, sharedStrings: string[]) {
   return rows;
 }
 
-function readCellValue(cellNode: Element, sharedStrings: string[]): BomCellValue {
+function readCellValue(
+  cellNode: Element,
+  sharedStrings: string[],
+): BomCellValue {
   const type = cellNode.getAttribute("t");
   const raw = cellNode.getElementsByTagName("v")[0]?.textContent ?? "";
 
   if (type === "s") return sharedStrings[Number(raw)] ?? "";
-  if (type === "inlineStr") return cellNode.getElementsByTagName("t")[0]?.textContent ?? "";
+  if (type === "inlineStr")
+    return cellNode.getElementsByTagName("t")[0]?.textContent ?? "";
   if (type === "b") return raw === "1";
 
   const numberValue = Number(raw);
@@ -392,17 +510,21 @@ function readCellValue(cellNode: Element, sharedStrings: string[]): BomCellValue
 }
 
 function columnNameToIndex(columnName: string) {
-  return columnName
-    .toUpperCase()
-    .split("")
-    .reduce((total, char) => total * 26 + char.charCodeAt(0) - 64, 0) - 1;
+  return (
+    columnName
+      .toUpperCase()
+      .split("")
+      .reduce((total, char) => total * 26 + char.charCodeAt(0) - 64, 0) - 1
+  );
 }
 
 function rowsToBomLines(
   rows: BomCellValue[][],
   bomName: string,
   headerIndex = findHeaderIndex(rows),
-  fieldIndexes = buildFieldIndexes((rows[headerIndex] ?? []).map(normalizeHeader)),
+  fieldIndexes = buildFieldIndexes(
+    (rows[headerIndex] ?? []).map(normalizeHeader),
+  ),
 ): BomLine[] {
   const prefix = sanitizeId(bomName);
 
@@ -418,8 +540,14 @@ function findHeaderIndex(rows: BomCellValue[][]) {
 
   rows.slice(0, 10).forEach((row, index) => {
     const matches = row.map((header) => bestFieldMatch(cleanText(header)));
-    const distinctFields = new Set(matches.filter((match) => match.score >= 0.42).map((match) => match.field));
-    const score = distinctFields.size * 2 + matches.reduce((total, match) => total + match.score, 0);
+    const distinctFields = new Set(
+      matches
+        .filter((match) => match.score >= 0.42)
+        .map((match) => match.field),
+    );
+    const score =
+      distinctFields.size * 2 +
+      matches.reduce((total, match) => total + match.score, 0);
 
     if (score > bestScore) {
       bestScore = score;
@@ -435,7 +563,10 @@ function buildFieldIndexes(headers: string[]) {
 
   headers.forEach((header, index) => {
     (Object.keys(FIELD_ALIASES) as BomField[]).forEach((field) => {
-      if (indexes[field] === undefined && (FIELD_ALIASES[field] as readonly string[]).includes(header)) {
+      if (
+        indexes[field] === undefined &&
+        (FIELD_ALIASES[field] as readonly string[]).includes(header)
+      ) {
         indexes[field] = index;
       }
     });
@@ -450,7 +581,10 @@ function bestFieldMatch(header: string): { field?: BomField; score: number } {
 
   let best: { field?: BomField; score: number } = { score: 0 };
   (Object.keys(FIELD_ALIASES) as BomField[]).forEach((field) => {
-    const aliases = [...FIELD_ALIASES[field], BOM_FIELD_OPTIONS.find((option) => option.value === field)?.label ?? ""];
+    const aliases = [
+      ...FIELD_ALIASES[field],
+      BOM_FIELD_OPTIONS.find((option) => option.value === field)?.label ?? "",
+    ];
     aliases.forEach((alias) => {
       const normalizedAlias = normalizeHeader(alias);
       const score = headerSimilarity(normalized, normalizedAlias);
@@ -468,11 +602,21 @@ function headerSimilarity(header: string, alias: string) {
   const compactHeader = header.replace(/\s/g, "");
   const compactAlias = alias.replace(/\s/g, "");
   if (compactHeader === compactAlias) return 0.96;
-  if (Math.min(header.length, alias.length) >= 3 && (header.includes(alias) || alias.includes(header))) return 0.76;
+  if (
+    Math.min(header.length, alias.length) >= 3 &&
+    (header.includes(alias) || alias.includes(header))
+  )
+    return 0.76;
 
-  const headerTokens = new Set(header.split(" ").filter((token) => token.length > 1));
-  const aliasTokens = new Set(alias.split(" ").filter((token) => token.length > 1));
-  const overlap = [...headerTokens].filter((token) => aliasTokens.has(token)).length;
+  const headerTokens = new Set(
+    header.split(" ").filter((token) => token.length > 1),
+  );
+  const aliasTokens = new Set(
+    alias.split(" ").filter((token) => token.length > 1),
+  );
+  const overlap = [...headerTokens].filter((token) =>
+    aliasTokens.has(token),
+  ).length;
   if (!overlap) return 0;
   return (overlap / Math.max(headerTokens.size, aliasTokens.size)) * 0.68;
 }
@@ -490,7 +634,9 @@ function rowToBomLine(
 
   if (!mpn || !designator) return undefined;
 
-  const description = mappedDescription ? `${designator} — ${mappedDescription}` : designator;
+  const description = mappedDescription
+    ? `${designator} — ${mappedDescription}`
+    : designator;
   const category = cleanText(cellAt(row, fields.category));
   const id = `${prefix}-line-${lineNo}`;
 
@@ -505,9 +651,13 @@ function rowToBomLine(
     qty: parseNumber(cellAt(row, fields.qty)) || 1,
     unit_price: parseNumber(cellAt(row, fields.unit_price)),
     score: 72,
-    component_metadata: withCharacteristicSummary({}, {
-      countryOfOrigin: cleanText(cellAt(row, fields.country_of_origin)) || "Unknown",
-    }),
+    component_metadata: withCharacteristicSummary(
+      {},
+      {
+        countryOfOrigin:
+          cleanText(cellAt(row, fields.country_of_origin)) || "Unknown",
+      },
+    ),
   };
 }
 
@@ -530,7 +680,11 @@ function normalizeHeader(value: BomCellValue | undefined) {
 }
 
 function parseNumber(value: BomCellValue | undefined) {
-  const number = Number(cleanText(value).replace(/[^0-9.,+-]/g, "").replace(/,/g, ""));
+  const number = Number(
+    cleanText(value)
+      .replace(/[^0-9.,+-]/g, "")
+      .replace(/,/g, ""),
+  );
   return Number.isFinite(number) && number >= 0 ? number : 0;
 }
 
@@ -540,7 +694,12 @@ function parseInteger(value: BomCellValue | undefined) {
 }
 
 function sanitizeId(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "bom";
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "bom"
+  );
 }
 
 function parseXml(xml: string) {

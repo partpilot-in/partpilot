@@ -2,7 +2,13 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FilePlus2, GitCompareArrows, Upload, X } from "lucide-react";
 import { useProjects } from "../api/hooks/boms";
-import { Card, EmptyState, ErrorMessage, ScoreRing, Spinner } from "../components/ui";
+import {
+  Card,
+  EmptyState,
+  ErrorMessage,
+  ScoreRing,
+  Spinner,
+} from "../components/ui";
 import { formatDate } from "../lib/format";
 
 export function Projects() {
@@ -24,7 +30,9 @@ export function Projects() {
       <div className="page-header detail-page-header projects-page-header">
         <div className="detail-page-heading">
           <h1 className="page-title">Projects</h1>
-          <p className="page-subtitle">Review uploaded BOMs and compare lifecycle changes across revisions.</p>
+          <p className="page-subtitle">
+            Review uploaded BOMs and compare lifecycle changes across revisions.
+          </p>
         </div>
         <div className="inline-stack projects-page-actions">
           <Link className="button button--primary" to="/projects/upload">
@@ -43,7 +51,10 @@ export function Projects() {
       ) : error ? (
         <ErrorMessage message={error} />
       ) : !projects?.length ? (
-        <EmptyState title="No BOM projects" body="Create or upload a BOM to populate this workspace." />
+        <EmptyState
+          title="No BOM projects"
+          body="Create or upload a BOM to populate this workspace."
+        />
       ) : (
         <section className="project-grid" aria-label="Uploaded BOM projects">
           {(projects ?? []).map((project) => (
@@ -56,7 +67,8 @@ export function Projects() {
                     </Link>
                   </h3>
                   <p>
-                    {project.part_count} parts – uploaded {formatDate(project.uploaded_at)}
+                    {project.part_count} parts – uploaded{" "}
+                    {formatDate(project.uploaded_at)}
                   </p>
                 </div>
                 <input
@@ -80,13 +92,21 @@ export function Projects() {
       )}
 
       {selectedIds.size > 0 && (
-        <div className="floating-bar" role="region" aria-label="Compare selected BOMs">
+        <div
+          className="floating-bar"
+          role="region"
+          aria-label="Compare selected BOMs"
+        >
           <span>{selectedIds.size} projects selected</span>
           <div className="inline-stack">
             <Link
               className="button button--primary"
               aria-disabled={!canCompare}
-              to={canCompare ? `/projects/compare?a=${compareIds[0]}&b=${compareIds[1]}` : "#"}
+              to={
+                canCompare
+                  ? `/projects/compare?a=${compareIds[0]}&b=${compareIds[1]}`
+                  : "#"
+              }
               onClick={(event) => {
                 if (!canCompare) event.preventDefault();
               }}
@@ -94,7 +114,11 @@ export function Projects() {
               <GitCompareArrows size={16} />
               Compare selected
             </Link>
-            <button type="button" className="button" onClick={() => setSelectedIds(new Set())}>
+            <button
+              type="button"
+              className="button"
+              onClick={() => setSelectedIds(new Set())}
+            >
               <X size={16} />
               Clear
             </button>

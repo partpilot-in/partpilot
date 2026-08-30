@@ -7,7 +7,11 @@ interface FileDropzoneProps {
   hint?: string;
 }
 
-export function FileDropzone({ accept, onFileSelected, hint }: FileDropzoneProps) {
+export function FileDropzone({
+  accept,
+  onFileSelected,
+  hint,
+}: FileDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -28,7 +32,9 @@ export function FileDropzone({ accept, onFileSelected, hint }: FileDropzoneProps
 
   return (
     <label
-      className={["file-dropzone", dragging && "file-dropzone--dragging"].filter(Boolean).join(" ")}
+      className={["file-dropzone", dragging && "file-dropzone--dragging"]
+        .filter(Boolean)
+        .join(" ")}
       onDragOver={(event) => {
         event.preventDefault();
         setDragging(true);

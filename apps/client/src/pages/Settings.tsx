@@ -1,6 +1,10 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Check, CreditCard, KeyRound, Save } from "lucide-react";
-import { useSettingsMutations, useProfile, type UserProfile } from "../api/hooks/settings";
+import {
+  useSettingsMutations,
+  useProfile,
+  type UserProfile,
+} from "../api/hooks/settings";
 import { useAuth } from "../auth/AuthProvider";
 import { Card, ErrorMessage, Spinner, useToast } from "../components/ui";
 
@@ -21,7 +25,8 @@ const availablePlans = ["startup", "scale", "enterprise"] as const;
 
 function planName(plan: unknown) {
   const safePlan =
-    typeof plan === "string" && ["hobby", "startup", "scale", "enterprise"].includes(plan)
+    typeof plan === "string" &&
+    ["hobby", "startup", "scale", "enterprise"].includes(plan)
       ? plan
       : "hobby";
   return safePlan.charAt(0).toUpperCase() + safePlan.slice(1);
@@ -29,7 +34,8 @@ function planName(plan: unknown) {
 
 function apiErrorMessage(error: unknown) {
   if (error && typeof error === "object" && "response" in error) {
-    const response = (error as { response?: { data?: { error?: unknown } } }).response;
+    const response = (error as { response?: { data?: { error?: unknown } } })
+      .response;
     if (typeof response?.data?.error === "string") return response.data.error;
   }
   return error instanceof Error ? error.message : "Please try again.";
@@ -48,12 +54,16 @@ export function SettingsPage() {
     if (profile) {
       setForm({
         ...profile,
-        organization_slug: profile.organization_slug || user?.organizationSlug || "personal",
+        organization_slug:
+          profile.organization_slug || user?.organizationSlug || "personal",
       });
     }
   }, [profile, user?.organizationSlug]);
 
-  function updateField<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
+  function updateField<K extends keyof UserProfile>(
+    key: K,
+    value: UserProfile[K],
+  ) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
@@ -61,7 +71,9 @@ export function SettingsPage() {
     event.preventDefault();
     setSaving(true);
     try {
-      const emailChanged = form.email.trim().toLowerCase() !== (user?.email ?? "").trim().toLowerCase();
+      const emailChanged =
+        form.email.trim().toLowerCase() !==
+        (user?.email ?? "").trim().toLowerCase();
       const saved = await updateProfile({
         email: form.email,
         first_name: form.first_name,
@@ -87,7 +99,10 @@ export function SettingsPage() {
         tone: "success",
       });
     } catch (saveError) {
-      showToast({ title: "Could not save settings", body: apiErrorMessage(saveError) });
+      showToast({
+        title: "Could not save settings",
+        body: apiErrorMessage(saveError),
+      });
     } finally {
       setSaving(false);
     }
@@ -103,7 +118,10 @@ export function SettingsPage() {
         tone: "success",
       });
     } catch (resetError) {
-      showToast({ title: "Could not reset password", body: apiErrorMessage(resetError) });
+      showToast({
+        title: "Could not reset password",
+        body: apiErrorMessage(resetError),
+      });
     } finally {
       setResetting(false);
     }
@@ -117,7 +135,9 @@ export function SettingsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Settings</h1>
-          <p className="page-subtitle">Manage your profile and account security.</p>
+          <p className="page-subtitle">
+            Manage your profile and account security.
+          </p>
         </div>
       </div>
 
@@ -129,7 +149,9 @@ export function SettingsPage() {
               <input
                 className="form-control"
                 value={form.first_name}
-                onChange={(event) => updateField("first_name", event.target.value)}
+                onChange={(event) =>
+                  updateField("first_name", event.target.value)
+                }
                 autoComplete="given-name"
                 maxLength={100}
               />
@@ -139,7 +161,9 @@ export function SettingsPage() {
               <input
                 className="form-control"
                 value={form.last_name}
-                onChange={(event) => updateField("last_name", event.target.value)}
+                onChange={(event) =>
+                  updateField("last_name", event.target.value)
+                }
                 autoComplete="family-name"
                 maxLength={100}
               />
@@ -213,14 +237,20 @@ export function SettingsPage() {
                 className="form-control"
                 type="url"
                 value={form.linkedin}
-                onChange={(event) => updateField("linkedin", event.target.value)}
+                onChange={(event) =>
+                  updateField("linkedin", event.target.value)
+                }
                 placeholder="https://www.linkedin.com/in/your-profile"
                 autoComplete="url"
                 maxLength={500}
               />
             </label>
             <div className="settings-form__actions">
-              <button type="submit" className="button button--primary" disabled={saving}>
+              <button
+                type="submit"
+                className="button button--primary"
+                disabled={saving}
+              >
                 <Save size={16} />
                 {saving ? "Saving..." : "Save changes"}
               </button>
@@ -247,7 +277,10 @@ export function SettingsPage() {
             <div className="billing-plans">
               <div>
                 <h3>Available plans</h3>
-                <p>Enjoy complimentary access to PartPilot during our launch trial.</p>
+                <p>
+                  Enjoy complimentary access to PartPilot during our launch
+                  trial.
+                </p>
               </div>
               <ul className="billing-plan-list">
                 {availablePlans.map((plan) => (
@@ -267,8 +300,15 @@ export function SettingsPage() {
 
         <Card title="Password">
           <div className="settings-password">
-            <p>We’ll email a secure reset link to your current sign-in address.</p>
-            <button type="button" className="button" disabled={resetting} onClick={resetPassword}>
+            <p>
+              We’ll email a secure reset link to your current sign-in address.
+            </p>
+            <button
+              type="button"
+              className="button"
+              disabled={resetting}
+              onClick={resetPassword}
+            >
               <KeyRound size={16} />
               {resetting ? "Sending..." : "Reset password"}
             </button>

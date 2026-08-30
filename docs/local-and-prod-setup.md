@@ -77,6 +77,7 @@ The feed server will listen on `http://127.0.0.1:8090`.
 
 ```bash
 pnpm install
+pnpm hooks:install   # one-time setup for the tracked pre-commit hook
 pnpm dev:client
 ```
 Access the client at `http://localhost:5173`.

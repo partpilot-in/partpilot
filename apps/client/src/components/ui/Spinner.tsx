@@ -36,7 +36,11 @@ export function Spinner({ message, size = 32 }: SpinnerProps) {
           strokeDasharray="50 20"
         />
       </svg>
-      {message && <p style={{ color: "var(--clr-text-muted, #888)", fontSize: 14 }}>{message}</p>}
+      {message && (
+        <p style={{ color: "var(--clr-text-muted, #888)", fontSize: 14 }}>
+          {message}
+        </p>
+      )}
     </div>
   );
 }

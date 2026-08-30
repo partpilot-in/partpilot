@@ -29,7 +29,9 @@
   border: 1px solid var(--border-color);
   border-radius: 50%;
   color: var(--text-muted);
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .footer-social-links {

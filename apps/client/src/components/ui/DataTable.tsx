@@ -38,7 +38,10 @@ function compareValues(a: unknown, b: unknown) {
   if (a == null && b == null) return 0;
   if (a == null) return -1;
   if (b == null) return 1;
-  return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+  return String(a).localeCompare(String(b), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
 }
 
 export function DataTable<T>({
@@ -56,13 +59,17 @@ export function DataTable<T>({
   rowClassName,
   footer,
 }: DataTableProps<T>) {
-  const [internalSort, setInternalSort] = useState<{ key: string; direction: "asc" | "desc" } | undefined>();
+  const [internalSort, setInternalSort] = useState<
+    { key: string; direction: "asc" | "desc" } | undefined
+  >();
   const activeSort = sort ?? internalSort;
   const safeRows = Array.isArray(rows) ? rows : [];
 
   const sortedRows = useMemo(() => {
     if (!activeSort) return safeRows;
-    const column = columns.find((candidate) => String(candidate.key) === activeSort.key);
+    const column = columns.find(
+      (candidate) => String(candidate.key) === activeSort.key,
+    );
     return [...safeRows].sort((a, b) => {
       const result = compareValues(
         column?.sortValue ? column.sortValue(a) : getValue(a, activeSort.key),
@@ -72,10 +79,15 @@ export function DataTable<T>({
     });
   }, [activeSort, columns, safeRows]);
 
-  const allVisibleSelected = sortedRows.length > 0 && sortedRows.every((row) => selectedIds.has(getRowId(row)));
+  const allVisibleSelected =
+    sortedRows.length > 0 &&
+    sortedRows.every((row) => selectedIds.has(getRowId(row)));
 
   function setSort(key: string) {
-    const nextDirection = activeSort?.key === key && activeSort.direction === "asc" ? "desc" : "asc";
+    const nextDirection =
+      activeSort?.key === key && activeSort.direction === "asc"
+        ? "desc"
+        : "asc";
     if (onSortChange) onSortChange(key, nextDirection);
     else setInternalSort({ key, direction: nextDirection });
   }
@@ -119,9 +131,15 @@ export function DataTable<T>({
                 return (
                   <th
                     key={key}
-                    className={column.numeric ? "data-table__numeric" : undefined}
+                    className={
+                      column.numeric ? "data-table__numeric" : undefined
+                    }
                     aria-sort={
-                      isSorted ? (activeSort.direction === "asc" ? "ascending" : "descending") : undefined
+                      isSorted
+                        ? activeSort.direction === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : undefined
                     }
                   >
                     {column.sortable ? (
@@ -182,7 +200,10 @@ export function DataTable<T>({
                     onClick={() => onRowClick?.(row)}
                     tabIndex={onRowClick ? 0 : undefined}
                     onKeyDown={(event) => {
-                      if (onRowClick && (event.key === "Enter" || event.key === " ")) {
+                      if (
+                        onRowClick &&
+                        (event.key === "Enter" || event.key === " ")
+                      ) {
                         event.preventDefault();
                         onRowClick(row);
                       }
@@ -206,10 +227,14 @@ export function DataTable<T>({
                       return (
                         <td
                           key={String(column.key)}
-                          className={column.numeric ? "data-table__numeric" : undefined}
+                          className={
+                            column.numeric ? "data-table__numeric" : undefined
+                          }
                           data-label={column.header}
                         >
-                          {column.render ? column.render(row) : String(getValue(row, String(column.key)) ?? "")}
+                          {column.render
+                            ? column.render(row)
+                            : String(getValue(row, String(column.key)) ?? "")}
                         </td>
                       );
                     })}
@@ -218,8 +243,16 @@ export function DataTable<T>({
               })}
             {!loading && sortedRows.length === 0 && (
               <tr>
-                <td className="data-table__empty" colSpan={columns.length + (selectable ? 1 : 0)}>
-                  {emptyState ?? <EmptyState title="No rows" body="Adjust filters or try another search." />}
+                <td
+                  className="data-table__empty"
+                  colSpan={columns.length + (selectable ? 1 : 0)}
+                >
+                  {emptyState ?? (
+                    <EmptyState
+                      title="No rows"
+                      body="Adjust filters or try another search."
+                    />
+                  )}
                 </td>
               </tr>
             )}

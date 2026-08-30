@@ -11,6 +11,14 @@
     "build": "pnpm --recursive run build",
     "build:client": "pnpm --filter @partpilot/client build",
     "build:website": "pnpm --filter @partpilot/website build",
-    "lint": "pnpm --recursive --if-present run lint"
+    "lint": "pnpm --recursive --if-present run lint",
+    "format": "cargo fmt --all && prettier --write \"apps/{client,website}/src/**/*.{ts,tsx,css}\" \"apps/{client,website}/*.{ts,json,html}\" package.json pnpm-workspace.yaml",
+    "format:check": "cargo fmt --all -- --check && prettier --check \"apps/{client,website}/src/**/*.{ts,tsx,css}\" \"apps/{client,website}/*.{ts,json,html}\" package.json pnpm-workspace.yaml",
+    "format:web": "prettier --write \"apps/{client,website}/src/**/*.{ts,tsx,css}\" \"apps/{client,website}/*.{ts,json,html}\" package.json pnpm-workspace.yaml",
+    "format:web:check": "prettier --check \"apps/{client,website}/src/**/*.{ts,tsx,css}\" \"apps/{client,website}/*.{ts,json,html}\" package.json pnpm-workspace.yaml",
+    "hooks:install": "git config core.hooksPath .githooks"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6"
   }
 }

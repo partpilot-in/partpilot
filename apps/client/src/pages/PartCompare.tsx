@@ -1,7 +1,13 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useComparePartsProperties } from "../api/hooks/parts";
-import { Card, EmptyState, ErrorMessage, PropertyCompareTable, Spinner } from "../components/ui";
+import {
+  Card,
+  EmptyState,
+  ErrorMessage,
+  PropertyCompareTable,
+  Spinner,
+} from "../components/ui";
 
 export function PartCompare() {
   const [searchParams] = useSearchParams();
@@ -13,7 +19,9 @@ export function PartCompare() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Compare parts</h1>
-          <p className="page-subtitle">Parameter differences are highlighted for quick replacement review.</p>
+          <p className="page-subtitle">
+            Parameter differences are highlighted for quick replacement review.
+          </p>
         </div>
         <Link className="button" to="/my-parts">
           <ArrowLeft size={16} />
@@ -28,7 +36,10 @@ export function PartCompare() {
         ) : (parts ?? []).length >= 2 ? (
           <PropertyCompareTable parts={parts!} />
         ) : (
-          <EmptyState title="Select at least two parts" body="Use My Parts search to choose rows for side-by-side comparison." />
+          <EmptyState
+            title="Select at least two parts"
+            body="Use My Parts search to choose rows for side-by-side comparison."
+          />
         )}
       </Card>
     </div>

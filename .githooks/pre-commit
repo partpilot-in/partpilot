@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+echo "Checking Rust and frontend formatting..."
+npm run format:check

@@ -31,7 +31,8 @@ const metalPrices: MetalPrice[] = [
   { metal: "LME Lead", price: "$2,060/mt", change: "-0.2%" },
 ];
 
-const manufacturerNewsFeedBaseUrl = import.meta.env.VITE_MANUFACTURER_NEWS_FEED_URL;
+const manufacturerNewsFeedBaseUrl = import.meta.env
+  .VITE_MANUFACTURER_NEWS_FEED_URL;
 const manufacturerNewsLimit = 12;
 
 function normalizeManufacturer(value: string) {
@@ -74,7 +75,11 @@ function formatNewsTime(value: string | undefined) {
 }
 
 function normalizeFeedItems(payload: unknown): ManufacturerNewsItem[] {
-  const rawItems = Array.isArray(payload) ? payload : isRecord(payload) && Array.isArray(payload.items) ? payload.items : [];
+  const rawItems = Array.isArray(payload)
+    ? payload
+    : isRecord(payload) && Array.isArray(payload.items)
+      ? payload.items
+      : [];
 
   return rawItems.flatMap((item) => {
     if (!isRecord(item)) return [];
@@ -86,29 +91,48 @@ function normalizeFeedItems(payload: unknown): ManufacturerNewsItem[] {
       {
         title,
         link: readString(item.link),
-        publishedAt: readString(item.published_at) ?? readString(item.publishedAt) ?? readString(item.pubDate),
-        source: readString(item.source_title) ?? readString(item.sourceTitle) ?? readString(item.source) ?? "Manufacturer feed",
+        publishedAt:
+          readString(item.published_at) ??
+          readString(item.publishedAt) ??
+          readString(item.pubDate),
+        source:
+          readString(item.source_title) ??
+          readString(item.sourceTitle) ??
+          readString(item.source) ??
+          "Manufacturer feed",
       },
     ];
   });
 }
 
-function newsMatchesManufacturer(item: ManufacturerNewsItem, manufacturer: string) {
+function newsMatchesManufacturer(
+  item: ManufacturerNewsItem,
+  manufacturer: string,
+) {
   const normalizedManufacturer = manufacturer.toLowerCase();
-  return [item.title, item.source].some((value) => value.toLowerCase().includes(normalizedManufacturer));
+  return [item.title, item.source].some((value) =>
+    value.toLowerCase().includes(normalizedManufacturer),
+  );
 }
 
 function renderNewsArticle(article: ManufacturerNewsItem) {
   return (
     <li key={article.title}>
       {article.link ? (
-        <a className="news-list__title" href={article.link} target="_blank" rel="noreferrer">
+        <a
+          className="news-list__title"
+          href={article.link}
+          target="_blank"
+          rel="noreferrer"
+        >
           {article.title}
         </a>
       ) : (
         <span className="news-list__title">{article.title}</span>
       )}
-      <small>{[article.source, formatNewsTime(article.publishedAt)].join(" - ")}</small>
+      <small>
+        {[article.source, formatNewsTime(article.publishedAt)].join(" - ")}
+      </small>
     </li>
   );
 }
@@ -116,9 +140,15 @@ function renderNewsArticle(article: ManufacturerNewsItem) {
 export function Dashboard() {
   const navigate = useNavigate();
   const { ids: importantIds } = useImportantParts();
-  const { data: projects, loading: projLoading, error: projError } = useProjects();
+  const {
+    data: projects,
+    loading: projLoading,
+    error: projError,
+  } = useProjects();
   const [selectedManufacturer, setSelectedManufacturer] = useState("");
-  const [manufacturerNews, setManufacturerNews] = useState<ManufacturerNewsItem[]>([]);
+  const [manufacturerNews, setManufacturerNews] = useState<
+    ManufacturerNewsItem[]
+  >([]);
   const [manufacturerNewsLoading, setManufacturerNewsLoading] = useState(true);
   const [manufacturerNewsError, setManufacturerNewsError] = useState<string>();
   const projectParts = useProjectParts(projects);
@@ -131,18 +161,33 @@ export function Dashboard() {
     () =>
       parts.filter((part) => {
         const lifecycle = lifecycleFromCharacteristics(part.component_metadata);
-        return importantIds.has(part.id) || part.score < 75 || lifecycle === "obsolete"
-          || lifecycle === "last_time_buy" || lifecycle === "nrnd";
+        return (
+          importantIds.has(part.id) ||
+          part.score < 75 ||
+          lifecycle === "obsolete" ||
+          lifecycle === "last_time_buy" ||
+          lifecycle === "nrnd"
+        );
       }),
     [importantIds, parts],
   );
   const attentionParts = useMemo(() => {
-    return [...(flaggedAttentionParts.length ? flaggedAttentionParts : parts)].sort(
-      (a, b) => Number(importantIds.has(b.id)) - Number(importantIds.has(a.id)) || a.score - b.score,
+    return [
+      ...(flaggedAttentionParts.length ? flaggedAttentionParts : parts),
+    ].sort(
+      (a, b) =>
+        Number(importantIds.has(b.id)) - Number(importantIds.has(a.id)) ||
+        a.score - b.score,
     );
   }, [flaggedAttentionParts, importantIds, parts]);
-  const attentionRows = useMemo(() => attentionParts.slice(0, 7), [attentionParts]);
-  const lowestScore = useMemo(() => (parts.length ? Math.min(...parts.map((part) => part.score)) : 0), [parts]);
+  const attentionRows = useMemo(
+    () => attentionParts.slice(0, 7),
+    [attentionParts],
+  );
+  const lowestScore = useMemo(
+    () => (parts.length ? Math.min(...parts.map((part) => part.score)) : 0),
+    [parts],
+  );
   const manufacturers = useMemo(() => {
     const counts = new Map<string, number>();
     parts.forEach((part) => {
@@ -159,14 +204,28 @@ export function Dashboard() {
   const dashboardStats = useMemo(
     () => [
       { label: "Parts", value: parts.length.toLocaleString() },
-      { label: "Need attention", value: flaggedAttentionParts.length.toLocaleString() },
-      { label: "Lowest score", value: parts.length ? String(lowestScore) : "-" },
+      {
+        label: "Need attention",
+        value: flaggedAttentionParts.length.toLocaleString(),
+      },
+      {
+        label: "Lowest score",
+        value: parts.length ? String(lowestScore) : "-",
+      },
       { label: "Manufacturers", value: manufacturers.length.toLocaleString() },
     ],
-    [flaggedAttentionParts.length, lowestScore, manufacturers.length, parts.length],
+    [
+      flaggedAttentionParts.length,
+      lowestScore,
+      manufacturers.length,
+      parts.length,
+    ],
   );
   const activeManufacturer =
-    manufacturers.find((item) => item.manufacturer === selectedManufacturer)?.manufacturer ?? manufacturers[0]?.manufacturer ?? "";
+    manufacturers.find((item) => item.manufacturer === selectedManufacturer)
+      ?.manufacturer ??
+    manufacturers[0]?.manufacturer ??
+    "";
   useEffect(() => {
     const controller = new AbortController();
 
@@ -175,7 +234,9 @@ export function Dashboard() {
       if (!feedUrl) {
         setManufacturerNews([]);
         setManufacturerNewsLoading(false);
-        setManufacturerNewsError("Manufacturer news feed URL is not configured.");
+        setManufacturerNewsError(
+          "Manufacturer news feed URL is not configured.",
+        );
         return;
       }
 
@@ -197,7 +258,11 @@ export function Dashboard() {
       } catch (error) {
         if (controller.signal.aborted) return;
         setManufacturerNews([]);
-        setManufacturerNewsError(error instanceof Error ? error.message : "Unable to load manufacturer news");
+        setManufacturerNewsError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load manufacturer news",
+        );
       } finally {
         if (!controller.signal.aborted) {
           setManufacturerNewsLoading(false);
@@ -209,16 +274,18 @@ export function Dashboard() {
 
     return () => controller.abort();
   }, []);
-  const newsItems = useMemo<ManufacturerNewsItem[]>(
-    () => {
-      const matchingItems = activeManufacturer
-        ? manufacturerNews.filter((article) => newsMatchesManufacturer(article, activeManufacturer))
-        : [];
+  const newsItems = useMemo<ManufacturerNewsItem[]>(() => {
+    const matchingItems = activeManufacturer
+      ? manufacturerNews.filter((article) =>
+          newsMatchesManufacturer(article, activeManufacturer),
+        )
+      : [];
 
-      return (matchingItems.length ? matchingItems : manufacturerNews).slice(0, 4);
-    },
-    [activeManufacturer, manufacturerNews],
-  );
+    return (matchingItems.length ? matchingItems : manufacturerNews).slice(
+      0,
+      4,
+    );
+  }, [activeManufacturer, manufacturerNews]);
 
   return (
     <div className="dashboard-grid">
@@ -229,7 +296,10 @@ export function Dashboard() {
         </div>
       </section>
 
-      <section className="dashboard-summary-grid" aria-label="Dashboard summary">
+      <section
+        className="dashboard-summary-grid"
+        aria-label="Dashboard summary"
+      >
         {dashboardStats.map((stat) => (
           <div className="dashboard-stat" key={stat.label}>
             <span>{stat.label}</span>
@@ -254,8 +324,17 @@ export function Dashboard() {
                   className="attention-card"
                   onClick={() => navigate(`/parts/${part.id}`)}
                 >
-                  <span className="attention-card__important" aria-label={importantIds.has(part.id) ? "Important" : "Not important"}>
-                    {importantIds.has(part.id) ? <Star size={16} fill="currentColor" /> : <Star size={16} />}
+                  <span
+                    className="attention-card__important"
+                    aria-label={
+                      importantIds.has(part.id) ? "Important" : "Not important"
+                    }
+                  >
+                    {importantIds.has(part.id) ? (
+                      <Star size={16} fill="currentColor" />
+                    ) : (
+                      <Star size={16} />
+                    )}
                   </span>
                   <span className="attention-card__part">
                     <strong>{part.mpn}</strong>
@@ -268,7 +347,10 @@ export function Dashboard() {
               ))}
             </div>
           ) : (
-            <EmptyState title="No parts need attention" body="Important or lower-score parts will appear here." />
+            <EmptyState
+              title="No parts need attention"
+              body="Important or lower-score parts will appear here."
+            />
           )}
         </section>
 
@@ -276,14 +358,22 @@ export function Dashboard() {
           <section className="market-prices" aria-label="LME prices">
             <div>
               <h2 className="section-title">LME prices</h2>
-              <p className="manufacturer-news__subtitle">Electronics metals, USD per metric ton.</p>
+              <p className="manufacturer-news__subtitle">
+                Electronics metals, USD per metric ton.
+              </p>
             </div>
             <div className="metal-price-grid">
               {metalPrices.map((metal) => (
                 <div className="metal-price" key={metal.metal}>
                   <span>{metal.metal}</span>
                   <strong>{metal.price}</strong>
-                  <small className={metal.change.startsWith("-") ? "metal-price__change--down" : "metal-price__change--up"}>
+                  <small
+                    className={
+                      metal.change.startsWith("-")
+                        ? "metal-price__change--down"
+                        : "metal-price__change--up"
+                    }
+                  >
                     {metal.change}
                   </small>
                 </div>
@@ -294,24 +384,36 @@ export function Dashboard() {
           <aside className="manufacturer-news" aria-label="Manufacturer news">
             <div>
               <h2 className="section-title">Manufacturer news</h2>
-              <p className="manufacturer-news__subtitle">Latest coverage tied to manufacturers in My Parts.</p>
+              <p className="manufacturer-news__subtitle">
+                Latest coverage tied to manufacturers in My Parts.
+              </p>
             </div>
             {manufacturers.length ? (
-                <div className="news-tabs" role="tablist" aria-label="Manufacturer news tabs">
-                  {manufacturers.map((item) => (
-                    <button
-                      key={item.manufacturer}
-                      type="button"
-                      className={["news-tab", item.manufacturer === activeManufacturer && "news-tab--active"].filter(Boolean).join(" ")}
-                      role="tab"
-                      aria-selected={item.manufacturer === activeManufacturer}
-                      onClick={() => setSelectedManufacturer(item.manufacturer)}
-                    >
-                      <span>{item.manufacturer}</span>
-                      <small>{item.count}</small>
-                    </button>
-                  ))}
-                </div>
+              <div
+                className="news-tabs"
+                role="tablist"
+                aria-label="Manufacturer news tabs"
+              >
+                {manufacturers.map((item) => (
+                  <button
+                    key={item.manufacturer}
+                    type="button"
+                    className={[
+                      "news-tab",
+                      item.manufacturer === activeManufacturer &&
+                        "news-tab--active",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    role="tab"
+                    aria-selected={item.manufacturer === activeManufacturer}
+                    onClick={() => setSelectedManufacturer(item.manufacturer)}
+                  >
+                    <span>{item.manufacturer}</span>
+                    <small>{item.count}</small>
+                  </button>
+                ))}
+              </div>
             ) : null}
             {manufacturerNewsLoading ? (
               <Spinner message="Loading manufacturer news..." />
@@ -320,7 +422,9 @@ export function Dashboard() {
             ) : newsItems.length ? (
               <ul className="news-list">{newsItems.map(renderNewsArticle)}</ul>
             ) : (
-              <p className="manufacturer-news__empty">No recent feed items found.</p>
+              <p className="manufacturer-news__empty">
+                No recent feed items found.
+              </p>
             )}
           </aside>
         </section>

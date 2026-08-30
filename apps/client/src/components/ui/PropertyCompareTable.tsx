@@ -15,7 +15,10 @@ function formatValue(value: string | number | boolean | undefined) {
   return String(value);
 }
 
-export function PropertyCompareTable({ parts, highlightDifferences = true }: PropertyCompareTableProps) {
+export function PropertyCompareTable({
+  parts,
+  highlightDifferences = true,
+}: PropertyCompareTableProps) {
   const parameterKeys = Array.from(
     new Set(parts.flatMap((part) => Object.keys(part.parameters))),
   ).sort((a, b) => a.localeCompare(b));
@@ -33,11 +36,16 @@ export function PropertyCompareTable({ parts, highlightDifferences = true }: Pro
         </thead>
         <tbody>
           {parameterKeys.map((key) => {
-            const values = parts.map((part) => formatValue(part.parameters[key]));
+            const values = parts.map((part) =>
+              formatValue(part.parameters[key]),
+            );
             const uniqueValues = new Set(values);
             const isDifferent = highlightDifferences && uniqueValues.size > 1;
             return (
-              <tr key={key} className={isDifferent ? "compare-table__different" : undefined}>
+              <tr
+                key={key}
+                className={isDifferent ? "compare-table__different" : undefined}
+              >
                 <td className="compare-table__key">{key}</td>
                 {values.map((value, index) => (
                   <td key={`${parts[index].id}-${key}`}>{value}</td>
