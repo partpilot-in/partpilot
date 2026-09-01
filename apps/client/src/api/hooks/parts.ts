@@ -1,6 +1,16 @@
 import { useMemo } from "react";
 import { api } from "../client";
-import { flattenCharacteristics } from "../componentMetadata";
+import {
+  componentMetadataFromApi,
+  flattenCharacteristics,
+} from "../componentMetadata";
+import {
+  apiRecord,
+  apiResponseItems,
+  apiString,
+  partFromApi,
+  partsFromApiResponse,
+} from "../partPayload";
 import type { Part, PartFilters } from "../types";
 import { useAsync } from "./useAsync";
 
@@ -8,15 +18,6 @@ export interface ProjectPartRow extends Part {
   project_count: number;
   project_names: string;
   total_qty: number;
-}
-
-function itemsFromResponse<T>(payload: unknown, key = "data"): T[] {
-  if (Array.isArray(payload)) return payload as T[];
-  if (!payload || typeof payload !== "object") return [];
-  const record = payload as Record<string, unknown>;
-  if (Array.isArray(record.items)) return record.items as T[];
-  if (Array.isArray(record[key])) return record[key] as T[];
-  return [];
 }
 
 /**
@@ -37,7 +38,7 @@ export function useSearchParts(query: string, filters: PartFilters) {
 
     return api
       .get("/v1/parts/search", { params })
-      .then((res) => itemsFromResponse<Part>(res.data));
+      .then((res) => partsFromApiResponse(res.data));
   }, [
     q,
     filters.category?.join(","),
@@ -51,7 +52,14 @@ export function useSearchParts(query: string, filters: PartFilters) {
  */
 export function usePart(id: string | undefined) {
   return useAsync<Part>(
-    id ? () => api.get(`/v1/parts/${id}`).then((res) => res.data) : null,
+    id
+      ? () =>
+          api.get(`/v1/parts/${id}`).then((res) => {
+            const part = partFromApi(res.data);
+            if (!part) throw new Error("The server returned an invalid part");
+            return part;
+          })
+      : null,
     [id],
   );
 }
@@ -79,9 +87,11 @@ export function usePartByMpn(mpn: string | undefined, manufacturer?: string) {
           if (manufacturerFilter) params.manufacturer = manufacturerFilter;
           return api.get("/v1/parts/search", { params }).then((res) => {
             const expectedMpn = comparableMpn(q);
-            const part = itemsFromResponse<Part>(res.data).find(
-              (candidate) => comparableMpn(candidate.mpn) === expectedMpn,
-            );
+            const candidates = partsFromApiResponse(res.data);
+            const part =
+              candidates.find(
+                (candidate) => comparableMpn(candidate.mpn) === expectedMpn,
+              ) ?? candidates[0];
             return { requestKey, part };
           });
         }
@@ -126,7 +136,7 @@ export function usePartAlternates(
               api
                 .get("/v1/parts/search", { params: { q: mpn } })
                 .then((res) => {
-                  const candidates = itemsFromResponse<Part>(res.data);
+                  const candidates = partsFromApiResponse(res.data);
                   const expectedMpn = comparableMpn(mpn);
                   const resolvedPart =
                     candidates.find(
@@ -172,14 +182,20 @@ export function useComparePartsProperties(ids: string[]) {
           api
             .get("/v1/parts/compare", { params: { ids: idsKey } })
             .then((res) => {
-              const parts = itemsFromResponse<Part>(res.data, "parts");
-              return parts.map((part) => ({
-                id: part.id,
-                label: `${part.mpn} - ${part.manufacturer}`,
-                parameters: flattenCharacteristics(
-                  part.component_metadata ?? {},
-                ),
-              }));
+              return apiResponseItems(res.data, "parts").flatMap((value) => {
+                const part = apiRecord(value);
+                const id = apiString(part.id);
+                if (!id) return [];
+                return [
+                  {
+                    id,
+                    label: apiString(part.label, id),
+                    parameters: flattenCharacteristics(
+                      componentMetadataFromApi(part.component_metadata),
+                    ),
+                  },
+                ];
+              });
             })
       : null,
     [idsKey],

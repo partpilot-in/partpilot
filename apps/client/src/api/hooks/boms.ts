@@ -1,5 +1,6 @@
 import { api } from "../client";
 import { parseBomFile } from "../bomParser";
+import { componentMetadataFromApi } from "../componentMetadata";
 import type { BomDiffLine, BomLine, Project } from "../types";
 import { useAsync } from "./useAsync";
 
@@ -57,7 +58,7 @@ function normalizeBomLine(
     qty: Math.max(1, asNumber(line.qty, 1)),
     unit_price: Math.max(0, asNumber(line.unit_price, 0)),
     score: Math.max(0, Math.min(100, asNumber(line.score, 72))),
-    component_metadata: asRecord(line.component_metadata),
+    component_metadata: componentMetadataFromApi(line.component_metadata),
   };
 }
 

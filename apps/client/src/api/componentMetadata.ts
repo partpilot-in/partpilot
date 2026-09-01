@@ -62,8 +62,39 @@ export interface CddProperty extends Record<string, unknown> {
 
 export type ComponentMetadataSection = Record<string, unknown>;
 
-/** A component document following docs/component-cdd.schema.json. */
+export type ComponentDocumentType =
+  "Datasheet" | "Application Note" | "Technical Note" | "Errata" | "PCN";
+
+export interface ComponentDocument extends Record<string, unknown> {
+  documentType: ComponentDocumentType;
+  url: string;
+  title?: string;
+  documentNumber?: string;
+  revision?: string;
+  date?: string;
+}
+
+export interface ComponentRevisionHistoryEntry extends Record<string, unknown> {
+  revision?: string;
+  date?: string;
+  notes?: string;
+}
+
+export interface ComponentDocumentation extends ComponentMetadataSection {
+  documents?: ComponentDocument[];
+  complianceCertificates?: string[];
+  revisionHistory?: ComponentRevisionHistoryEntry[];
+}
+
+export type EdaModelKey =
+  "bsdl" | "ibis" | "spice" | "svd" | "symbol" | "footprint" | "threeDModel";
+
+export type EdaModels = Partial<Record<EdaModelKey, string[]>>;
+
+/** A partial DatasheetXML v0.3 JSON projection returned by the API. */
 export interface ComponentMetadata extends Record<string, unknown> {
+  version?: string;
+  schemaVersion?: string;
   identification?: ComponentMetadataSection;
   electrical?: ComponentMetadataSection;
   mechanical?: ComponentMetadataSection;
@@ -75,7 +106,114 @@ export interface ComponentMetadata extends Record<string, unknown> {
   manufacturing?: ComponentMetadataSection;
   commercial?: ComponentMetadataSection;
   packaging?: ComponentMetadataSection;
-  documentation?: ComponentMetadataSection;
+  documentation?: ComponentDocumentation;
+  edaModels?: EdaModels;
+}
+
+export type ComponentResourceKey =
+  | "datasheet"
+  | "applicationNote"
+  | "technicalNote"
+  | "errata"
+  | "pcn"
+  | EdaModelKey;
+
+export type ComponentResourceUris = Partial<
+  Record<ComponentResourceKey, string[]>
+>;
+
+const EDA_MODEL_KEYS: EdaModelKey[] = [
+  "bsdl",
+  "ibis",
+  "spice",
+  "svd",
+  "symbol",
+  "footprint",
+  "threeDModel",
+];
+
+const DOCUMENT_RESOURCE_KEYS: Record<
+  ComponentDocumentType,
+  ComponentResourceKey
+> = {
+  Datasheet: "datasheet",
+  "Application Note": "applicationNote",
+  "Technical Note": "technicalNote",
+  Errata: "errata",
+  PCN: "pcn",
+};
+
+function recordFrom(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+export function componentMetadataFromApi(value: unknown): ComponentMetadata {
+  return recordFrom(value) as ComponentMetadata;
+}
+
+export function componentResourceUris(value: unknown): ComponentResourceUris {
+  const metadata = componentMetadataFromApi(value);
+  const documentation = recordFrom(metadata.documentation);
+  const resources: ComponentResourceUris = {};
+  const add = (key: ComponentResourceKey, source: unknown) => {
+    const current = new Set(resources[key] ?? []);
+    resourceUris(source).forEach((uri) => current.add(uri));
+    if (current.size) resources[key] = Array.from(current);
+  };
+
+  const rawDocuments = documentation.documents;
+  const documents = Array.isArray(rawDocuments)
+    ? rawDocuments
+    : Array.isArray(recordFrom(rawDocuments).document)
+      ? (recordFrom(rawDocuments).document as unknown[])
+      : [];
+  documents.forEach((value) => {
+    const document = recordFrom(value);
+    const documentType = document.documentType;
+    if (
+      typeof documentType === "string" &&
+      Object.prototype.hasOwnProperty.call(DOCUMENT_RESOURCE_KEYS, documentType)
+    ) {
+      add(
+        DOCUMENT_RESOURCE_KEYS[documentType as ComponentDocumentType],
+        document.url,
+      );
+    }
+  });
+
+  add("datasheet", documentation.datasheetUrl);
+  add("applicationNote", documentation.applicationNote);
+  add("applicationNote", documentation.applicationNotes);
+  add("technicalNote", documentation.technicalNote);
+  add("technicalNote", documentation.technicalNotes);
+  add("errata", documentation.errata);
+  add("pcn", documentation.pcn);
+  add("pcn", documentation.changeNotifications);
+
+  const canonicalEdaModels = recordFrom(metadata.edaModels);
+  const nestedEdaModels = recordFrom(documentation.edaModels);
+  EDA_MODEL_KEYS.forEach((key) => {
+    add(key, canonicalEdaModels[key]);
+    add(key, nestedEdaModels[key]);
+    add(key, documentation[key]);
+  });
+
+  return resources;
+}
+
+export function resourceUris(value: unknown): string[] {
+  if (typeof value === "string") {
+    const uri = value.trim();
+    return uri ? [uri] : [];
+  }
+  if (Array.isArray(value)) return value.flatMap(resourceUris);
+  if (value && typeof value === "object") {
+    const resource = value as Record<string, unknown>;
+    return resourceUris(resource.url ?? resource.value);
+  }
+  return [];
 }
 
 export interface CddSectionDefinition {

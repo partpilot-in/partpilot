@@ -1,4 +1,11 @@
 import { api } from "../client";
+import {
+  apiNumber,
+  apiRecord,
+  apiResponseItems,
+  apiString,
+  partFromApi,
+} from "../partPayload";
 import type { Part } from "../types";
 import type { ProjectPartRow } from "./parts";
 import { useAsync } from "./useAsync";
@@ -18,9 +25,23 @@ export interface MyPartInput {
 }
 
 function responseItems(payload: unknown): MyPart[] {
-  if (!payload || typeof payload !== "object") return [];
-  const data = (payload as { data?: unknown }).data;
-  return Array.isArray(data) ? (data as MyPart[]) : [];
+  return apiResponseItems(payload).flatMap((value) => {
+    const part = myPartFromApi(value);
+    return part ? [part] : [];
+  });
+}
+
+function myPartFromApi(value: unknown): MyPart | undefined {
+  const part = partFromApi(value);
+  if (!part) return undefined;
+  const record = apiRecord(value);
+  return {
+    ...part,
+    project_count: Math.max(0, apiNumber(record.project_count, 0)),
+    project_names: apiString(record.project_names, "Manual entry"),
+    total_qty: Math.max(1, apiNumber(record.total_qty, 1)),
+    source: "manual",
+  };
 }
 
 export function useMyParts() {
@@ -34,12 +55,16 @@ export function useMyParts() {
 export function useMyPartsMutations() {
   async function createMyPart(input: MyPartInput): Promise<MyPart> {
     const response = await api.post("/v1/my-parts", input);
-    return response.data as MyPart;
+    const part = myPartFromApi(response.data);
+    if (!part) throw new Error("The server returned an invalid My Part");
+    return part;
   }
 
   async function updateMyPart(id: string, input: MyPartInput): Promise<MyPart> {
     const response = await api.patch(`/v1/my-parts/${id}`, input);
-    return response.data as MyPart;
+    const part = myPartFromApi(response.data);
+    if (!part) throw new Error("The server returned an invalid My Part");
+    return part;
   }
 
   async function deleteMyPart(id: string): Promise<void> {

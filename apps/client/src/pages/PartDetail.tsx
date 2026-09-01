@@ -41,10 +41,12 @@ import {
   cddFieldLabel,
   cddValueAtPath,
   complianceFromCharacteristics,
+  componentResourceUris,
   lifecycleFromCharacteristics,
   fieldsForCddSection,
   formatCddValue,
   referencePriceFromCharacteristics,
+  resourceUris,
   resolveDesignatorCategory,
   type CddSectionKey,
 } from "../api/componentMetadata";
@@ -90,7 +92,7 @@ const characteristicSections = CDD_SECTION_DEFINITIONS.filter(
 );
 
 const documentationFields = [
-  { key: "datasheetUrl", label: "Datasheet", icon: BookOpen },
+  { key: "datasheet", label: "Datasheet", icon: BookOpen },
   { key: "applicationNote", label: "Application Note", icon: ClipboardList },
   { key: "technicalNote", label: "Technical Note", icon: FileText },
   { key: "errata", label: "Errata", icon: Bug },
@@ -115,25 +117,12 @@ interface ResourceField {
   icon: LucideIcon;
 }
 
-function resourceUris(value: unknown): string[] {
-  if (typeof value === "string") {
-    const uri = value.trim();
-    return uri ? [uri] : [];
-  }
-  if (Array.isArray(value)) return value.flatMap(resourceUris);
-  if (value && typeof value === "object") {
-    const resource = value as Record<string, unknown>;
-    return resourceUris(resource.url ?? resource.value);
-  }
-  return [];
-}
-
 function ResourceGrid({
   fields,
   metadata,
 }: {
   fields: ResourceField[];
-  metadata: Record<string, unknown>;
+  metadata: Partial<Record<string, unknown>>;
 }) {
   return (
     <div className="resource-grid">
@@ -446,18 +435,7 @@ export function PartDetail() {
     part.description,
   );
   const componentMetadata = part.component_metadata ?? {};
-  const documentationMetadata = componentMetadata.documentation ?? {};
-  const nestedEdaModels = documentationMetadata.edaModels;
-  const edaModelsMetadata =
-    nestedEdaModels &&
-    typeof nestedEdaModels === "object" &&
-    !Array.isArray(nestedEdaModels)
-      ? (nestedEdaModels as Record<string, unknown>)
-      : documentationMetadata;
-  const documentationAndEdaMetadata = {
-    ...documentationMetadata,
-    ...edaModelsMetadata,
-  };
+  const documentationAndEdaMetadata = componentResourceUris(componentMetadata);
   const characteristicSectionData = characteristicSections.map((section) => {
     const fields = fieldsForCddSection(section, designatorCategory)
       .filter((field) => !hiddenCharacteristicFields[section.key]?.has(field))
