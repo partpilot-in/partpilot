@@ -46,6 +46,87 @@ Response envelope for paginated lists:
 
 **Sorting** (BOM line tables): `sort` + `order` query params, e.g. `?sort=score&order=desc`. Sortable fields are listed per endpoint below.
 
+### Component metadata schema
+
+`component_metadata` is a partial JSON projection of DatasheetXML v0.3. An
+unenriched part may use `{}`. Every non-empty value is normalized by the server
+and database to include string `version` and `schemaVersion: "0.3"` fields.
+Defined characteristic sections are objects and may be omitted when no data is
+available:
+
+| Section | Purpose |
+|---|---|
+| `identification` | Manufacturer, MPN, family, description and classification |
+| `electrical`, `mechanical`, `thermal`, `material` | Datasheet characteristics |
+| `environmental`, `reliability`, `regulatory` | Compliance and reliability data |
+| `manufacturing`, `commercial`, `packaging` | Production, lifecycle and packaging data |
+| `documentation` | Documents, certificates and revision history |
+| `edaModels` | Canonical EDA model URI lists |
+
+Canonical documentation and EDA example:
+
+```json
+{
+  "version": "1",
+  "schemaVersion": "0.3",
+  "identification": {
+    "manufacturerPartNumber": "STM32F103C8T6",
+    "manufacturer": "STMicroelectronics"
+  },
+  "documentation": {
+    "documents": [
+      {
+        "documentType": "Datasheet",
+        "title": "STM32F103x8/xB datasheet",
+        "documentNumber": "DS5319",
+        "revision": "Rev 20",
+        "date": "2025-02-03",
+        "url": "https://www.st.com/resource/en/datasheet/stm32f103c8.pdf"
+      },
+      {
+        "documentType": "Application Note",
+        "title": "Getting started with STM32F10xxx hardware development",
+        "url": "https://www.st.com/resource/en/application_note/an2586.pdf"
+      }
+    ],
+    "complianceCertificates": [
+      "https://example.com/stm32f103-rohs.pdf"
+    ],
+    "revisionHistory": [
+      { "revision": "Rev 20", "date": "2025-02-03", "notes": "Current release" }
+    ]
+  },
+  "edaModels": {
+    "bsdl": ["https://example.com/stm32f103.bsdl"],
+    "ibis": ["https://example.com/stm32f103.ibs"],
+    "spice": ["https://example.com/stm32f103.lib"],
+    "svd": ["https://example.com/stm32f103.svd"],
+    "symbol": ["https://example.com/stm32f103.kicad_sym"],
+    "footprint": ["https://example.com/lqfp48.kicad_mod"],
+    "threeDModel": ["https://example.com/lqfp48.step"]
+  }
+}
+```
+
+`documentation.documents` entries allow `documentType`, `title`,
+`documentNumber`, `revision`, `date`, and `url`. `documentType` is one of
+`Datasheet`, `Application Note`, `Technical Note`, `Errata`, or `PCN`.
+`Datasheet` is a PartPilot extension because the source XSD models the
+datasheet as the root document rather than as a linked document. `url` is
+required; other document fields are optional strings.
+
+Every `edaModels` value is a list of non-empty URI strings. The only supported
+keys are `bsdl`, `ibis`, `spice`, `svd`, `symbol`, `footprint`, and
+`threeDModel`.
+
+For adapter compatibility, legacy documentation fields such as
+`datasheetUrl`, `applicationNotes`, `technicalNotes`, and
+`changeNotifications` are retained, while equivalent entries are added to the
+canonical `documentation.documents` list. EDA links found directly under
+`documentation` or under `documentation.edaModels` are promoted into the
+top-level `edaModels` object. Invalid canonical metadata submitted through My
+Parts or BOM endpoints returns `400`; invalid adapter metadata returns `502`.
+
 ---
 
 ## 3. Endpoints
@@ -80,10 +161,20 @@ Fuzzy search by MPN or description.
       "category": "regulator",
       "score": 92,
       "component_metadata": {
+        "version": "1",
+        "schemaVersion": "0.3",
         "mechanical": { "packageType": "TO-220" },
         "environmental": { "rohsCompliant": true },
         "regulatory": { "countryOfOrigin": "US" },
-        "commercial": { "lifecycleStatus": "Active" }
+        "commercial": { "lifecycleStatus": "Active" },
+        "documentation": {
+          "documents": [
+            {
+              "documentType": "Datasheet",
+              "url": "https://www.ti.com/lit/ds/symlink/lm317.pdf"
+            }
+          ]
+        }
       }
     }
   ],
@@ -112,10 +203,20 @@ Part detail — reconciled lifecycle status and risk/PartPilot score.
   "description": "3-terminal adjustable regulator, TO-220",
   "category": "regulator",
   "component_metadata": {
+    "version": "1",
+    "schemaVersion": "0.3",
     "mechanical": { "packageType": "TO-220" },
     "environmental": { "rohsCompliant": true },
     "regulatory": { "countryOfOrigin": "US" },
-    "commercial": { "lifecycleStatus": "Active" }
+    "commercial": { "lifecycleStatus": "Active" },
+    "documentation": {
+      "documents": [
+        {
+          "documentType": "Datasheet",
+          "url": "https://www.ti.com/lit/ds/symlink/lm317.pdf"
+        }
+      ]
+    }
   },
   "reconciled_status": {
     "stage": "active",
@@ -260,12 +361,20 @@ Side-by-side Characteristics comparison for the Part Search "Compare" flow.
     {
       "id": "8e4c1a20-...",
       "label": "LM317T — Texas Instruments",
-      "component_metadata": { "mechanical": { "packageType": "TO-220" } }
+      "component_metadata": {
+        "version": "1",
+        "schemaVersion": "0.3",
+        "mechanical": { "packageType": "TO-220" }
+      }
     },
     {
       "id": "c2b3d4e5-...",
       "label": "LM317T-ALT — STMicroelectronics",
-      "component_metadata": { "mechanical": { "packageType": "TO-220" } }
+      "component_metadata": {
+        "version": "1",
+        "schemaVersion": "0.3",
+        "mechanical": { "packageType": "TO-220" }
+      }
     }
   ]
 }
@@ -380,6 +489,8 @@ Upload a BOM (CSV or XLSX) and generate a risk report.
       "unit_price": 0.01,
       "score": 97,
       "component_metadata": {
+        "version": "1",
+        "schemaVersion": "0.3",
         "environmental": { "rohsCompliant": true },
         "regulatory": { "countryOfOrigin": "TW" },
         "commercial": { "lifecycleStatus": "Active" }
@@ -424,6 +535,8 @@ Fetch a stored BOM's risk report.
       "unit_price": 0.01,
       "score": 97,
       "component_metadata": {
+        "version": "1",
+        "schemaVersion": "0.3",
         "environmental": { "rohsCompliant": true },
         "regulatory": { "countryOfOrigin": "TW" },
         "commercial": { "lifecycleStatus": "Active" }
@@ -441,6 +554,8 @@ Fetch a stored BOM's risk report.
       "unit_price": 0.42,
       "score": 58,
       "component_metadata": {
+        "version": "1",
+        "schemaVersion": "0.3",
         "environmental": { "rohsCompliant": true },
         "regulatory": { "countryOfOrigin": "US" },
         "commercial": { "lifecycleStatus": "NRND" }
@@ -478,7 +593,11 @@ Line-by-line diff against another BOM (e.g. two revisions of a project).
       "qty": 4,
       "unit_price": 0.42,
       "score": 58,
-      "component_metadata": { "commercial": { "lifecycleStatus": "NRND" } },
+      "component_metadata": {
+        "version": "1",
+        "schemaVersion": "0.3",
+        "commercial": { "lifecycleStatus": "NRND" }
+      },
       "delta": "changed",
       "change_summary": "Lifecycle changed from active to NRND; score dropped from 92 to 58.",
       "previous_score": 92
@@ -494,7 +613,11 @@ Line-by-line diff against another BOM (e.g. two revisions of a project).
       "qty": 8,
       "unit_price": 0.18,
       "score": 89,
-      "component_metadata": { "commercial": { "lifecycleStatus": "Active" } },
+      "component_metadata": {
+        "version": "1",
+        "schemaVersion": "0.3",
+        "commercial": { "lifecycleStatus": "Active" }
+      },
       "delta": "added",
       "change_summary": "Added in comparison BOM."
     },
@@ -509,7 +632,11 @@ Line-by-line diff against another BOM (e.g. two revisions of a project).
       "qty": 1,
       "unit_price": 0,
       "score": 3,
-      "component_metadata": { "commercial": { "lifecycleStatus": "Obsolete" } },
+      "component_metadata": {
+        "version": "1",
+        "schemaVersion": "0.3",
+        "commercial": { "lifecycleStatus": "Obsolete" }
+      },
       "delta": "removed",
       "change_summary": "Removed from comparison BOM."
     }
@@ -538,6 +665,8 @@ Current user's important parts.
       "category": "regulator",
       "score": 92,
       "component_metadata": {
+        "version": "1",
+        "schemaVersion": "0.3",
         "mechanical": { "packageType": "TO-220" },
         "environmental": { "rohsCompliant": true },
         "regulatory": { "countryOfOrigin": "US" },
@@ -602,7 +731,11 @@ Slim single-part lookup for the KiCad plugin.
 {
   "mpn": "LM317T",
   "manufacturer": "TEXAS INSTRUMENTS",
-  "component_metadata": { "commercial": { "lifecycleStatus": "Active" } },
+  "component_metadata": {
+    "version": "1",
+    "schemaVersion": "0.3",
+    "commercial": { "lifecycleStatus": "Active" }
+  },
   "score": 92,
   "risk_band": "low"
 }
@@ -642,6 +775,7 @@ All non-2xx responses share one shape:
 | `404` | Resource not found |
 | `409` | Conflict (e.g. duplicate important part) |
 | `429` | Rate limited |
+| `502` | A configured distributor adapter returned invalid or unusable metadata |
 | `500` | Internal error — logged server-side with a request id, never leaks internals in the response |
 
 Every response includes an `X-Request-Id` header for support/debugging correlation.

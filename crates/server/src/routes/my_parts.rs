@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     auth::UserId,
+    component_metadata::normalize_component_metadata,
     error::AppError,
     models::{MyPartDto, MyPartInput},
     state::AppState,
@@ -50,8 +51,9 @@ pub async fn list(
 pub async fn create(
     State(state): State<AppState>,
     Extension(UserId(user_id)): Extension<UserId>,
-    Json(input): Json<MyPartInput>,
+    Json(mut input): Json<MyPartInput>,
 ) -> Result<(StatusCode, Json<MyPartDto>), AppError> {
+    normalize_input_metadata(&mut input)?;
     validate(&input)?;
     let part = if let Some(db) = &state.db {
         sqlx::query_as::<_, MyPartDto>(
@@ -124,8 +126,9 @@ pub async fn update(
     State(state): State<AppState>,
     Extension(UserId(user_id)): Extension<UserId>,
     Path(id): Path<Uuid>,
-    Json(input): Json<MyPartInput>,
+    Json(mut input): Json<MyPartInput>,
 ) -> Result<Json<MyPartDto>, AppError> {
+    normalize_input_metadata(&mut input)?;
     validate(&input)?;
     let part = if let Some(db) = &state.db {
         sqlx::query_as::<_, MyPartDto>(
@@ -226,11 +229,12 @@ fn validate(input: &MyPartInput) -> Result<(), AppError> {
     if input.manufacturer.trim().is_empty() {
         return Err(AppError::bad_request("manufacturer is required"));
     }
-    if !input.component_metadata.is_object() {
-        return Err(AppError::bad_request(
-            "component_metadata must be a JSON object",
-        ));
-    }
+    Ok(())
+}
+
+fn normalize_input_metadata(input: &mut MyPartInput) -> Result<(), AppError> {
+    input.component_metadata = normalize_component_metadata(input.component_metadata.take())
+        .map_err(AppError::bad_request)?;
     Ok(())
 }
 

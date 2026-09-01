@@ -14,7 +14,10 @@ use engine::{
     ports::ConnectorError,
 };
 
-use crate::{error::AppError, models::PartDto, state::AppState};
+use crate::{
+    component_metadata::normalize_component_metadata, error::AppError, models::PartDto,
+    state::AppState,
+};
 
 #[derive(Debug, Default, Deserialize)]
 pub struct SearchQuery {
@@ -208,6 +211,14 @@ async fn fetch_digikey_on_miss(
 }
 
 async fn persist_snapshot(state: &AppState, snapshot: &PartSnapshot) -> Result<Uuid, AppError> {
+    let component_metadata = normalize_component_metadata(snapshot.part.component_metadata.clone())
+        .map_err(|error| {
+            tracing::warn!(%error, "adapter returned invalid component metadata");
+            AppError::new(
+                StatusCode::BAD_GATEWAY,
+                format!("DigiKey returned invalid component metadata: {error}"),
+            )
+        })?;
     if let Some(db) = &state.db {
         let status = &snapshot.lifecycle_status;
         let id = sqlx::query_scalar::<_, Uuid>(
@@ -222,7 +233,7 @@ async fn persist_snapshot(state: &AppState, snapshot: &PartSnapshot) -> Result<U
         .bind(&snapshot.part.manufacturer.0)
         .bind(snapshot.part.description.as_deref())
         .bind(snapshot.part.category.as_deref())
-        .bind(&snapshot.part.component_metadata)
+        .bind(&component_metadata)
         .bind(stage_db_value(status.stage))
         .bind(status.last_time_buy_date)
         .bind(status.confidence.0)
@@ -250,7 +261,7 @@ async fn persist_snapshot(state: &AppState, snapshot: &PartSnapshot) -> Result<U
                     .clone()
                     .unwrap_or_else(|| "Uncategorized".to_owned()),
                 score: engine::base_rating(),
-                component_metadata: snapshot.part.component_metadata.clone(),
+                component_metadata,
             },
         );
         Ok(id)

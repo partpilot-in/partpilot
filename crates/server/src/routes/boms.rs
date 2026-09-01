@@ -18,6 +18,7 @@ use uuid::Uuid;
 
 use crate::{
     auth::UserId,
+    component_metadata::normalize_component_metadata,
     error::AppError,
     models::{BomLineDto, BomLineInput, CreateBom, ProjectDto, UpdateBom},
     state::AppState,
@@ -121,7 +122,8 @@ pub async fn create(
     Extension(UserId(user_id)): Extension<UserId>,
     request: Request,
 ) -> Result<Response, AppError> {
-    let input = extract_create_input(request, &state).await?;
+    let mut input = extract_create_input(request, &state).await?;
+    normalize_line_metadata(&mut input.lines)?;
     validate_bom(&input.name, &input.lines)?;
 
     let project = if let Some(db) = &state.db {
@@ -181,14 +183,15 @@ pub async fn update(
     State(state): State<AppState>,
     Extension(UserId(user_id)): Extension<UserId>,
     Path(id): Path<Uuid>,
-    Json(input): Json<UpdateBom>,
+    Json(mut input): Json<UpdateBom>,
 ) -> Result<Json<ProjectDto>, AppError> {
     if let Some(name) = &input.name
         && name.trim().is_empty()
     {
         return Err(AppError::bad_request("project name cannot be empty"));
     }
-    if let Some(lines) = &input.lines {
+    if let Some(lines) = &mut input.lines {
+        normalize_line_metadata(lines)?;
         validate_lines(lines)?;
     }
 
@@ -650,13 +653,13 @@ fn validate_lines(lines: &[BomLineInput]) -> Result<(), AppError> {
     if lines.iter().any(|line| line.mpn.trim().is_empty()) {
         return Err(AppError::bad_request("every BOM line must have an MPN"));
     }
-    if lines
-        .iter()
-        .any(|line| !line.component_metadata.is_object())
-    {
-        return Err(AppError::bad_request(
-            "component_metadata must be a JSON object",
-        ));
+    Ok(())
+}
+
+fn normalize_line_metadata(lines: &mut [BomLineInput]) -> Result<(), AppError> {
+    for line in lines {
+        line.component_metadata = normalize_component_metadata(line.component_metadata.take())
+            .map_err(AppError::bad_request)?;
     }
     Ok(())
 }

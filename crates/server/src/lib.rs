@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod component_metadata;
 pub mod config;
 pub mod error;
 pub mod models;

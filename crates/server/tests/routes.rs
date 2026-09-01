@@ -75,6 +75,15 @@ impl DataSourceConnector for FixtureDigikey {
                     "commercial": {
                         "lifecycleStatus": "Active",
                         "priceBreaks": [{ "quantity": 1, "unitPrice": 3.5, "currency": "USD" }]
+                    },
+                    "documentation": {
+                        "datasheetUrl": "https://example.com/tps7a49-q1.pdf",
+                        "datasheetRevision": "Rev C",
+                        "symbol": "https://example.com/tps7a49-q1.kicad_sym"
+                    },
+                    "edaModels": {
+                        "footprint": ["https://example.com/tps7a49-q1.kicad_mod"],
+                        "threeDModel": ["https://example.com/tps7a49-q1.step"]
                     }
                 }),
             },
@@ -170,9 +179,27 @@ async fn part_search_enriches_a_miss_and_detail_returns_the_persisted_shape() {
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     let part = &body["data"][0];
     assert_eq!(part["manufacturer"], "TEXAS INSTRUMENTS");
+    assert_eq!(part["component_metadata"]["version"], "1");
+    assert_eq!(part["component_metadata"]["schemaVersion"], "0.3");
     assert_eq!(
         part["component_metadata"]["electrical"]["voltageRating"]["value"],
         "36V"
+    );
+    assert_eq!(
+        part["component_metadata"]["documentation"]["documents"][0],
+        json!({
+            "documentType": "Datasheet",
+            "revision": "Rev C",
+            "url": "https://example.com/tps7a49-q1.pdf"
+        })
+    );
+    assert_eq!(
+        part["component_metadata"]["edaModels"]["symbol"],
+        json!(["https://example.com/tps7a49-q1.kicad_sym"])
+    );
+    assert_eq!(
+        part["component_metadata"]["edaModels"]["footprint"],
+        json!(["https://example.com/tps7a49-q1.kicad_mod"])
     );
     let id = part["id"].as_str().expect("enriched part id");
 
@@ -252,6 +279,16 @@ async fn my_parts_support_full_crud() {
             "commercial": {
                 "lifecycleStatus": "Active",
                 "priceBreaks": [{ "quantity": 1, "unitPrice": 4.25 }]
+            },
+            "documentation": {
+                "documents": [{
+                    "documentType": "Datasheet",
+                    "title": "STM32F411CE datasheet",
+                    "url": "https://example.com/stm32f411ce.pdf"
+                }]
+            },
+            "edaModels": {
+                "svd": ["https://example.com/stm32f411.svd"]
             }
         }
     });
@@ -265,9 +302,18 @@ async fn my_parts_support_full_crud() {
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     let id = created["id"].as_str().unwrap();
     assert_eq!(created["score"], engine::base_rating());
+    assert_eq!(created["component_metadata"]["schemaVersion"], "0.3");
     assert_eq!(
         created["component_metadata"]["regulatory"]["countryOfOrigin"],
         "FR"
+    );
+    assert_eq!(
+        created["component_metadata"]["documentation"]["documents"][0]["documentType"],
+        "Datasheet"
+    );
+    assert_eq!(
+        created["component_metadata"]["edaModels"]["svd"],
+        json!(["https://example.com/stm32f411.svd"])
     );
 
     let list = app
@@ -307,6 +353,34 @@ async fn my_parts_support_full_crud() {
 }
 
 #[tokio::test]
+async fn my_parts_reject_invalid_datasheet_document_metadata() {
+    let response = router()
+        .oneshot(json_request(
+            Method::POST,
+            "/v1/my-parts",
+            json!({
+                "mpn": "INVALID-DOC",
+                "manufacturer": "Example",
+                "component_metadata": {
+                    "documentation": {
+                        "documents": [{
+                            "documentType": "White Paper",
+                            "url": "https://example.com/document.pdf"
+                        }]
+                    }
+                }
+            }),
+        ))
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert!(body["error"].as_str().unwrap().contains("documentType"));
+}
+
+#[tokio::test]
 async fn projects_support_full_crud() {
     let app = router();
     let create = json!({ "name": "Controller v1", "lines": [{
@@ -324,6 +398,10 @@ async fn projects_support_full_crud() {
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     let id = created["id"].as_str().unwrap();
     assert_eq!(created["lines"][0]["score"], engine::base_rating());
+    assert_eq!(
+        created["lines"][0]["component_metadata"]["schemaVersion"],
+        "0.3"
+    );
     assert_eq!(
         created["lines"][0]["component_metadata"]["commercial"]["lifecycleStatus"],
         "Active"

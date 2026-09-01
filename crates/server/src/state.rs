@@ -9,6 +9,7 @@ use uuid::Uuid;
 
 use crate::{
     auth::AuthVerifier,
+    component_metadata::normalize_component_metadata,
     config::Config,
     models::{MyPartDto, PartDto, PartNoteDto, ProfileDto, ProjectDto},
 };
@@ -53,15 +54,19 @@ impl AppState {
             description: "3-terminal adjustable regulator, TO-220".into(),
             category: "regulator".into(),
             score: 92,
-            component_metadata: json!({
+            component_metadata: normalize_component_metadata(json!({
                 "mechanical": { "packageType": "TO-220" },
                 "environmental": { "rohsCompliant": true },
                 "regulatory": { "countryOfOrigin": "US" },
                 "commercial": {
                     "lifecycleStatus": "Active",
                     "priceBreaks": [{ "quantity": 1, "unitPrice": 0.42 }]
+                },
+                "documentation": {
+                    "datasheetUrl": "https://www.ti.com/lit/ds/symlink/lm317.pdf"
                 }
-            }),
+            }))
+            .expect("placeholder component metadata must be valid"),
         };
         Self {
             db: None,

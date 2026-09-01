@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "PartPilot API — server",
-    "description": "Component obsolescence intelligence API. Public read endpoints include database and adapter-backed part search, including alternate or alias MPN resolution. Supabase-session endpoints cover BOMs, Important Parts, and Settings; an API-key endpoint supports the KiCad plugin.",
+    "description": "Component obsolescence intelligence API. Public read endpoints include database and adapter-backed part search, including alternate or alias MPN resolution. Non-empty component_metadata values use the partial DatasheetXML v0.3 projection, with canonical documentation.documents and top-level edaModels. Supabase-session endpoints cover BOMs, Important Parts, and Settings; an API-key endpoint supports the KiCad plugin.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "b6f0b6d0-2a2a-4f0a-8a0e-partpilot0001"
   },
@@ -112,7 +112,23 @@
                   "  pm.response.to.have.status(200);",
                   "  const body = pm.response.json();",
                   "  pm.expect(body.data).to.be.an(\"array\").that.is.not.empty;",
-                  "  pm.expect(body.data[0].component_metadata).to.be.an(\"object\");",
+                  "  const metadata = body.data[0].component_metadata;",
+                  "  pm.expect(metadata).to.be.an(\"object\");",
+                  "  pm.expect(metadata.version).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(metadata.schemaVersion).to.eql(\"0.3\");",
+                  "  pm.expect(metadata.documentation).to.be.an(\"object\");",
+                  "  pm.expect(metadata.documentation.documents).to.be.an(\"array\").that.is.not.empty;",
+                  "  const datasheets = metadata.documentation.documents.filter((document) => document.documentType === \"Datasheet\");",
+                  "  pm.expect(datasheets.length, \"Datasheet must be in documentation.documents\").to.be.above(0);",
+                  "  pm.expect(datasheets[0].url).to.be.a(\"string\").and.not.empty;",
+                  "  if (metadata.edaModels) {",
+                  "    const allowed = [\"bsdl\", \"ibis\", \"spice\", \"svd\", \"symbol\", \"footprint\", \"threeDModel\"];",
+                  "    Object.entries(metadata.edaModels).forEach(([key, urls]) => {",
+                  "      pm.expect(allowed).to.include(key);",
+                  "      pm.expect(urls).to.be.an(\"array\");",
+                  "      urls.forEach((url) => pm.expect(url).to.be.a(\"string\").and.not.empty);",
+                  "    });",
+                  "  }",
                   "  pm.collectionVariables.set(\"part_id\", body.data[0].id);",
                   "});"
                 ]
@@ -124,7 +140,7 @@
             "auth": {
               "type": "noauth"
             },
-            "description": "Searches the PartPilot database first. On an exact catalog miss, a configured server fetches ProductDetails from DigiKey, normalizes and persists the result, then returns the populated API record. The test stores its id in {{part_id}} for the detail request.",
+            "description": "Searches the PartPilot database first. On an exact catalog miss, a configured server fetches ProductDetails from DigiKey, normalizes and persists the result, then returns the populated API record. Legacy datasheetUrl is promoted to a Datasheet entry in documentation.documents; supported EDA links are promoted to top-level edaModels. The test stores the part id in {{part_id}} for the detail request.",
             "url": {
               "raw": "{{base_url}}/v1/parts/search?q=TPS7A49-Q1&manufacturer=Texas%20Instruments&limit=25",
               "host": [
@@ -169,6 +185,8 @@
                   "  pm.expect(body.data[0].mpn).to.eql(\"STM32F103C8T6\");",
                   "  pm.expect(body.data[0].id).to.be.a(\"string\").and.not.empty;",
                   "  pm.expect(body.data[0].component_metadata).to.be.an(\"object\");",
+                  "  pm.expect(body.data[0].component_metadata.version).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.data[0].component_metadata.schemaVersion).to.eql(\"0.3\");",
                   "  pm.collectionVariables.set(\"part_id\", body.data[0].id);",
                   "});"
                 ]
@@ -203,6 +221,32 @@
         },
         {
           "name": "Get part detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Returns DatasheetXML v0.3 component metadata\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const metadata = pm.response.json().component_metadata;",
+                  "  pm.expect(metadata).to.be.an(\"object\");",
+                  "  if (Object.keys(metadata).length > 0) {",
+                  "    pm.expect(metadata.version).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(metadata.schemaVersion).to.eql(\"0.3\");",
+                  "  }",
+                  "  if (metadata.documentation && metadata.documentation.documents) {",
+                  "    const allowedTypes = [\"Datasheet\", \"Application Note\", \"Technical Note\", \"Errata\", \"PCN\"];",
+                  "    metadata.documentation.documents.forEach((document) => {",
+                  "      pm.expect(allowedTypes).to.include(document.documentType);",
+                  "      pm.expect(document.url).to.be.a(\"string\").and.not.empty;",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "auth": {
