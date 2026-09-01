@@ -153,6 +153,25 @@ export function componentMetadataFromApi(value: unknown): ComponentMetadata {
   return recordFrom(value) as ComponentMetadata;
 }
 
+export function mergeComponentMetadata(
+  localValue: unknown,
+  apiValue: unknown,
+): ComponentMetadata {
+  const local = componentMetadataFromApi(localValue);
+  const remote = componentMetadataFromApi(apiValue);
+  const merged: ComponentMetadata = { ...local, ...remote };
+
+  CDD_SECTION_DEFINITIONS.forEach(({ key }) => {
+    const localSection = recordFrom(local[key]);
+    const remoteSection = recordFrom(remote[key]);
+    if (Object.keys(localSection).length || Object.keys(remoteSection).length) {
+      merged[key] = { ...localSection, ...remoteSection };
+    }
+  });
+
+  return merged;
+}
+
 export function componentResourceUris(value: unknown): ComponentResourceUris {
   const metadata = componentMetadataFromApi(value);
   const documentation = recordFrom(metadata.documentation);

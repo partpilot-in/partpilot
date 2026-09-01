@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Check,
@@ -18,11 +18,15 @@ import {
 import {
   complianceFromCharacteristics,
   lifecycleFromCharacteristics,
+  mergeComponentMetadata,
+  referencePriceFromCharacteristics,
 } from "../api/componentMetadata";
+import { usePartsByMpn } from "../api/hooks/parts";
 import type { BomLine } from "../api/types";
 import { exportBomCsv } from "../components/BomEditor";
 import {
   ComplianceBadge,
+  CellSpinner,
   DataTable,
   EmptyState,
   ErrorMessage,
@@ -37,6 +41,7 @@ import {
   type NoteTarget,
 } from "../components/ui";
 import { createCurrencyFormatter, formatDate } from "../lib/format";
+import { partLookupPath } from "../lib/partRoutes";
 import { useCurrencyPreference } from "../lib/useCurrencyPreference";
 import { useUsdExchangeRate } from "../lib/useExchangeRate";
 
@@ -48,6 +53,10 @@ function splitBomDescription(description: string) {
     designator: description.slice(0, separatorIndex),
     description: description.slice(separatorIndex + separator.length),
   };
+}
+
+interface EnrichedBomLine extends BomLine {
+  catalog_part_id?: string;
 }
 
 export function ProjectDetail() {
@@ -76,6 +85,47 @@ export function ProjectDetail() {
   const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
 
+  const storedProjectLines = useMemo(
+    () => (Array.isArray(project?.lines) ? project.lines : []),
+    [project],
+  );
+  const lookupCandidates = useMemo(
+    () =>
+      storedProjectLines.map((line) => ({
+        key: line.id,
+        mpn: line.mpn,
+        manufacturer: line.manufacturer,
+      })),
+    [storedProjectLines],
+  );
+  const { data: catalogParts, loadingRowKeys } =
+    usePartsByMpn(lookupCandidates);
+  const projectLines = useMemo<EnrichedBomLine[]>(
+    () =>
+      storedProjectLines.map((line) => {
+        const catalogPart = catalogParts?.[line.id];
+        if (!catalogPart) return line;
+        const componentMetadata = mergeComponentMetadata(
+          line.component_metadata,
+          catalogPart.component_metadata,
+        );
+        const catalogPrice =
+          referencePriceFromCharacteristics(componentMetadata);
+        return {
+          ...line,
+          manufacturer: catalogPart.manufacturer || line.manufacturer,
+          category:
+            catalogPart.category === "Uncategorized"
+              ? line.category
+              : catalogPart.category,
+          score: catalogPart.score,
+          unit_price: line.unit_price > 0 ? line.unit_price : catalogPrice,
+          component_metadata: componentMetadata,
+          catalog_part_id: catalogPart.id,
+        };
+      }),
+    [catalogParts, storedProjectLines],
+  );
   useEffect(() => {
     if (project) setProjectName(project.name);
   }, [project]);
@@ -100,7 +150,7 @@ export function ProjectDetail() {
     };
   }, []);
 
-  const columns: Column<BomLine>[] = [
+  const columns: Column<EnrichedBomLine>[] = [
     { key: "line_no", header: "#", sortable: true, numeric: true },
     {
       key: "designator",
@@ -108,7 +158,13 @@ export function ProjectDetail() {
       render: (row) => splitBomDescription(row.description).designator,
     },
     { key: "mpn", header: "MPN", sortable: true },
-    { key: "category", header: "Category", sortable: true },
+    {
+      key: "category",
+      header: "Category",
+      sortable: true,
+      render: (row) =>
+        loadingRowKeys.has(row.id) ? <CellSpinner /> : row.category,
+    },
     {
       key: "description",
       header: "Description",
@@ -122,7 +178,11 @@ export function ProjectDetail() {
       sortable: true,
       numeric: true,
       render: (row) =>
-        bomCurrencyFormatter.format(row.unit_price * displayRate),
+        loadingRowKeys.has(row.id) && row.unit_price <= 0 ? (
+          <CellSpinner />
+        ) : (
+          bomCurrencyFormatter.format(row.unit_price * displayRate)
+        ),
     },
     {
       key: "compliance",
@@ -132,48 +192,62 @@ export function ProjectDetail() {
         complianceFromCharacteristics(row.component_metadata)
           .map((item) => item.status)
           .join(","),
-      render: (row) => (
-        <ComplianceBadge
-          statuses={complianceFromCharacteristics(row.component_metadata)}
-        />
-      ),
+      render: (row) =>
+        loadingRowKeys.has(row.id) ? (
+          <CellSpinner />
+        ) : (
+          <ComplianceBadge
+            statuses={complianceFromCharacteristics(row.component_metadata)}
+          />
+        ),
     },
     {
       key: "lifecycle_stage",
       header: "Lifecycle",
       sortable: true,
       sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
-      render: (row) => (
-        <LifecycleBadge
-          stage={lifecycleFromCharacteristics(row.component_metadata)}
-        />
-      ),
+      render: (row) =>
+        loadingRowKeys.has(row.id) ? (
+          <CellSpinner />
+        ) : (
+          <LifecycleBadge
+            stage={lifecycleFromCharacteristics(row.component_metadata)}
+          />
+        ),
     },
     {
       key: "score",
       header: "PartPilot Score",
       sortable: true,
       numeric: true,
-      render: (row) => <ScoreRing value={row.score} size="sm" />,
+      render: (row) =>
+        loadingRowKeys.has(row.id) ? (
+          <CellSpinner />
+        ) : (
+          <ScoreRing value={row.score} size="sm" />
+        ),
     },
     {
       key: "note",
       header: "Note",
-      render: (row) => (
-        <PartNoteButton
-          part={{ id: row.part_id, label: row.mpn }}
-          onOpen={setNoteTarget}
-        />
-      ),
+      render: (row) =>
+        loadingRowKeys.has(row.id) ? (
+          <CellSpinner />
+        ) : (
+          <PartNoteButton
+            part={{
+              id: row.catalog_part_id ?? row.part_id,
+              label: row.mpn,
+            }}
+            onOpen={setNoteTarget}
+          />
+        ),
     },
   ];
 
   function exportProjectBom() {
     if (!project) return;
-    exportBomCsv(
-      project.name,
-      Array.isArray(project.lines) ? project.lines : [],
-    );
+    exportBomCsv(project.name, projectLines);
     showToast({
       title: "CSV exported",
       body: `${project.name} downloaded.`,
@@ -254,7 +328,6 @@ export function ProjectDetail() {
     );
   }
 
-  const projectLines = Array.isArray(project.lines) ? project.lines : [];
   const totalCost = projectLines.reduce(
     (total, line) => total + line.qty * line.unit_price,
     0,
@@ -391,7 +464,7 @@ export function ProjectDetail() {
         columns={columns}
         rows={projectLines}
         getRowId={(row) => row.id}
-        onRowClick={(row) => navigate(`/parts/${row.part_id}`)}
+        onRowClick={(row) => navigate(partLookupPath(row))}
         footer={
           <tr>
             <td />

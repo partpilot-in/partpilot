@@ -45,6 +45,30 @@ export function Spinner({ message, size = 32 }: SpinnerProps) {
   );
 }
 
+export function CellSpinner() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      role="status"
+      aria-label="Loading part details"
+      style={{ animation: "spin 0.8s linear infinite" }}
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="var(--clr-text-muted, #888)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeDasharray="36 18"
+      />
+    </svg>
+  );
+}
+
 export function ErrorMessage({ message }: { message: string }) {
   return (
     <div

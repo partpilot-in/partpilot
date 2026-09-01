@@ -11,7 +11,7 @@ export { PartNoteButton, PartNoteEditor, PartNoteModal } from "./PartNote";
 export type { NoteTarget } from "./PartNote";
 export { PropertyCompareTable } from "./PropertyCompareTable";
 export { ScoreRing } from "./ScoreRing";
-export { Spinner, ErrorMessage } from "./Spinner";
+export { CellSpinner, Spinner, ErrorMessage } from "./Spinner";
 export { TabNav } from "./TabNav";
 export { ToastProvider, useToast } from "./Toast";
 export { TopAppBar } from "./TopAppBar";

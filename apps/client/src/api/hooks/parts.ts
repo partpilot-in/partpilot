@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../client";
 import {
   componentMetadataFromApi,
@@ -71,6 +71,162 @@ function comparableMpn(value: string) {
     .replace(/[^A-Z0-9]/g, "");
 }
 
+export interface PartLookupCandidate {
+  key: string;
+  mpn: string;
+  manufacturer?: string;
+}
+
+const inFlightPartLookups = new Map<string, Promise<Part | undefined>>();
+
+function lookupCacheKey(mpn: string, manufacturer: string) {
+  return `${comparableMpn(mpn)}\n${manufacturer.trim().toLowerCase()}`;
+}
+
+function manufacturerForLookup(value: string | undefined) {
+  const manufacturer = value?.trim() ?? "";
+  return ["", "unknown", "n/a", "na", "—", "-"].includes(
+    manufacturer.toLowerCase(),
+  )
+    ? ""
+    : manufacturer;
+}
+
+function requestPartByMpn(mpn: string, manufacturer = "") {
+  const q = mpn.trim();
+  const manufacturerFilter = manufacturerForLookup(manufacturer);
+  if (!q) return Promise.resolve(undefined);
+
+  const cacheKey = lookupCacheKey(q, manufacturerFilter);
+  const pending = inFlightPartLookups.get(cacheKey);
+  if (pending) return pending;
+
+  const params: Record<string, string> = { q, limit: "25" };
+  if (manufacturerFilter) params.manufacturer = manufacturerFilter;
+  const request = api
+    .get("/v1/parts/search", { params })
+    .then((res) => {
+      const candidates = partsFromApiResponse(res.data);
+      const expectedMpn = comparableMpn(q);
+      return (
+        candidates.find(
+          (candidate) => comparableMpn(candidate.mpn) === expectedMpn,
+        ) ?? candidates[0]
+      );
+    })
+    .finally(() => inFlightPartLookups.delete(cacheKey));
+  inFlightPartLookups.set(cacheKey, request);
+  return request;
+}
+
+/**
+ * Enrich a collection of local/manual/BOM rows through the same MPN search
+ * endpoint used by PartDetail. Requests are deduplicated and concurrency is
+ * bounded to avoid flooding the public adapter on large projects.
+ */
+export function usePartsByMpn(candidates: PartLookupCandidate[]) {
+  const normalized = candidates
+    .map((candidate) => ({
+      key: candidate.key,
+      mpn: candidate.mpn.trim(),
+      manufacturer: manufacturerForLookup(candidate.manufacturer),
+    }))
+    .filter((candidate) => candidate.key && candidate.mpn);
+  const candidatesKey = normalized
+    .map(
+      (candidate) =>
+        `${candidate.key}\n${lookupCacheKey(candidate.mpn, candidate.manufacturer)}`,
+    )
+    .join("\n\n");
+
+  const [state, setState] = useState<{
+    requestKey: string;
+    partsByRowKey: Record<string, Part>;
+    loadingRowKeys: Set<string>;
+  }>({
+    requestKey: "",
+    partsByRowKey: {},
+    loadingRowKeys: new Set(),
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    const grouped = new Map<
+      string,
+      {
+        mpn: string;
+        manufacturer: string;
+        rowKeys: string[];
+      }
+    >();
+    normalized.forEach((candidate) => {
+      const lookupKey = lookupCacheKey(candidate.mpn, candidate.manufacturer);
+      const existing = grouped.get(lookupKey);
+      if (existing) existing.rowKeys.push(candidate.key);
+      else {
+        grouped.set(lookupKey, {
+          mpn: candidate.mpn,
+          manufacturer: candidate.manufacturer,
+          rowKeys: [candidate.key],
+        });
+      }
+    });
+
+    const lookups = Array.from(grouped.values());
+    setState({
+      requestKey: candidatesKey,
+      partsByRowKey: {},
+      loadingRowKeys: new Set(normalized.map((candidate) => candidate.key)),
+    });
+
+    let cursor = 0;
+    const worker = async () => {
+      while (!cancelled && cursor < lookups.length) {
+        const lookup = lookups[cursor++];
+        let part: Part | undefined;
+        try {
+          part = await requestPartByMpn(lookup.mpn, lookup.manufacturer);
+        } catch {
+          // Keep the stored row when an individual enrichment fails.
+        }
+        if (cancelled) return;
+        setState((current) => {
+          if (current.requestKey !== candidatesKey) return current;
+          const loadingRowKeys = new Set(current.loadingRowKeys);
+          lookup.rowKeys.forEach((rowKey) => loadingRowKeys.delete(rowKey));
+          const partsByRowKey = { ...current.partsByRowKey };
+          if (part) {
+            lookup.rowKeys.forEach((rowKey) => {
+              partsByRowKey[rowKey] = part;
+            });
+          }
+          return { requestKey: candidatesKey, partsByRowKey, loadingRowKeys };
+        });
+      }
+    };
+
+    void Promise.all(
+      Array.from({ length: Math.min(4, lookups.length) }, () => worker()),
+    );
+    return () => {
+      cancelled = true;
+    };
+    // `candidatesKey` captures the normalized lookup input.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidatesKey]);
+
+  const isCurrentRequest = state.requestKey === candidatesKey;
+  const loadingRowKeys = isCurrentRequest
+    ? state.loadingRowKeys
+    : new Set(normalized.map((candidate) => candidate.key));
+
+  return {
+    data: isCurrentRequest ? state.partsByRowKey : undefined,
+    loading: loadingRowKeys.size > 0,
+    loadingRowKeys,
+  };
+}
+
 /**
  * Resolve a part through `GET /v1/parts/search` using its MPN. This is kept
  * separate from `usePart` because the search endpoint may enrich a catalog
@@ -78,22 +234,15 @@ function comparableMpn(value: string) {
  */
 export function usePartByMpn(mpn: string | undefined, manufacturer?: string) {
   const q = mpn?.trim() ?? "";
-  const manufacturerFilter = manufacturer?.trim() ?? "";
+  const manufacturerFilter = manufacturerForLookup(manufacturer);
   const requestKey = `${q}\n${manufacturerFilter}`;
   const state = useAsync<{ requestKey: string; part: Part | undefined }>(
     q
       ? () => {
-          const params: Record<string, string> = { q, limit: "25" };
-          if (manufacturerFilter) params.manufacturer = manufacturerFilter;
-          return api.get("/v1/parts/search", { params }).then((res) => {
-            const expectedMpn = comparableMpn(q);
-            const candidates = partsFromApiResponse(res.data);
-            const part =
-              candidates.find(
-                (candidate) => comparableMpn(candidate.mpn) === expectedMpn,
-              ) ?? candidates[0];
-            return { requestKey, part };
-          });
+          return requestPartByMpn(q, manufacturerFilter).then((part) => ({
+            requestKey,
+            part,
+          }));
         }
       : null,
     [q, manufacturerFilter],
@@ -133,18 +282,9 @@ export function usePartAlternates(
       ? async () => {
           const searchResults = await Promise.allSettled(
             uniquePartNumbers.map((mpn) =>
-              api
-                .get("/v1/parts/search", { params: { q: mpn } })
-                .then((res) => {
-                  const candidates = partsFromApiResponse(res.data);
-                  const expectedMpn = comparableMpn(mpn);
-                  const resolvedPart =
-                    candidates.find(
-                      (candidate) =>
-                        comparableMpn(candidate.mpn) === expectedMpn,
-                    ) ?? candidates[0];
-                  return resolvedPart ? { ...resolvedPart, mpn } : undefined;
-                }),
+              requestPartByMpn(mpn).then((resolvedPart) =>
+                resolvedPart ? { ...resolvedPart, mpn } : undefined,
+              ),
             ),
           );
           const alternates = searchResults.flatMap((result) =>

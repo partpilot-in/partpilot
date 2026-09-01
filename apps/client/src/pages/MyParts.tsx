@@ -17,6 +17,7 @@ import {
 } from "../api/hooks/myParts";
 import {
   useProjectParts,
+  usePartsByMpn,
   useSearchParts,
   type ProjectPartRow,
 } from "../api/hooks/parts";
@@ -24,12 +25,14 @@ import {
   complianceFromCharacteristics,
   countryOfOriginFromCharacteristics,
   lifecycleFromCharacteristics,
+  mergeComponentMetadata,
   referencePriceFromCharacteristics,
   withCharacteristicSummary,
 } from "../api/componentMetadata";
 import type { Part } from "../api/types";
 import {
   ComplianceBadge,
+  CellSpinner,
   DataTable,
   EmptyState,
   ErrorMessage,
@@ -82,6 +85,7 @@ interface ManualPartForm {
 
 interface MyPartRow extends ProjectPartRow {
   source: "project" | "manual";
+  catalog_part_id?: string;
 }
 
 interface RecentSearchPart {
@@ -205,12 +209,48 @@ export function MyParts() {
     loading: searchLoading,
     error: searchError,
   } = useSearchParts(activeQuery, {});
-  const myRows: MyPartRow[] = useMemo(
+  const storedRows: MyPartRow[] = useMemo(
     () => [
       ...(storedParts ?? []),
       ...projectRows.map((row) => ({ ...row, source: "project" as const })),
     ],
     [storedParts, projectRows],
+  );
+  const lookupCandidates = useMemo(
+    () =>
+      storedRows.map((row) => ({
+        key: `${row.source}:${row.id}`,
+        mpn: row.mpn,
+        manufacturer: row.manufacturer,
+      })),
+    [storedRows],
+  );
+  const { data: catalogParts, loadingRowKeys } =
+    usePartsByMpn(lookupCandidates);
+  const myRows = useMemo<MyPartRow[]>(
+    () =>
+      storedRows.map((row) => {
+        const catalogPart = catalogParts?.[`${row.source}:${row.id}`];
+        if (!catalogPart) return row;
+        const componentMetadata = mergeComponentMetadata(
+          row.component_metadata,
+          catalogPart.component_metadata,
+        );
+        const localPriceBreaks = row.component_metadata.commercial?.priceBreaks;
+        if (Array.isArray(localPriceBreaks) && localPriceBreaks.length) {
+          componentMetadata.commercial = {
+            ...(componentMetadata.commercial ?? {}),
+            priceBreaks: localPriceBreaks,
+          };
+        }
+        return {
+          ...row,
+          score: catalogPart.score,
+          component_metadata: componentMetadata,
+          catalog_part_id: catalogPart.id,
+        };
+      }),
+    [catalogParts, storedRows],
   );
   const myPartKeys = useMemo(() => {
     const ids = new Set<string>();
@@ -265,7 +305,11 @@ export function MyParts() {
       sortValue: (row) =>
         countryOfOriginFromCharacteristics(row.component_metadata),
       render: (row) =>
-        countryOfOriginFromCharacteristics(row.component_metadata),
+        loadingRowKeys.has(`${row.source}:${row.id}`) ? (
+          <CellSpinner />
+        ) : (
+          countryOfOriginFromCharacteristics(row.component_metadata)
+        ),
     },
     { key: "category", header: "Category", sortable: true },
     {
@@ -283,39 +327,60 @@ export function MyParts() {
         complianceFromCharacteristics(row.component_metadata)
           .map((item) => item.status)
           .join(","),
-      render: (row) => (
-        <ComplianceBadge
-          statuses={complianceFromCharacteristics(row.component_metadata)}
-        />
-      ),
+      render: (row) =>
+        loadingRowKeys.has(`${row.source}:${row.id}`) ? (
+          <CellSpinner />
+        ) : (
+          <ComplianceBadge
+            statuses={complianceFromCharacteristics(row.component_metadata)}
+          />
+        ),
     },
     {
       key: "lifecycle_stage",
       header: "Lifecycle",
       sortable: true,
       sortValue: (row) => lifecycleFromCharacteristics(row.component_metadata),
-      render: (row) => (
-        <LifecycleBadge
-          stage={lifecycleFromCharacteristics(row.component_metadata)}
-        />
-      ),
+      render: (row) =>
+        loadingRowKeys.has(`${row.source}:${row.id}`) ? (
+          <CellSpinner />
+        ) : (
+          <LifecycleBadge
+            stage={lifecycleFromCharacteristics(row.component_metadata)}
+          />
+        ),
     },
     {
       key: "score",
       header: "PartPilot Score",
       sortable: true,
       numeric: true,
-      render: (row) => <ScoreRing value={row.score} size="sm" />,
+      render: (row) =>
+        loadingRowKeys.has(`${row.source}:${row.id}`) ? (
+          <CellSpinner />
+        ) : (
+          <ScoreRing value={row.score} size="sm" />
+        ),
     },
     {
       key: "note",
       header: "Note",
-      render: (row) => (
-        <PartNoteButton
-          part={{ id: row.id, label: row.mpn }}
-          onOpen={setNoteTarget}
-        />
-      ),
+      render: (row) =>
+        row.source !== "manual" &&
+        loadingRowKeys.has(`${row.source}:${row.id}`) ? (
+          <CellSpinner />
+        ) : (
+          <PartNoteButton
+            part={{
+              id:
+                row.source === "manual"
+                  ? row.id
+                  : (row.catalog_part_id ?? row.id),
+              label: row.mpn,
+            }}
+            onOpen={setNoteTarget}
+          />
+        ),
     },
   ];
 
@@ -645,7 +710,7 @@ export function MyParts() {
             getRowId={(row) => row.id}
             onRowClick={(row) => {
               if (row.source === "manual") openEditPart(row);
-              else navigate(`/parts/${row.id}`);
+              else navigate(partLookupPath(row));
             }}
             emptyState={
               <EmptyState
