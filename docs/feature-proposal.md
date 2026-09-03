@@ -6,6 +6,7 @@
 |----------|---------|----------------|
 | ⭐ Immediate | BOM line notes | Simple to implement and provides valuable user preference data. |
 | ⭐ Immediate | Qualification/compliance-aware alternate matching | Extends existing matching logic with high customer value. |
+| ⭐ Immediate | Part search using generic names e.g., "10k resistor" or "100nF capacitor" | Basic feature for part search. |
 | 🟡 Near-term | Company preference-aware scoring | Highest differentiator; implement in phases starting with configurable profiles. |
 | 🟡 Near-term | PCN compliance parsing | Extend existing parser with explicit `unknown` states for safety. |
 | 🟡 Near-term | Manufacturer & distributor APIs | Continue expanding structured data integrations. |
