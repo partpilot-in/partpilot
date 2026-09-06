@@ -57,7 +57,7 @@ the adapter implementations perform network I/O.
 ## Component metadata enrichment
 
 Parts now carry a `component_metadata` document shaped by
-[`component-cdd.schema.json`](component-cdd.schema.json). It contains the CDD
+[`component-cdd.schema.json`](../domain/component-cdd.schema.json). It contains the CDD
 Identification, Electrical, Mechanical, Thermal, Material, Environmental,
 Reliability, Regulatory, Manufacturing, Commercial, Packaging, and
 Documentation sections. Distributor adapters populate the source-backed fields

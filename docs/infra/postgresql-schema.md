@@ -236,7 +236,7 @@ The canonical, shared component catalog. User-specific inventory belongs in
 | `manufacturer` | `text` | Yes | — | Normalized manufacturer name. |
 | `description` | `text` | No | `No description available` | Human-readable description. Existing blank values were normalized by migration 0007. |
 | `category` | `text` | No | `Uncategorized` | Part category. |
-| `component_metadata` | `jsonb` | Yes | `{}` | Canonical Characteristics document defined by `component-cdd.schema.json`. |
+| `component_metadata` | `jsonb` | Yes | `{}` | Canonical Characteristics document defined by [`component-cdd.schema.json`](../domain/component-cdd.schema.json). |
 | `created_at` | `timestamptz` | Yes | `now()` | Catalog insertion time. |
 | `score` | `integer` | Yes | `72` | PartPilot score, constrained to 0–100. |
 

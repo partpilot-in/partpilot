@@ -10,7 +10,7 @@ pub struct Part {
     pub manufacturer: NormalizedManufacturer,
     pub description: Option<String>,
     pub category: Option<String>,
-    /// Canonical component facts shaped by `docs/component-cdd.schema.json`.
+    /// Canonical component facts shaped by `docs/domain/component-cdd.schema.json`.
     pub component_metadata: serde_json::Value,
 }
 

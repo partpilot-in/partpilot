@@ -1,5 +1,5 @@
 -- IEC CDD-style category metadata for catalog, manual, and BOM-only parts.
--- The document shape is defined by docs/component-cdd.schema.json. Empty JSON
+-- The document shape is defined by docs/domain/component-cdd.schema.json. Empty JSON
 -- objects are intentional until the PartPilot engine enrichment pipeline fills
 -- source-backed values.
 
@@ -29,7 +29,7 @@ begin
 end $$;
 
 comment on column parts.component_metadata is
-    'CDD component document conforming to docs/component-cdd.schema.json; populated by PartPilot enrichment.';
+    'CDD component document conforming to docs/domain/component-cdd.schema.json; populated by PartPilot enrichment.';
 comment on column user_parts.component_metadata is
     'CDD component document for a user-owned part.';
 comment on column bom_lines.component_metadata is
