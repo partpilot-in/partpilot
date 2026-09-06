@@ -13,6 +13,9 @@
       "description": "Microchip RSS root directory"
     }
   ],
+  "auth": {
+    "type": "noauth"
+  },
   "item": [
     {
       "name": "Documentation & Quality Feeds",
@@ -222,7 +225,15 @@
             },
             "description": "Updates across 32-bit Arm Cortex and MIPS microcontroller families."
           },
-          "response": []
+          "response": [
+            {
+              "name": "Verified Live Response (200 OK)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "xml",
+              "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title>Microchip: 32-bit PIC® Microcontrollers (All)</title>\n    <item>\n      <title>PIC32CZ5125CA70144</title>\n      <link>http://www.microchip.com/en-us/product/PIC32CZ5125CA70144</link>\n      <pubDate>8/3/2026 10:17:18 PM</pubDate>\n    </item>\n  </channel>\n</rss>"
+            }
+          ]
         },
         {
           "name": "Power Management ICs",
@@ -249,7 +260,15 @@
             },
             "description": "Updates across voltage regulators, battery managers, and switching power ICs."
           },
-          "response": []
+          "response": [
+            {
+              "name": "Verified Live Response (200 OK)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "xml",
+              "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title>Microchip: Power Management Products</title>\n    <item>\n      <title>MCP14L0211C</title>\n      <link>http://www.microchip.com/en-us/product/MCP14L0211C</link>\n      <pubDate>8/6/2026 6:49:27 PM</pubDate>\n    </item>\n  </channel>\n</rss>"
+            }
+          ]
         },
         {
           "name": "Memory Products",
@@ -276,7 +295,15 @@
             },
             "description": "Updates across EEPROM, SPI/I2C memory, and crypto storage devices."
           },
-          "response": []
+          "response": [
+            {
+              "name": "Verified Live Response (200 OK)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "xml",
+              "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title>Microchip: Memory Products (All)</title>\n    <item>\n      <title>25CSM01</title>\n      <link>http://www.microchip.com/en-us/product/25CSM01</link>\n      <pubDate>6/8/2026 9:20:27 PM</pubDate>\n    </item>\n  </channel>\n</rss>"
+            }
+          ]
         }
       ]
     }

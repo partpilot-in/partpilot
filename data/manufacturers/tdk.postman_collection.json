@@ -12,6 +12,9 @@
       "type": "string"
     }
   ],
+  "auth": {
+    "type": "noauth"
+  },
   "item": [
     {
       "name": "TDK & EPCOS News & Component Articles",
