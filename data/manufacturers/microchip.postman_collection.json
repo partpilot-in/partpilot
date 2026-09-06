@@ -1,0 +1,284 @@
+{
+  "info": {
+    "_postman_id": "partpilot-microchip-feeds-v2",
+    "name": "Microchip Technology — Verified Feeds (No Key Required)",
+    "description": "Comprehensive collection of verified, live-tested Microchip Technology RSS feeds. Requires zero authentication. Directly consumed by PartPilot's apps/feed service and adapter-pcn-parser to monitor datasheets, silicon errata, new product announcements, and active MPNs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://www.microchip.com/RSS",
+      "type": "string",
+      "description": "Microchip RSS root directory"
+    }
+  ],
+  "item": [
+    {
+      "name": "Documentation & Quality Feeds",
+      "item": [
+        {
+          "name": "Recent DataSheets Feed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/rss+xml, application/xml, text/xml"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PartPilot-Feed/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/Recent-DataSheets.xml",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "Recent-DataSheets.xml"
+              ]
+            },
+            "description": "Monitors newly released and revised Microchip datasheets. Each item provides the MPN, description, and direct link to the canonical PDF datasheet on ww1.microchip.com."
+          },
+          "response": [
+            {
+              "name": "Verified Live Response (200 OK)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "xml",
+              "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title>Microchip: Data Sheets</title>\n    <link>https://www.microchip.com</link>\n    <description>Recently Released Data Sheet Documents from Microchip Technology Inc.</description>\n    <language>en-us</language>\n    <item>\n      <title>LAN8832 Single Port 10/100/1000 Ethernet Transceiver with SGMII Support</title>\n      <description>LAN8832 Single Port 10/100/1000 Ethernet Transceiver with SGMII Support Data Sheet</description>\n      <link>https://ww1.microchip.com/downloads/aemDocuments/documents/NCS/ProductDocuments/DataSheets/LAN8832-Data-Sheet-DS00005878.pdf</link>\n      <pubDate>5/14/2026 3:56:00 AM</pubDate>\n    </item>\n    <item>\n      <title>LAN8842 Single Port 10/100/1000 Ethernet Transceiver with SGMII, IEEE 1588, SyncE and TSN Support</title>\n      <description>LAN8842 Single Port 10/100/1000 Ethernet Transceiver with SGMII, IEEE 1588, SyncE and TSN Support Data Sheet</description>\n      <link>https://ww1.microchip.com/downloads/aemDocuments/documents/NCS/ProductDocuments/DataSheets/LAN8842-Data-Sheet-DS00005877.pdf</link>\n      <pubDate>5/14/2026 3:52:00 AM</pubDate>\n    </item>\n  </channel>\n</rss>"
+            }
+          ]
+        },
+        {
+          "name": "Silicon Errata & Clarifications Feed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/rss+xml, application/xml, text/xml"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PartPilot-Feed/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/recent-errata.xml",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recent-errata.xml"
+              ]
+            },
+            "description": "Monitors silicon errata documents, silicon revision flaws, and datasheet clarification notices for microcontrollers and analog ICs."
+          },
+          "response": [
+            {
+              "name": "Verified Live Response (200 OK)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "xml",
+              "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title>Microchip: Errata</title>\n    <description>Recently Released Errata Documents from Microchip Technology Inc.</description>\n    <language>en-us</language>\n    <item>\n      <title>dsPIC33CK64MP105 Family Silicon Errata and Data Sheet Clarification</title>\n      <description>Errata</description>\n      <link>https://ww1.microchip.com/downloads/aemDocuments/documents/MCU16/ProductDocuments/Errata/dsPIC33CK64MP105-Family-Silicon-Errata-and-Data-Sheet-Clarification-DS80000809.pdf</link>\n      <pubDate>5/12/2026 3:49:00 AM</pubDate>\n    </item>\n    <item>\n      <title>dsPIC33CK512MP608 Family Silicon Errata and Data Sheet Clarification</title>\n      <description>dsPIC33CK512MP608 Family Silicon Errata and Data Sheet Clarification</description>\n      <link>https://ww1.microchip.com/downloads/aemDocuments/documents/MCU16/ProductDocuments/Errata/dsPIC33CK512MP608-Family-Silicon-Errata-and-Data-Sheet-Clarification-DS80000966.pdf</link>\n      <pubDate>5/12/2026 12:57:00 AM</pubDate>\n    </item>\n  </channel>\n</rss>"
+            }
+          ]
+        },
+        {
+          "name": "Product Press Releases Feed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/rss+xml, application/xml, text/xml"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PartPilot-Feed/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/recent-PRProduct.xml",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recent-PRProduct.xml"
+              ]
+            },
+            "description": "Product press releases announcing major component launches, packaging additions, and new silicon families."
+          },
+          "response": [
+            {
+              "name": "Verified Live Response (200 OK)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "xml",
+              "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title>Microchip: Product Press Releases</title>\n    <description>Recent Product Press Releases from Microchip Technology Inc.</description>\n    <language>en-us</language>\n    <item>\n      <title>Microchip Advances Space-Grade Timing with Enhanced Radiation Tolerance and Extended Temperature Performance</title>\n      <description>Microchip Advances Space-Grade Timing with Enhanced Radiation Tolerance and Extended Temperature Performance</description>\n      <link>https://www.microchip.com/en-us/about/news-releases/products/microchip-advances-space-grade-timing-with-enhanced-radiation-tolerance</link>\n      <pubDate>8/13/2026 7:00:00 AM</pubDate>\n    </item>\n  </channel>\n</rss>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Component Category Feeds",
+      "item": [
+        {
+          "name": "8-Bit PIC & AVR Microcontrollers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/rss+xml, application/xml, text/xml"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PartPilot-Feed/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/recent-8bitPIC.xml",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recent-8bitPIC.xml"
+              ]
+            },
+            "description": "Updates across Microchip's 8-bit PIC and AVR microcontroller portfolio."
+          },
+          "response": [
+            {
+              "name": "Verified Live Response (200 OK)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "xml",
+              "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title>Microchip: 8-bit PICr Microcontrollers (All)</title>\n    <description>Recently Updated 8-bit PICr Microcontrollers from Microchip Technology Inc.</description>\n    <item>\n      <title>MCP2222</title>\n      <link>http://www.microchip.com/en-us/product/MCP2222</link>\n      <pubDate>7/24/2026 3:50:29 AM</pubDate>\n    </item>\n    <item>\n      <title>pic16f13226</title>\n      <link>http://www.microchip.com/en-us/product/pic16f13226</link>\n      <pubDate>7/1/2026 4:32:21 PM</pubDate>\n    </item>\n  </channel>\n</rss>"
+            }
+          ]
+        },
+        {
+          "name": "16-Bit PIC & dsPIC DSCs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/rss+xml, application/xml, text/xml"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PartPilot-Feed/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/recent-16bitPIC.xml",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recent-16bitPIC.xml"
+              ]
+            },
+            "description": "Updates across 16-bit PIC24 and dsPIC digital signal controllers."
+          },
+          "response": [
+            {
+              "name": "Verified Live Response (200 OK)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "xml",
+              "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title>Microchip: 16-bit PICr Microcontrollers &amp; dsPICr Digital Signal Controllers (All)</title>\n    <item>\n      <title>dsPIC33CK256MC006</title>\n      <link>http://www.microchip.com/en-us/product/dsPIC33CK256MC006</link>\n      <pubDate>5/21/2026 8:12:42 AM</pubDate>\n    </item>\n  </channel>\n</rss>"
+            }
+          ]
+        },
+        {
+          "name": "32-Bit Microcontrollers (PIC32 / SAM)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/rss+xml, application/xml, text/xml"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PartPilot-Feed/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/recent-32bitPIC.xml",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recent-32bitPIC.xml"
+              ]
+            },
+            "description": "Updates across 32-bit Arm Cortex and MIPS microcontroller families."
+          },
+          "response": []
+        },
+        {
+          "name": "Power Management ICs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/rss+xml, application/xml, text/xml"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PartPilot-Feed/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/recent-PowerMgt.xml",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recent-PowerMgt.xml"
+              ]
+            },
+            "description": "Updates across voltage regulators, battery managers, and switching power ICs."
+          },
+          "response": []
+        },
+        {
+          "name": "Memory Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/rss+xml, application/xml, text/xml"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PartPilot-Feed/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/recent-Memory.xml",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recent-Memory.xml"
+              ]
+            },
+            "description": "Updates across EEPROM, SPI/I2C memory, and crypto storage devices."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
