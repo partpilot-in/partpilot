@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Building2,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -17,8 +16,7 @@ import { supportedCurrencies, type CurrencyCode } from "../../lib/format";
 import { useCurrencyPreference } from "../../lib/useCurrencyPreference";
 
 interface TopAppBarProps {
-  organizationSlug: string;
-  user: { name: string; avatarUrl?: string } | null;
+  user: { name: string; organizationName?: string; avatarUrl?: string } | null;
   onSignOut?: () => void | Promise<void>;
 }
 
@@ -41,11 +39,23 @@ const socialLinks = [
   },
 ];
 
-export function TopAppBar({
-  organizationSlug,
-  user,
-  onSignOut,
-}: TopAppBarProps) {
+function userChipName(user: TopAppBarProps["user"]) {
+  if (!user) return "Guest";
+
+  const organizationName = user.organizationName?.trim();
+  if (!organizationName) return user.name;
+
+  const firstName = user.name.trim().split(/\s+/)[0];
+  return firstName ? `${firstName} from ${organizationName}` : organizationName;
+}
+
+function userFirstName(user: TopAppBarProps["user"]) {
+  if (!user) return "Guest";
+
+  return user.name.trim().split(/\s+/)[0] || user.name;
+}
+
+export function TopAppBar({ user, onSignOut }: TopAppBarProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false);
@@ -53,6 +63,8 @@ export function TopAppBar({
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const { currency, updateCurrency } = useCurrencyPreference();
   const logoSrc = theme === "dark" ? "/pp-logo-dark.png" : "/pp-logo-light.png";
+  const displayName = userChipName(user);
+  const mobileDisplayName = userFirstName(user);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -122,26 +134,25 @@ export function TopAppBar({
           </Link>
         </div>
         <div className="top-actions">
-          <span className="org-slug" title="Organization">
-            <Building2 size={14} aria-hidden="true" />
-            {organizationSlug}
-          </span>
           <div className="account-menu" ref={accountMenuRef}>
             <button
               type="button"
               className="user-chip"
               aria-haspopup="menu"
               aria-expanded={accountMenuOpen}
-              aria-label={
-                user ? `${user.name} account menu` : "Guest account menu"
-              }
+              aria-label={`${displayName} account menu`}
               onClick={() => {
                 setAccountMenuOpen((open) => !open);
                 setCurrencyMenuOpen(false);
                 setConnectMenuOpen(false);
               }}
             >
-              <span className="user-chip__name">{user?.name ?? "Guest"}</span>
+              <span className="user-chip__name user-chip__name--desktop">
+                {displayName}
+              </span>
+              <span className="user-chip__name user-chip__name--mobile">
+                {mobileDisplayName}
+              </span>
               <span className="avatar">
                 {user?.avatarUrl ? (
                   <img src={user.avatarUrl} alt="" />

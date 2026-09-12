@@ -61,11 +61,7 @@ function AppLayout() {
 
   return (
     <>
-      <TopAppBar
-        organizationSlug={user?.organizationSlug ?? "personal"}
-        user={user}
-        onSignOut={signOut}
-      />
+      <TopAppBar user={user} onSignOut={signOut} />
       <TabNav tabs={tabs} activeKey={activeTabForPath(location.pathname)} />
       <main className="page-shell">
         <Outlet />

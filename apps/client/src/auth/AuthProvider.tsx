@@ -14,6 +14,7 @@ export interface AppUser {
   id: string;
   email: string;
   name: string;
+  organizationName: string;
   organizationSlug: string;
   avatarUrl?: string;
 }
@@ -131,6 +132,11 @@ function getAppUser(user: User): AppUser {
     readMetadataString(user.user_metadata, "organization_slug") ??
     readMetadataString(user.user_metadata, "org_slug") ??
     "personal";
+  const organizationName =
+    readMetadataString(user.user_metadata, "organization_name") ??
+    readMetadataString(user.user_metadata, "org_name") ??
+    readMetadataString(user.user_metadata, "company") ??
+    "";
   const avatarUrl =
     readMetadataString(user.user_metadata, "avatar_url") ??
     readMetadataString(user.user_metadata, "picture");
@@ -139,6 +145,7 @@ function getAppUser(user: User): AppUser {
     id: user.id,
     email,
     name,
+    organizationName,
     organizationSlug,
     avatarUrl,
   };

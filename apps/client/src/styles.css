@@ -188,25 +188,6 @@ a:hover {
   height: 24px;
 }
 
-.org-slug {
-  display: inline-flex;
-  min-width: 0;
-  max-width: 240px;
-  align-items: center;
-  gap: 6px;
-  overflow: hidden;
-  padding: 4px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .top-actions {
   display: inline-flex;
   align-items: center;
@@ -269,10 +250,11 @@ a:hover {
 }
 
 .user-chip__name {
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.user-chip__name--mobile {
+  display: none;
 }
 
 .account-menu {
@@ -2729,11 +2711,6 @@ a.news-list__title:hover {
     padding-left: max(10px, var(--safe-left));
   }
 
-  .org-slug {
-    max-width: min(112px, 32vw);
-    padding: 4px 8px;
-  }
-
   .top-actions {
     gap: 2px;
   }
@@ -2764,8 +2741,12 @@ a.news-list__title:hover {
     box-shadow: none;
   }
 
-  .user-chip__name {
+  .user-chip__name--desktop {
     display: none;
+  }
+
+  .user-chip__name--mobile {
+    display: inline;
   }
 
   .avatar {
