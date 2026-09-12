@@ -9,6 +9,7 @@ import {
   LogOut,
   Moon,
   Settings,
+  Share2,
   Sun,
   UserCircle,
 } from "lucide-react";
@@ -21,6 +22,25 @@ interface TopAppBarProps {
   onSignOut?: () => void | Promise<void>;
 }
 
+const socialLinks = [
+  {
+    label: "Crunchbase",
+    href: "https://www.crunchbase.com/organization/partpilot",
+  },
+  {
+    label: "GitHub",
+    href: "https://github.com/partpilot-in",
+  },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/company/bestpartpilot/",
+  },
+  {
+    label: "X",
+    href: "https://x.com/partpilotinc",
+  },
+];
+
 export function TopAppBar({
   organizationSlug,
   user,
@@ -29,6 +49,7 @@ export function TopAppBar({
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false);
+  const [connectMenuOpen, setConnectMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const { currency, updateCurrency } = useCurrencyPreference();
   const logoSrc = theme === "dark" ? "/pp-logo-dark.png" : "/pp-logo-light.png";
@@ -47,6 +68,7 @@ export function TopAppBar({
     function closeAccountMenuOnEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setCurrencyMenuOpen(false);
+        setConnectMenuOpen(false);
         setAccountMenuOpen(false);
       }
     }
@@ -75,12 +97,14 @@ export function TopAppBar({
   const selectThemeMenuItem = () => {
     toggleTheme();
     setCurrencyMenuOpen(false);
+    setConnectMenuOpen(false);
     setAccountMenuOpen(false);
   };
 
   const selectCurrencyMenuItem = (nextCurrency: CurrencyCode) => {
     updateCurrency(nextCurrency);
     setCurrencyMenuOpen(false);
+    setConnectMenuOpen(false);
     setAccountMenuOpen(false);
   };
 
@@ -114,6 +138,7 @@ export function TopAppBar({
               onClick={() => {
                 setAccountMenuOpen((open) => !open);
                 setCurrencyMenuOpen(false);
+                setConnectMenuOpen(false);
               }}
             >
               <span className="user-chip__name">{user?.name ?? "Guest"}</span>
@@ -138,7 +163,10 @@ export function TopAppBar({
                     event.stopPropagation();
                     selectThemeMenuItem();
                   }}
-                  onMouseEnter={() => setCurrencyMenuOpen(false)}
+                  onMouseEnter={() => {
+                    setCurrencyMenuOpen(false);
+                    setConnectMenuOpen(false);
+                  }}
                   onClick={selectThemeMenuItem}
                 >
                   {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
@@ -153,8 +181,14 @@ export function TopAppBar({
                     role="menuitem"
                     aria-haspopup="menu"
                     aria-expanded={currencyMenuOpen}
-                    onMouseEnter={() => setCurrencyMenuOpen(true)}
-                    onClick={() => setCurrencyMenuOpen((open) => !open)}
+                    onMouseEnter={() => {
+                      setCurrencyMenuOpen(true);
+                      setConnectMenuOpen(false);
+                    }}
+                    onClick={() => {
+                      setCurrencyMenuOpen((open) => !open);
+                      setConnectMenuOpen(false);
+                    }}
                   >
                     <DollarSign size={18} />
                     <span className="account-menu__item-main">
@@ -187,13 +221,61 @@ export function TopAppBar({
                     </div>
                   )}
                 </div>
+                <div className="account-menu__submenu-wrap">
+                  <button
+                    type="button"
+                    className="account-menu__item account-menu__item--submenu"
+                    role="menuitem"
+                    aria-haspopup="menu"
+                    aria-expanded={connectMenuOpen}
+                    onMouseEnter={() => {
+                      setConnectMenuOpen(true);
+                      setCurrencyMenuOpen(false);
+                    }}
+                    onClick={() => {
+                      setConnectMenuOpen((open) => !open);
+                      setCurrencyMenuOpen(false);
+                    }}
+                  >
+                    <Share2 size={18} />
+                    <span>Connect with us</span>
+                    <ChevronLeft size={16} aria-hidden="true" />
+                  </button>
+                  {connectMenuOpen && (
+                    <div
+                      className="account-menu__panel account-menu__submenu account-menu__submenu--left"
+                      role="menu"
+                    >
+                      {socialLinks.map((link) => (
+                        <a
+                          key={link.href}
+                          className="account-menu__item"
+                          role="menuitem"
+                          href={link.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => {
+                            setConnectMenuOpen(false);
+                            setAccountMenuOpen(false);
+                          }}
+                        >
+                          <span>{link.label}</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <Link
                   className="account-menu__item"
                   role="menuitem"
                   to="/settings"
-                  onMouseEnter={() => setCurrencyMenuOpen(false)}
+                  onMouseEnter={() => {
+                    setCurrencyMenuOpen(false);
+                    setConnectMenuOpen(false);
+                  }}
                   onClick={() => {
                     setCurrencyMenuOpen(false);
+                    setConnectMenuOpen(false);
                     setAccountMenuOpen(false);
                   }}
                 >
@@ -205,9 +287,13 @@ export function TopAppBar({
                     type="button"
                     className="account-menu__item"
                     role="menuitem"
-                    onMouseEnter={() => setCurrencyMenuOpen(false)}
+                    onMouseEnter={() => {
+                      setCurrencyMenuOpen(false);
+                      setConnectMenuOpen(false);
+                    }}
                     onClick={() => {
                       setCurrencyMenuOpen(false);
+                      setConnectMenuOpen(false);
                       setAccountMenuOpen(false);
                       void onSignOut();
                     }}
