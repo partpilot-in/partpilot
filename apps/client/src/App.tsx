@@ -35,6 +35,12 @@ const tabs = [
     to: "/projects",
     icon: <ClipboardList size={22} />,
   },
+  {
+    key: "kicad",
+    label: "KiCad",
+    icon: <img src="/kicad-logo.png" alt="" width={22} height={22} />,
+    disabled: true,
+  },
 ];
 
 function activeTabForPath(pathname: string) {
