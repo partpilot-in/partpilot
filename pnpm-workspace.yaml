@@ -1,3 +1,5 @@
 packages:
   - apps/client
   - apps/website
+minimumReleaseAgeExclude:
+  - prettier@3.9.7
