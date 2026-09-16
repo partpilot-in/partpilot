@@ -1,4 +1,10 @@
-# PartPilot
+<div align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="apps/website/public/partpilot-logo-dark-landscape.png" width="1280">
+  <source media="(prefers-color-scheme: light)" srcset="apps/website/public/partpilot-logo-light-landscape.png" width="1280">
+  <img alt="partpilot logo" src="apps/website/public/partpilot-logo-light-landscape.png" width="1280">
+</picture>
+</div>
 
 Electronic component obsolescence intelligence platform.
 
