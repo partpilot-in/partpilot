@@ -210,10 +210,25 @@ async fn fetch_source(client: &Client, url: &str) -> anyhow::Result<FetchedSourc
 }
 
 fn parse_rss_date(value: &str) -> Option<DateTime<Utc>> {
-    DateTime::parse_from_rfc2822(value)
-        .or_else(|_| DateTime::parse_from_rfc3339(value))
-        .map(|date| date.with_timezone(&Utc))
-        .ok()
+    let value = value.trim();
+    if let Ok(date) = DateTime::parse_from_rfc2822(value) {
+        return Some(date.with_timezone(&Utc));
+    }
+    if let Ok(date) = DateTime::parse_from_rfc3339(value) {
+        return Some(date.with_timezone(&Utc));
+    }
+    for fmt in &[
+        "%-m/%-d/%Y %-I:%M:%S %p",
+        "%m/%d/%Y %I:%M:%S %p",
+        "%-m/%-d/%Y %-H:%M:%S",
+        "%m/%d/%Y %H:%M:%S",
+        "%Y-%m-%d %H:%M:%S",
+    ] {
+        if let Ok(naive) = chrono::NaiveDateTime::parse_from_str(value, fmt) {
+            return Some(naive.and_utc());
+        }
+    }
+    None
 }
 
 fn non_empty(value: &str) -> Option<&str> {
@@ -446,6 +461,14 @@ mod tests {
                 .with_timezone(&FixedOffset::east_opt(0).unwrap())
                 .to_rfc3339(),
             "2003-06-10T04:00:00+00:00"
+        );
+
+        assert_eq!(
+            parse_rss_date("7/24/2026 3:50:29 AM")
+                .unwrap()
+                .with_timezone(&FixedOffset::east_opt(0).unwrap())
+                .to_rfc3339(),
+            "2026-07-24T03:50:29+00:00"
         );
     }
 

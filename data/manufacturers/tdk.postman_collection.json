@@ -1,0 +1,63 @@
+{
+  "info": {
+    "_postman_id": "partpilot-tdk-feeds-v2",
+    "name": "TDK Corporation — Verified Feeds (No Key Required)",
+    "description": "Verified live XML RSS feeds for TDK and EPCOS passive components, aluminum electrolytic capacitors, inductors, transformers, and discontinued parts. Zero authentication required. Concurrently polled by PartPilot's apps/feed server.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://www.tdk-electronics.tdk.com",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "TDK & EPCOS News & Component Articles",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/rss+xml, application/xml, text/xml"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PartPilot-Feed/1.0"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/en/service/156018/tech-library/articles/article/176158/asFeed/index.xml",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "en",
+            "service",
+            "156018",
+            "tech-library",
+            "articles",
+            "article",
+            "176158",
+            "asFeed",
+            "index.xml"
+          ]
+        },
+        "description": "Live TDK & EPCOS technical library feed broadcasting new component series, high-voltage capacitors, inductors, common-mode chokes, and line discontinuations."
+      },
+      "response": [
+        {
+          "name": "Verified Live Response (200 OK)",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "xml",
+          "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:media=\"http://search.yahoo.com/mrss/\" version=\"2.0\">\n  <channel>\n    <title>TDK and EPCOS | News − All news</title>\n    <link>https://www.tdk-electronics.tdk.com/en/156018/tech-library/articles/article/tdk-and-epcos-news-all-news/176158</link>\n    <item>\n      <title>Aluminum Electrolytic Capacitors: TDK adds vibration-resistant axial and soldering-star capacitors for 125 V and upgrades 63 V series</title>\n      <link>https://www.tdk-electronics.tdk.com/en/373928/tech-library/articles/products-technologies/products-technologies/tdk-adds-vibration-resistant-axial-and-soldering-star-capacitors-for-125-v-and-upgrades-63-v-series/3690812</link>\n      <description>TDK Corporation presents two new EPCOS aluminum electrolytic capacitor series with axial-lead and soldering star design.</description>\n      <pubDate>Wed, 12 Aug 2026 12:44:00 GMT</pubDate>\n    </item>\n    <item>\n      <title>Inductors: TDK presents SMD common-mode chokes for up to 80 V/35 A with a minimized PCB footprint</title>\n      <link>https://www.tdk-electronics.tdk.com/en/373554/tech-library/articles/products-technologies/products-technologies/tdk-presents-smd-common-mode-chokes-for-up-to-80-v-35-a-with-a-minimized-pcb-footprint/3690620</link>\n      <description>TDK Corporation has developed a new series of compact SMD common-mode chokes for power applications.</description>\n      <pubDate>Mon, 03 Aug 2026 11:20:00 GMT</pubDate>\n    </item>\n  </channel>\n</rss>"
+        }
+      ]
+    }
+  ]
+}
