@@ -1,23 +1,98 @@
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="apps/website/public/partpilot-logo-dark-landscape.png" width="1280">
-  <source media="(prefers-color-scheme: light)" srcset="apps/website/public/partpilot-logo-light-landscape.png" width="1280">
-  <img alt="partpilot logo" src="apps/website/public/partpilot-logo-light-landscape.png" width="1280">
+  <source media="(prefers-color-scheme: dark)" srcset="apps/website/public/partpilot-logo-dark-landscape.png" width="960">
+  <source media="(prefers-color-scheme: light)" srcset="apps/website/public/partpilot-logo-light-landscape.png" width="960">
+  <img alt="PartPilot logo" src="apps/website/public/partpilot-logo-light-landscape.png" width="960">
 </picture>
+
+### Component intelligence for hardware teams
+
+Find lifecycle changes, obsolescence risk, PCNs, risky BOM items, and better replacement options before they become production problems.
+
+[Website](https://bestpartpilot.com) · [Architecture](docs/architecture/overview.md) · [API docs](docs/api/api-doc.md) · [Contributing](CONTRIBUTING.md)
+
 </div>
 
-Electronic component obsolescence intelligence platform.
+---
 
-**Stack**: Rust (engine/server/worker), React (client), Supabase (Postgres + Auth + Storage), Redis (adapter response cache), Railway (hosting), Python (KiCad plugin). Single monorepo, Cargo workspace for the Rust side.
+## What PartPilot does
 
-## Components
+A BOM can be technically valid and still contain future production problems.
+
+A component can exist today while quietly becoming NRND, obsolete, difficult to source, affected by a PCN, dependent on a single source, or hard to replace safely.
+
+PartPilot is building an intelligence layer that pulls those signals together and explains what deserves attention.
+
+For a part or BOM, PartPilot is designed to answer questions like:
+
+- Is this component still safe to design in?
+- Is it active, NRND, obsolete, or approaching end of life?
+- What changed recently?
+- Why did this part's risk score move?
+- Are there credible alternates?
+- What are engineers reporting about this part?
+- Which BOM items need investigation first?
+
+## Why this exists
+
+Lifecycle and component-risk information is fragmented across manufacturer pages, distributor APIs, PCNs, datasheets, compliance documents, and engineering communities.
+
+The useful question is not just **"does this part exist?"**
+
+It is:
+
+> **"What could make this part a problem later, and what evidence supports that?"**
+
+PartPilot brings those signals into one system so engineering and sourcing teams can catch problems earlier.
+
+## Current capabilities
+
+- Multi-source component and lifecycle ingestion
+- Manufacturer and MPN normalization
+- Lifecycle reconciliation
+- Component risk scoring
+- Alternate-part matching
+- BOM upload and comparison
+- Watchlists and notifications
+- Scheduled enrichment and risk refreshes
+- Community Pulse: engineering discussion signals attached to component context
+- Shared Redis cache for rate-limited external data sources
+
+## Community Pulse
+
+Datasheets tell you what a component is supposed to do.
+
+Engineers tell you what happens when you actually use it.
+
+Community Pulse collects public engineering discussions and lets the PartPilot engine rank and synthesize those mentions into cited component-level context: common praise, recurring issues, and overall sentiment.
+
+Sources include communities such as:
+
+- Reddit communities including r/AskElectronics, r/PrintedCircuitBoard, and r/embedded
+- EEVblog
+- Electrical Engineering Stack Exchange
+- ST Community
+- Renesas Engineering Community
+- Silicon Labs Community
+- TI E2E
+- Microchip Forums
+- NXP Community
+- All About Circuits
+
+The goal is not to replace manufacturer data. It is to add the field experience that manufacturer data usually does not contain.
+
+## Architecture
+
+PartPilot is a monorepo.
+
+**Stack:** Rust for the engine/server/worker side, React + Vite for the client, Supabase for Postgres/Auth/Storage, Redis for adapter caching, Railway for hosting, and Python for KiCad integration work.
 
 ```mermaid
 graph TD
     Client["client<br/>(React / Vite)"]
     Server["server<br/>(axum API)"]
     Engine["engine<br/>(domain + ports)"]
-    Worker["worker<br/>(ingestion sweep & enrichment)"]
+    Worker["worker<br/>(ingestion & enrichment)"]
 
     subgraph Adapters["adapters"]
         DigiKey["adapter-digikey"]
@@ -30,10 +105,10 @@ graph TD
 
     Cache["cache<br/>(CachedConnector decorator)"]
 
-    Supabase[("Supabase\n(Postgres/Auth/Storage)")]
-    Redis[("Redis\n(adapter response cache)")]
+    Supabase[("Supabase\nPostgres / Auth / Storage")]
+    Redis[("Redis\nadapter response cache")]
     External[("External sources\nDigiKey · Mouser · Octopart · PCNs")]
-    Forums[("Public forums\nReddit · EEVblog · StackExchange\nvendor communities")]
+    Forums[("Public engineering communities")]
 
     Client -->|HTTP REST| Server
     Server -->|calls ports| Engine
@@ -46,25 +121,141 @@ graph TD
     Mouser --> External
     Octopart --> External
     PCN --> External
-    Notify --> External
     CommunityPulse --> Forums
 
-    Client -.->|auth only| Supabase
+    Client -.->|auth/session| Supabase
 ```
 
-### 1. client
+### Engine
 
-The React frontend (Vite). Everything the user actually sees and clicks — Dashboard, Part Search, Projects/BOM tabs, all built from the shared DataTable, ScoreRing, and other reusable UI components.
+The engine owns PartPilot's domain logic and stays independent of HTTP, database drivers, and vendor APIs.
 
-The client talks to server over HTTP and directly to Supabase only for authentication and session management.
+Responsibilities include:
 
-It contains no business logic. Reconciliation, risk scoring, and BOM diffing all happen server-side; the client simply renders the results.
+- MPN normalization
+- Manufacturer normalization
+- Lifecycle reconciliation
+- Risk scoring
+- Alternate matching
+- Community Pulse ranking and synthesis
+- Category-aware component metadata validation and reconciliation
 
-## Database Migrations
+External systems implement traits defined by the engine so vendor-specific behavior stays outside the domain layer.
 
-Database migrations use the Supabase CLI and live in `supabase/migrations/`.
+### Adapters
 
-To apply migrations to a linked Supabase project:
+Adapters translate external APIs, authentication schemes, documents, and vendor-specific formats into clean PartPilot domain models.
+
+That is where source-specific concerns live:
+
+- rate limiting
+- OAuth
+- PDF / PCN parsing
+- vendor API quirks
+- source-specific mappings
+
+### Server
+
+The Axum API is intentionally thin:
+
+1. receive the request
+2. call engine/repository interfaces
+3. format the result
+4. return the response
+
+### Worker
+
+The worker runs ingestion and enrichment separately from the user-facing API so slow or rate-limited jobs do not block requests.
+
+Typical work includes:
+
+- pulling lifecycle changes
+- reconciling sources
+- recomputing risk
+- sending notifications
+- enriching previously unseen parts
+- refreshing Community Pulse summaries
+
+### Cache
+
+Server and worker share a Redis-backed connector cache.
+
+The cache sits inside the rate limiter so cache hits do not consume external API quota.
+
+Key shape:
+
+```text
+adapter:{source_id}:{normalized_mpn}:{normalized_manufacturer}
+```
+
+Default TTL is aligned with the daily sweep cadence.
+
+## Repository layout
+
+```text
+apps/
+  client/      React product UI
+  website/     PartPilot website
+  feed/        Rust application
+
+crates/
+  engine/      domain logic + ports
+  adapters/    external integrations
+  server/      Axum API
+
+tools/
+  cli/         CLI scaffold / work in progress
+
+docs/          architecture, API, domain, infra, proposals
+supabase/      database migrations
+```
+
+## Local development
+
+### Requirements
+
+- Rust toolchain
+- Node.js 20.19+
+- pnpm 12.5.1
+- Supabase CLI for local database work
+
+Install JavaScript dependencies:
+
+```bash
+pnpm install
+```
+
+Run the client:
+
+```bash
+pnpm dev:client
+```
+
+Run the website:
+
+```bash
+pnpm dev:website
+```
+
+Build the Rust workspace:
+
+```bash
+cargo build --workspace
+```
+
+Build web packages:
+
+```bash
+pnpm build
+```
+
+Copy `.env.example` and configure the services you want to run locally.
+
+## Database migrations
+
+Migrations live in `supabase/migrations/`.
+
+Linked project:
 
 ```bash
 supabase login
@@ -72,147 +263,66 @@ supabase link --project-ref <project-ref>
 supabase db push
 ```
 
-To apply migrations with a database connection string instead of linking:
+Direct database URL:
 
 ```bash
 supabase db push --db-url <db_connection_string>
 ```
 
-To create a new migration:
+Create a migration:
 
 ```bash
 supabase migration new <migration_name>
 ```
 
-For Supabase GitHub integration, set the working directory to `.` because the `supabase/` directory is at the repository root. Supabase automatically runs new files in `supabase/migrations/` for preview branches and production deployments when that integration is enabled.
+## DigiKey configuration
 
-### 2. adapters
+The DigiKey adapter uses Product Information v4 with OAuth 2.0 client credentials.
 
-The outward-facing edges of the system — one crate per external integration:
+Configure:
 
-* adapter-digikey
-* adapter-mouser
-* adapter-octopart
-* adapter-pcn-parser
-* adapter-notify
-* adapter-community-pulse
+```text
+DIGIKEY_CLIENT_ID
+DIGIKEY_CLIENT_SECRET
+DIGIKEY_ACCOUNT_ID
+```
 
-Each adapter implements a trait defined in engine such as:
+Locale defaults to US / en / USD. See `.env.example` for the available locale variables.
 
-* DataSourceConnector
-* PartRepository
-* NotificationSender
+## Roadmap
 
-Adapters translate between external APIs, authentication methods, and response formats and the engine's clean domain models.
+PartPilot is early and moving quickly.
 
-This is where all source-specific complexity lives:
+- [x] Component normalization
+- [x] Lifecycle reconciliation
+- [x] Risk scoring
+- [x] BOM upload and comparison
+- [x] Scheduled enrichment
+- [x] Redis connector caching
+- [x] Community Pulse architecture
+- [ ] Expand manufacturer / distributor coverage
+- [ ] Productionize the PartPilot CLI
+- [ ] Deeper KiCad workflow integration
+- [ ] Datasheet intelligence and structured metadata extraction
+- [ ] Better alternate compatibility reasoning
+- [ ] Change-impact analysis across BOM and engineering context
+- [ ] Public component-intelligence API workflows
 
-* Rate limiting
-* OAuth flows
-* PDF parsing
-* API quirks
-* Vendor-specific data mapping
+## Contributing
 
-Keeping these concerns isolated prevents them from leaking into the rest of the system.
+Useful contributions include:
 
-#### DigiKey configuration
+- component and manufacturer adapters
+- lifecycle / PCN edge cases
+- datasheet parsing
+- normalization cases
+- KiCad integration
+- test BOMs
+- component metadata schemas
+- engineering-community source connectors
+- documentation and developer experience
 
-`adapter-digikey` uses DigiKey Product Information v4 with OAuth 2.0 client
-credentials. Configure `DIGIKEY_CLIENT_ID`, `DIGIKEY_CLIENT_SECRET`, and
-`DIGIKEY_ACCOUNT_ID`, which DigiKey requires for two-legged Product Details
-requests. Locale defaults to `US` / `en` / `USD` and can be changed with the
-`DIGIKEY_LOCALE_*` variables listed in `.env.example`.
-
-Deployed server environment variables take precedence. On a local machine,
-missing values are filled from the repository's top-level `.env` file.
-
-**Community Pulse** is the component that collects and summarizes what engineers actually say about a part across public forums — the same idea as Reddit Answers, applied to component reputation. It pulls in mentions, then hands them to the engine for ranking and synthesis into a short, cited summary (common praise, common issues, overall sentiment) shown alongside a part's lifecycle and risk data.
-
-Credible sources this adapter draws from:
-
-* Reddit (r/AskElectronics, r/PrintedCircuitBoard, r/embedded)
-* EEVblog forum
-* Electrical Engineering Stack Exchange
-* ST Community (STMicroelectronics)
-* Renesas Engineering Community
-* Silicon Labs Community
-* TI E2E (Texas Instruments)
-* Microchip Forums
-* NXP Community
-* All About Circuits forums
-
-### Caching layer (`cache`)
-
-`server` and `worker` both call out to the same rate-limited, sometimes-paid external APIs (DigiKey, Mouser, Octopart) — the worker on its daily sweep, the server synchronously in enrich mode when a user searches/uploads a BOM containing a part with no data yet. Without a shared cache, a burst of enrich-mode lookups for the same not-yet-seen part (e.g. several users uploading BOMs that share a part) each re-hit the paid API before the worker ever gets to it.
-
-`cache` is a `CachedConnector<T: DataSourceConnector>` decorator — same shape as the existing `RateLimited<T>` wrapper — backed by Redis. It sits *inside* the rate limiter in the composition root (`RateLimited(CachedConnector(inner))`), so cache hits never consume rate-limit budget; only real misses do.
-
-* **Why Redis, not another Postgres table**: the cached data is disposable (re-fetchable from source), wants TTL-based expiry rather than a cleanup job, and needs to be shared between two separate Railway services (server + worker) without adding read/write load to the Postgres instance that holds the actual source of truth.
-* **Key shape**: `adapter:{source_id}:{normalized_mpn}:{normalized_manufacturer}` → serialized raw connector response.
-* **TTL**: defaults to the sweep cadence (24h) — data can't be fresher than the next scheduled sweep anyway, so caching past that point costs nothing in staleness.
-* Client: `deadpool-redis` for pooling, added to both `AppState` (server) and the worker's composition root.
-
-### 3. engine
-
-The brain of the system.
-
-Pure business logic with no HTTP server, database driver, or runtime dependencies beyond trait definitions.
-
-Responsibilities include:
-
-* MPN normalization
-* Manufacturer normalization
-* Lifecycle reconciliation across multiple sources
-* Risk scoring
-* Alternate part matching
-* Ranking and synthesizing forum mentions into Community Pulse summaries
-* Category-aware mapping, validation, and reconciliation of IEC CDD component
-  metadata extracted from datasheets (planned; the storage/API/UI contract is
-  already present)
-
-engine depends on nothing else in the workspace.
-
-Everything else depends on it.
-
-If Postgres, DigiKey, Reddit, or any other external dependency changed, this crate would remain largely untouched — Community Pulse's ranking/synthesis logic lives here for the same reason reconciliation and risk scoring do: it's judgment the engine owns, while adapter-community-pulse just fetches the raw posts.
-
-### 4. server
-
-The API layer.
-
-An Axum-based binary that wires concrete adapters into the engine's traits (the composition root) and exposes HTTP endpoints for:
-
-* Part search
-* Part details
-* BOM upload
-* BOM comparison
-* Watchlists
-* Authentication
-* Error handling
-
-The server intentionally remains thin:
-
-* Receive request
-* Call engine and repositories
-* Format response
-* Return result
-
-Very little business logic lives here.
-
-### 5. worker
-
-The background processing service.
-
-A separate binary with no HTTP surface that performs scheduled and asynchronous tasks such as:
-
-* Pulling lifecycle updates from external sources
-* Reconciling data
-* Recomputing risk scores
-* Sending notifications and alerts
-* Performing on-demand enrichment for previously unseen parts
-* Sweeping forums for fresh mentions and refreshing Community Pulse summaries
-
-It runs as an independent Railway service so that slow, rate-limited, or failure-prone ingestion tasks never block the user-facing API.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Documentation
 
@@ -227,3 +337,11 @@ It runs as an independent Railway service so that slow, rate-limited, or failure
 - [API Documentation](docs/api/api-doc.md)
 - [Postman Collection](docs/api/server.postman_collection.json)
 - [Feature Proposal](docs/proposals/feature-proposal.md)
+
+---
+
+<div align="center">
+
+If component intelligence for hardware should be easier to inspect, explain, and build on, **star the repo and follow the project.**
+
+</div>
