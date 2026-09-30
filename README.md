@@ -1,229 +1,81 @@
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="apps/website/public/partpilot-logo-dark-landscape.png" width="1280">
-  <source media="(prefers-color-scheme: light)" srcset="apps/website/public/partpilot-logo-light-landscape.png" width="1280">
-  <img alt="partpilot logo" src="apps/website/public/partpilot-logo-light-landscape.png" width="1280">
+  <source media="(prefers-color-scheme: dark)" srcset="apps/website/public/partpilot-logo-dark-landscape.png">
+  <source media="(prefers-color-scheme: light)" srcset="apps/website/public/partpilot-logo-light-landscape.png">
+  <img alt="PartPilot" src="apps/website/public/partpilot-logo-light-landscape.png" width="900">
 </picture>
 </div>
 
-Electronic component obsolescence intelligence platform.
+# PartPilot
 
-**Stack**: Rust (engine/server/worker), React (client), Supabase (Postgres + Auth + Storage), Redis (adapter response cache), Railway (hosting), Python (KiCad plugin). Single monorepo, Cargo workspace for the Rust side.
+PartPilot helps hardware teams catch component and BOM risks before they become production problems.
 
-## Components
+It brings lifecycle changes, component metadata, source evidence, alternates, and engineering context into one place so teams can understand **what changed, why it matters, and what needs attention**.
 
-```mermaid
-graph TD
-    Client["client<br/>(React / Vite)"]
-    Server["server<br/>(axum API)"]
-    Engine["engine<br/>(domain + ports)"]
-    Worker["worker<br/>(ingestion sweep & enrichment)"]
+> PartPilot is in active development. Interfaces and behavior may change.
 
-    subgraph Adapters["adapters"]
-        DigiKey["adapter-digikey"]
-        Mouser["adapter-mouser"]
-        Octopart["adapter-octopart"]
-        PCN["adapter-pcn-parser"]
-        Notify["adapter-notify"]
-        CommunityPulse["adapter-community-pulse"]
-    end
+## What this repository is for
 
-    Cache["cache<br/>(CachedConnector decorator)"]
+This repository is the public PartPilot product and integration surface. It includes the web applications, API/server surface, component data contracts, integrations, and tooling used to connect PartPilot to hardware workflows.
 
-    Supabase[("Supabase\n(Postgres/Auth/Storage)")]
-    Redis[("Redis\n(adapter response cache)")]
-    External[("External sources\nDigiKey · Mouser · Octopart · PCNs")]
-    Forums[("Public forums\nReddit · EEVblog · StackExchange\nvendor communities")]
+The long-term architecture separates the public integration layer from PartPilot's proprietary decision-intelligence engine. That separation is currently in progress. New proprietary scoring, reasoning, ranking, and change-impact logic should not be added to this public repository.
 
-    Client -->|HTTP REST| Server
-    Server -->|calls ports| Engine
-    Worker -->|calls ports| Engine
-    Engine -.->|implemented by| Adapters
-    Adapters -.->|wrapped by| Cache
-    Cache --> Redis
+See [Public / Private Boundary](docs/architecture/public-private-boundary.md).
 
-    DigiKey --> External
-    Mouser --> External
-    Octopart --> External
-    PCN --> External
-    Notify --> External
-    CommunityPulse --> Forums
+## Current capabilities
 
-    Client -.->|auth only| Supabase
+- Search and inspect electronic components
+- Upload and analyze BOMs
+- Track important parts and component changes
+- Normalize component metadata and documentation
+- Surface lifecycle and source information
+- Compare candidate alternates
+- Connect PartPilot to KiCad and external component-data sources
+
+## Repository layout
+
+```text
+apps/
+  client/       PartPilot application
+  website/      Public website
+
+crates/
+  server/       HTTP API
+  worker/       Background ingestion and enrichment
+  adapters/     External data-source integrations
+  engine/       Legacy/current engine code pending architectural separation
+
+plugins/
+  kicad/        KiCad integration
+
+infra/          Deployment and database infrastructure
+docs/           API, domain, architecture, and setup documentation
 ```
 
-### 1. client
+## Development
 
-The React frontend (Vite). Everything the user actually sees and clicks — Dashboard, Part Search, Projects/BOM tabs, all built from the shared DataTable, ScoreRing, and other reusable UI components.
+PartPilot uses Rust for backend services, React/TypeScript for the web applications, Supabase/Postgres for persistence and authentication, Redis for caching, and Python for the KiCad integration.
 
-The client talks to server over HTTP and directly to Supabase only for authentication and session management.
-
-It contains no business logic. Reconciliation, risk scoring, and BOM diffing all happen server-side; the client simply renders the results.
-
-## Database Migrations
-
-Database migrations use the Supabase CLI and live in `supabase/migrations/`.
-
-To apply migrations to a linked Supabase project:
-
-```bash
-supabase login
-supabase link --project-ref <project-ref>
-supabase db push
-```
-
-To apply migrations with a database connection string instead of linking:
-
-```bash
-supabase db push --db-url <db_connection_string>
-```
-
-To create a new migration:
-
-```bash
-supabase migration new <migration_name>
-```
-
-For Supabase GitHub integration, set the working directory to `.` because the `supabase/` directory is at the repository root. Supabase automatically runs new files in `supabase/migrations/` for preview branches and production deployments when that integration is enabled.
-
-### 2. adapters
-
-The outward-facing edges of the system — one crate per external integration:
-
-* adapter-digikey
-* adapter-mouser
-* adapter-octopart
-* adapter-pcn-parser
-* adapter-notify
-* adapter-community-pulse
-
-Each adapter implements a trait defined in engine such as:
-
-* DataSourceConnector
-* PartRepository
-* NotificationSender
-
-Adapters translate between external APIs, authentication methods, and response formats and the engine's clean domain models.
-
-This is where all source-specific complexity lives:
-
-* Rate limiting
-* OAuth flows
-* PDF parsing
-* API quirks
-* Vendor-specific data mapping
-
-Keeping these concerns isolated prevents them from leaking into the rest of the system.
-
-#### DigiKey configuration
-
-`adapter-digikey` uses DigiKey Product Information v4 with OAuth 2.0 client
-credentials. Configure `DIGIKEY_CLIENT_ID`, `DIGIKEY_CLIENT_SECRET`, and
-`DIGIKEY_ACCOUNT_ID`, which DigiKey requires for two-legged Product Details
-requests. Locale defaults to `US` / `en` / `USD` and can be changed with the
-`DIGIKEY_LOCALE_*` variables listed in `.env.example`.
-
-Deployed server environment variables take precedence. On a local machine,
-missing values are filled from the repository's top-level `.env` file.
-
-**Community Pulse** is the component that collects and summarizes what engineers actually say about a part across public forums — the same idea as Reddit Answers, applied to component reputation. It pulls in mentions, then hands them to the engine for ranking and synthesis into a short, cited summary (common praise, common issues, overall sentiment) shown alongside a part's lifecycle and risk data.
-
-Credible sources this adapter draws from:
-
-* Reddit (r/AskElectronics, r/PrintedCircuitBoard, r/embedded)
-* EEVblog forum
-* Electrical Engineering Stack Exchange
-* ST Community (STMicroelectronics)
-* Renesas Engineering Community
-* Silicon Labs Community
-* TI E2E (Texas Instruments)
-* Microchip Forums
-* NXP Community
-* All About Circuits forums
-
-### Caching layer (`cache`)
-
-`server` and `worker` both call out to the same rate-limited, sometimes-paid external APIs (DigiKey, Mouser, Octopart) — the worker on its daily sweep, the server synchronously in enrich mode when a user searches/uploads a BOM containing a part with no data yet. Without a shared cache, a burst of enrich-mode lookups for the same not-yet-seen part (e.g. several users uploading BOMs that share a part) each re-hit the paid API before the worker ever gets to it.
-
-`cache` is a `CachedConnector<T: DataSourceConnector>` decorator — same shape as the existing `RateLimited<T>` wrapper — backed by Redis. It sits *inside* the rate limiter in the composition root (`RateLimited(CachedConnector(inner))`), so cache hits never consume rate-limit budget; only real misses do.
-
-* **Why Redis, not another Postgres table**: the cached data is disposable (re-fetchable from source), wants TTL-based expiry rather than a cleanup job, and needs to be shared between two separate Railway services (server + worker) without adding read/write load to the Postgres instance that holds the actual source of truth.
-* **Key shape**: `adapter:{source_id}:{normalized_mpn}:{normalized_manufacturer}` → serialized raw connector response.
-* **TTL**: defaults to the sweep cadence (24h) — data can't be fresher than the next scheduled sweep anyway, so caching past that point costs nothing in staleness.
-* Client: `deadpool-redis` for pooling, added to both `AppState` (server) and the worker's composition root.
-
-### 3. engine
-
-The brain of the system.
-
-Pure business logic with no HTTP server, database driver, or runtime dependencies beyond trait definitions.
-
-Responsibilities include:
-
-* MPN normalization
-* Manufacturer normalization
-* Lifecycle reconciliation across multiple sources
-* Risk scoring
-* Alternate part matching
-* Ranking and synthesizing forum mentions into Community Pulse summaries
-* Category-aware mapping, validation, and reconciliation of IEC CDD component
-  metadata extracted from datasheets (planned; the storage/API/UI contract is
-  already present)
-
-engine depends on nothing else in the workspace.
-
-Everything else depends on it.
-
-If Postgres, DigiKey, Reddit, or any other external dependency changed, this crate would remain largely untouched — Community Pulse's ranking/synthesis logic lives here for the same reason reconciliation and risk scoring do: it's judgment the engine owns, while adapter-community-pulse just fetches the raw posts.
-
-### 4. server
-
-The API layer.
-
-An Axum-based binary that wires concrete adapters into the engine's traits (the composition root) and exposes HTTP endpoints for:
-
-* Part search
-* Part details
-* BOM upload
-* BOM comparison
-* Watchlists
-* Authentication
-* Error handling
-
-The server intentionally remains thin:
-
-* Receive request
-* Call engine and repositories
-* Format response
-* Return result
-
-Very little business logic lives here.
-
-### 5. worker
-
-The background processing service.
-
-A separate binary with no HTTP surface that performs scheduled and asynchronous tasks such as:
-
-* Pulling lifecycle updates from external sources
-* Reconciling data
-* Recomputing risk scores
-* Sending notifications and alerts
-* Performing on-demand enrichment for previously unseen parts
-* Sweeping forums for fresh mentions and refreshing Community Pulse summaries
-
-It runs as an independent Railway service so that slow, rate-limited, or failure-prone ingestion tasks never block the user-facing API.
+For local setup and environment configuration, see [Local & Production Setup](docs/infra/local-and-prod-setup.md).
 
 ## Documentation
 
 - [Architecture Overview](docs/architecture/overview.md)
-- [Engine](docs/architecture/engine.md)
-- [Client](docs/architecture/client.md)
-- [Component Metadata and Datasheet Ingestion](docs/domain/component-metadata-ingestion.md)
-- [Component Protocols](docs/domain/component-protocols.md)
-- [Component CDD Schema](docs/domain/component-cdd.schema.json)
-- [Local & Production Setup Guide](docs/infra/local-and-prod-setup.md)
-- [PostgreSQL Schema](docs/infra/postgresql-schema.md)
+- [Public / Private Boundary](docs/architecture/public-private-boundary.md)
 - [API Documentation](docs/api/api-doc.md)
-- [Postman Collection](docs/api/server.postman_collection.json)
-- [Feature Proposal](docs/proposals/feature-proposal.md)
+- [Component Metadata](docs/domain/component-metadata-ingestion.md)
+- [Component CDD Schema](docs/domain/component-cdd.schema.json)
+- [Local & Production Setup](docs/infra/local-and-prod-setup.md)
+- [PostgreSQL Schema](docs/infra/postgresql-schema.md)
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+
+## Security
+
+Please do not report security vulnerabilities in public issues. See [SECURITY.md](SECURITY.md).
+
+## License
+
+A software license has not yet been published for this repository. Until one is added, the repository being public should not be interpreted as granting permission to copy, modify, or redistribute the code.
