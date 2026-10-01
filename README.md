@@ -4,73 +4,107 @@
   <source media="(prefers-color-scheme: light)" srcset="apps/website/public/partpilot-logo-light-landscape.png">
   <img alt="PartPilot" src="apps/website/public/partpilot-logo-light-landscape.png" width="900">
 </picture>
+
+### Component intelligence for hardware engineering
+
+**Catch risky components before they become production problems.**
 </div>
 
-# PartPilot
+<p align="center">
+  <img src="partpilot-demo.gif" alt="PartPilot analyzing a hardware BOM and surfacing component lifecycle risk" width="420">
+</p>
 
-PartPilot helps hardware teams catch component and BOM risks before they become production problems.
+PartPilot helps hardware teams inspect BOMs and component changes before lifecycle and sourcing problems turn into production surprises.
 
-It brings lifecycle changes, component metadata, source evidence, alternates, and engineering context into one place so teams can understand **what changed, why it matters, and what needs attention**.
+## What PartPilot does
 
-> PartPilot is in active development. Interfaces and behavior may change.
+Hardware teams shouldn't discover component problems after a board is already designed.
 
-## What this repository is for
+PartPilot brings component data and engineering context together to help teams investigate:
 
-This repository is the public PartPilot product and integration surface. It includes the web applications, API/server surface, component data contracts, integrations, and tooling used to connect PartPilot to hardware workflows.
+- lifecycle, EOL, and NRND risk
+- PCNs and manufacturer changes
+- supply dependencies
+- questionable alternates
+- parametric mismatches
+- component documentation and compliance
+- the impact of component changes
 
-The long-term architecture separates the public integration layer from PartPilot's proprietary decision-intelligence engine. That separation is currently in progress. New proprietary scoring, reasoning, ranking, and change-impact logic should not be added to this public repository.
+The product is in active development, so interfaces and behavior may change.
 
-See [Public / Private Boundary](docs/architecture/public-private-boundary.md).
+## Try PartPilot
 
-## Current capabilities
+The current product can upload and inspect BOMs, search electronic components, surface lifecycle and compliance information, track parts, and investigate candidate alternates.
 
-- Search and inspect electronic components
-- Upload and analyze BOMs
-- Track important parts and component changes
-- Normalize component metadata and documentation
-- Surface lifecycle and source information
-- Compare candidate alternates
-- Connect PartPilot to KiCad and external component-data sources
+**Web app:** [app.bestpartpilot.com](https://app.bestpartpilot.com)
 
-## Repository layout
+A public CLI workflow is planned as part of the open PartPilot developer surface. We won't document commands here until they are actually available.
+
+## Open PartPilot ecosystem
+
+This repository is becoming the public developer and integration layer around PartPilot.
+
+The target public surface includes:
+
+- developer tooling and future CLI
+- KiCad and future EDA integrations
+- API clients and SDKs
+- BOM parsing and import/export tooling
+- public schemas and component-data contracts
+- examples and test fixtures
+- public API documentation
+
+The PartPilot decision-intelligence engine is proprietary.
 
 ```text
-apps/
-  client/       PartPilot application
-  website/      Public website
-
-crates/
-  server/       HTTP API
-  worker/       Background ingestion and enrichment
-  adapters/     External data-source integrations
-  engine/       Legacy/current engine code pending architectural separation
-
-plugins/
-  kicad/        KiCad integration
-
-infra/          Deployment and database infrastructure
-docs/           API, domain, architecture, and setup documentation
+BOM / KiCad / Web / SDK
+          |
+          v
+    PartPilot API
+          |
+          v
+ Proprietary engine
+          |
+          v
+ evidence + decision
 ```
+
+The separation is still in progress. The current repository contains legacy/current engine code while dependencies are being removed. New proprietary scoring, reasoning, ranking, and change-impact logic should not be added here.
+
+Read the [public/private architecture boundary](docs/architecture/public-private-boundary.md).
+
+## KiCad
+
+PartPilot is building toward component intelligence inside the tools hardware engineers already use.
+
+The KiCad integration lives in `plugins/kicad/`. As the integration matures, this section will become the fastest path from a board/BOM to PartPilot analysis.
+
+## Component Intelligence Benchmark
+
+We're developing benchmark infrastructure for evaluating how well systems handle real component-intelligence decisions: lifecycle changes, evidence, alternates, constraints, uncertainty, and eventually change impact.
+
+The benchmark will be published when the cases and evaluation criteria are ready. We want it to test real engineering judgment rather than be designed around making PartPilot look good.
+
+## Contributing
+
+We want hardware engineers involved.
+
+Found a weird component case? Have a BOM format we don't support? Think PartPilot made the wrong call? Open an issue or read [CONTRIBUTING.md](CONTRIBUTING.md) before sending a pull request.
+
+Please read the [public/private boundary](docs/architecture/public-private-boundary.md) before contributing architecture or engine-related changes.
 
 ## Development
 
-PartPilot uses Rust for backend services, React/TypeScript for the web applications, Supabase/Postgres for persistence and authentication, Redis for caching, and Python for the KiCad integration.
+PartPilot currently uses Rust for backend services, React/TypeScript for the web applications, Supabase/Postgres for persistence and authentication, Redis for caching, and Python for the KiCad integration.
 
-For local setup and environment configuration, see [Local & Production Setup](docs/infra/local-and-prod-setup.md).
-
-## Documentation
+Developer details live in the docs instead of the top of this README:
 
 - [Architecture Overview](docs/architecture/overview.md)
-- [Public / Private Boundary](docs/architecture/public-private-boundary.md)
 - [API Documentation](docs/api/api-doc.md)
 - [Component Metadata](docs/domain/component-metadata-ingestion.md)
 - [Component CDD Schema](docs/domain/component-cdd.schema.json)
 - [Local & Production Setup](docs/infra/local-and-prod-setup.md)
 - [PostgreSQL Schema](docs/infra/postgresql-schema.md)
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 ## Security
 
