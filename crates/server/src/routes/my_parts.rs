@@ -14,21 +14,34 @@ use crate::{
     state::AppState,
 };
 
-const SELECT_MY_PART: &str = r#"select id, mpn, manufacturer,
+/// Column list shared by every query returning a `MyPartDto`.
+/// A macro (not a const) so it can be used inside `concat!`, which only
+/// accepts literals and other literal-producing macros.
+macro_rules! my_part_columns {
+    () => {
+        r#"id, mpn, manufacturer,
     coalesce(nullif(description, ''), 'Manually added part') as description,
     coalesce(nullif(category, ''), 'Uncategorized') as category,
     score, component_metadata,
     0::int as project_count, 'Manual entry'::text as project_names,
-    quantity::int as total_qty, 'manual'::text as source
-   from user_parts"#;
+    quantity::int as total_qty, 'manual'::text as source"#
+    };
+}
+
+macro_rules! select_my_part {
+    () => {
+        concat!("select ", my_part_columns!(), " from user_parts")
+    };
+}
 
 pub async fn list(
     State(state): State<AppState>,
     Extension(UserId(user_id)): Extension<UserId>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     let mut parts = if let Some(db) = &state.db {
-        sqlx::query_as::<_, MyPartDto>(&format!(
-            "{SELECT_MY_PART} where user_id = $1 order by created_at desc"
+        sqlx::query_as::<_, MyPartDto>(concat!(
+            select_my_part!(),
+            " where user_id = $1 order by created_at desc"
         ))
         .bind(user_id)
         .fetch_all(db)
@@ -56,18 +69,14 @@ pub async fn create(
     normalize_input_metadata(&mut input)?;
     validate(&input)?;
     let part = if let Some(db) = &state.db {
-        sqlx::query_as::<_, MyPartDto>(
+        sqlx::query_as::<_, MyPartDto>(concat!(
             r#"insert into user_parts
                (user_id, mpn, manufacturer, description, category, score,
                 component_metadata, quantity)
                values ($1,$2,$3,$4,$5,$6,$7,$8)
-               returning id, mpn, manufacturer,
-                coalesce(nullif(description, ''), 'Manually added part') as description,
-                coalesce(nullif(category, ''), 'Uncategorized') as category,
-                score, component_metadata,
-                0::int as project_count, 'Manual entry'::text as project_names,
-                quantity::int as total_qty, 'manual'::text as source"#,
-        )
+               returning "#,
+            my_part_columns!()
+        ))
         .bind(user_id)
         .bind(input.mpn.trim())
         .bind(input.manufacturer.trim())
@@ -103,11 +112,14 @@ pub async fn detail(
     Path(id): Path<Uuid>,
 ) -> Result<Json<MyPartDto>, AppError> {
     let part = if let Some(db) = &state.db {
-        sqlx::query_as::<_, MyPartDto>(&format!("{SELECT_MY_PART} where user_id = $1 and id = $2"))
-            .bind(user_id)
-            .bind(id)
-            .fetch_optional(db)
-            .await?
+        sqlx::query_as::<_, MyPartDto>(concat!(
+            select_my_part!(),
+            " where user_id = $1 and id = $2"
+        ))
+        .bind(user_id)
+        .bind(id)
+        .fetch_optional(db)
+        .await?
     } else {
         state
             .memory
@@ -131,18 +143,14 @@ pub async fn update(
     normalize_input_metadata(&mut input)?;
     validate(&input)?;
     let part = if let Some(db) = &state.db {
-        sqlx::query_as::<_, MyPartDto>(
+        sqlx::query_as::<_, MyPartDto>(concat!(
             r#"update user_parts set
                 mpn=$3, manufacturer=$4, description=$5, category=$6, score=$7,
                 component_metadata=$8, quantity=$9, updated_at=now()
                where id=$1 and user_id=$2
-               returning id, mpn, manufacturer,
-                coalesce(nullif(description, ''), 'Manually added part') as description,
-                coalesce(nullif(category, ''), 'Uncategorized') as category,
-                score, component_metadata,
-                0::int as project_count, 'Manual entry'::text as project_names,
-                quantity::int as total_qty, 'manual'::text as source"#,
-        )
+               returning "#,
+            my_part_columns!()
+        ))
         .bind(id)
         .bind(user_id)
         .bind(input.mpn.trim())

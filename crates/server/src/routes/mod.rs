@@ -40,19 +40,19 @@ fn v1_routes(state: AppState) -> Router<AppState> {
     Router::new()
         .route("/parts/search", get(parts::search))
         .route("/parts/compare", get(parts::compare))
-        .route("/parts/:id", get(parts::detail))
-        .route("/parts/:id/history", get(parts::history))
-        .route("/parts/:id/alternates", get(parts::alternates))
-        .route("/parts/:id/insights", get(parts::insights))
+        .route("/parts/{id}", get(parts::detail))
+        .route("/parts/{id}/history", get(parts::history))
+        .route("/parts/{id}/alternates", get(parts::alternates))
+        .route("/parts/{id}/insights", get(parts::insights))
         .nest(
             "/boms",
             Router::new()
                 .route("/", get(boms::list).post(boms::create))
                 .route(
-                    "/:id",
+                    "/{id}",
                     get(boms::detail).patch(boms::update).delete(boms::remove),
                 )
-                .route("/:id/compare", get(boms::compare))
+                .route("/{id}/compare", get(boms::compare))
                 .layer(middleware::from_fn_with_state(
                     state.clone(),
                     crate::auth::require_supabase_session,
@@ -63,7 +63,7 @@ fn v1_routes(state: AppState) -> Router<AppState> {
             Router::new()
                 .route("/", get(my_parts::list).post(my_parts::create))
                 .route(
-                    "/:id",
+                    "/{id}",
                     get(my_parts::detail)
                         .patch(my_parts::update)
                         .delete(my_parts::remove),
@@ -77,7 +77,7 @@ fn v1_routes(state: AppState) -> Router<AppState> {
             "/part-notes",
             Router::new()
                 .route(
-                    "/:part_id",
+                    "/{part_id}",
                     get(part_notes::detail).patch(part_notes::update),
                 )
                 .layer(middleware::from_fn_with_state(
@@ -105,7 +105,7 @@ fn v1_routes(state: AppState) -> Router<AppState> {
             "/important-parts",
             Router::new()
                 .route("/", get(important_parts::list).post(important_parts::add))
-                .route("/:part_id", delete(important_parts::remove))
+                .route("/{part_id}", delete(important_parts::remove))
                 .layer(middleware::from_fn_with_state(
                     state.clone(),
                     crate::auth::require_supabase_session,
@@ -115,7 +115,7 @@ fn v1_routes(state: AppState) -> Router<AppState> {
             "/watchlist",
             Router::new()
                 .route("/", get(important_parts::list).post(important_parts::add))
-                .route("/:part_id", delete(important_parts::remove))
+                .route("/{part_id}", delete(important_parts::remove))
                 .layer(middleware::from_fn_with_state(
                     state,
                     crate::auth::require_supabase_session,

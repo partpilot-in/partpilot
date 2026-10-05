@@ -229,7 +229,10 @@ async fn verify_with_auth_server(
         .bearer_auth(token)
         .send()
         .await
-        .map_err(|_| AppError::unauthorized("could not validate access token"))?;
+        .map_err(|e| {
+            tracing::error!(error = ?e, url = auth_user_url, "auth server request failed");
+            AppError::unauthorized("could not validate access token")
+        })?;
     if !response.status().is_success() {
         return Err(AppError::unauthorized("invalid or expired access token"));
     }
@@ -270,10 +273,12 @@ pub async fn require_supabase_session(
     let token = req
         .headers()
         .get(AUTHORIZATION)
-        .and_then(|value| value.to_str().ok())
-        .and_then(|value| value.strip_prefix("Bearer "))
-        .unwrap_or_default()
-        .to_owned();
+        .and_then(|v| v.to_str().ok())
+        .ok_or_else(|| AppError::unauthorized("missing Authorization header"))?
+        .split_once(' ')
+        .filter(|(scheme, _)| scheme.eq_ignore_ascii_case("bearer"))
+        .map(|(_, t)| t.trim().to_owned())
+        .ok_or_else(|| AppError::unauthorized("expected 'Authorization: Bearer <access_token>'"))?;
 
     let user = state.auth.verify(&token).await?;
     req.extensions_mut().insert(UserId(user.id));
