@@ -27,7 +27,7 @@ pub async fn list(
     Extension(UserId(user_id)): Extension<UserId>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     let mut parts = if let Some(db) = &state.db {
-        sqlx::query_as::<_, MyPartDto>(&format!(
+        sqlx::query_as::<_, MyPartDto>(concat!(
             "{SELECT_MY_PART} where user_id = $1 order by created_at desc"
         ))
         .bind(user_id)
@@ -103,7 +103,7 @@ pub async fn detail(
     Path(id): Path<Uuid>,
 ) -> Result<Json<MyPartDto>, AppError> {
     let part = if let Some(db) = &state.db {
-        sqlx::query_as::<_, MyPartDto>(&format!("{SELECT_MY_PART} where user_id = $1 and id = $2"))
+        sqlx::query_as::<_, MyPartDto>(concat!("{SELECT_MY_PART} where user_id = $1 and id = $2"))
             .bind(user_id)
             .bind(id)
             .fetch_optional(db)
