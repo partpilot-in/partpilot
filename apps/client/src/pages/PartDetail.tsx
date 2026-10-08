@@ -676,7 +676,7 @@ export function PartDetail() {
         </Card>
       </section>
 
-      <section className="stack alternates-section">
+      <section className="stack alternates-section alternate-parts-table">
         <h2 className="section-title">Alternates</h2>
         {altLoading ? (
           <Spinner message="Loading alternates..." />
