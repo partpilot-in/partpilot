@@ -131,6 +131,7 @@ export function DataTable<T>({
                 return (
                   <th
                     key={key}
+                    data-column={key}
                     className={
                       column.numeric ? "data-table__numeric" : undefined
                     }
@@ -177,7 +178,11 @@ export function DataTable<T>({
                     </td>
                   )}
                   {columns.map((column) => (
-                    <td key={String(column.key)} data-label={column.header}>
+                    <td
+                      key={String(column.key)}
+                      data-column={String(column.key)}
+                      data-label={column.header}
+                    >
                       <span className="skeleton-cell" />
                     </td>
                   ))}
@@ -227,6 +232,7 @@ export function DataTable<T>({
                       return (
                         <td
                           key={String(column.key)}
+                          data-column={String(column.key)}
                           className={
                             column.numeric ? "data-table__numeric" : undefined
                           }

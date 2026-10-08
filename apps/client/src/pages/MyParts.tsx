@@ -296,7 +296,12 @@ export function MyParts() {
         );
       },
     },
-    { key: "mpn", header: "MPN", sortable: true },
+    {
+      key: "mpn",
+      header: "MPN",
+      sortable: true,
+      render: (row) => <span title={row.mpn}>{row.mpn}</span>,
+    },
     { key: "manufacturer", header: "Manufacturer", sortable: true },
     {
       key: "country_of_origin",

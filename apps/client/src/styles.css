@@ -3262,6 +3262,50 @@ a.news-list__title:hover {
     gap: 3px;
   }
 
+  .my-parts-table .data-table__scroll {
+    overflow-x: hidden;
+  }
+
+  .my-parts-table .data-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  .my-parts-table
+    [data-column]:not([data-column="important"]):not([data-column="mpn"]):not(
+      [data-column="lifecycle_stage"]
+    ):not([data-column="score"]) {
+    display: none;
+  }
+
+  .my-parts-table .data-table th,
+  .my-parts-table .data-table td {
+    padding-inline: 4px;
+  }
+
+  .my-parts-table [data-column="important"] {
+    width: 40px;
+  }
+
+  .my-parts-table [data-column="mpn"] {
+    overflow-wrap: anywhere;
+  }
+
+  .my-parts-table [data-column="lifecycle_stage"] {
+    width: 104px;
+  }
+
+  .my-parts-table [data-column="score"] {
+    width: 72px;
+  }
+
+  .my-parts-table .lifecycle-badge {
+    gap: 4px;
+    padding-inline: 5px;
+    font-size: 11px;
+  }
+
   .data-table td::before {
     content: none;
   }
