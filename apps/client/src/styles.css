@@ -2238,6 +2238,96 @@ a.news-list__title:hover {
   font-size: 13px;
 }
 
+.ai-page {
+  display: grid;
+  gap: 32px;
+  filter: grayscale(1);
+  opacity: 0.65;
+}
+
+.ai-chat {
+  display: flex;
+  width: 100%;
+  max-width: 760px;
+  min-height: 65vh;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  margin: 0 auto;
+}
+
+.ai-chat__welcome {
+  text-align: center;
+}
+
+.ai-chat__welcome h2 {
+  margin: 16px 0 8px;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.ai-chat__welcome p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.ai-chat__suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ai-chat__suggestion {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: not-allowed;
+}
+
+.ai-chat__suggestion > span {
+  display: inline-flex;
+}
+
+.ai-chat__composer {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.ai-chat__composer textarea {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  resize: none;
+  cursor: not-allowed;
+}
+
+.ai-chat__composer textarea::placeholder {
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
+.ai-chat__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
 .project-grid {
   display: grid;
   min-width: 0;

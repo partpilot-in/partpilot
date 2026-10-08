@@ -1,5 +1,11 @@
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
-import { ClipboardList, LayoutDashboard, Package, Plug } from "lucide-react";
+import {
+  ClipboardList,
+  LayoutDashboard,
+  Package,
+  Plug,
+  Sparkles,
+} from "lucide-react";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { Spinner, TabNav, TopAppBar } from "./components/ui";
 import { Dashboard } from "./pages/Dashboard";
@@ -10,6 +16,7 @@ import { PartCompare } from "./pages/PartCompare";
 import { PartDetail } from "./pages/PartDetail";
 import { Projects } from "./pages/Projects";
 import { Connect } from "./pages/Connect";
+import { AI } from "./pages/AI";
 import { ProjectDetail } from "./pages/ProjectDetail";
 import { ResetPassword } from "./pages/ResetPassword";
 import { BomCompare } from "./pages/BomCompare";
@@ -37,6 +44,12 @@ const tabs = [
     icon: <ClipboardList size={22} />,
   },
   {
+    key: "ai",
+    label: "AI",
+    to: "/ai",
+    icon: <Sparkles size={22} />,
+  },
+  {
     key: "connect",
     label: "Connect",
     to: "/connect",
@@ -54,6 +67,7 @@ function activeTabForPath(pathname: string) {
     return "my-parts";
   if (pathname.startsWith("/projects")) return "projects";
   if (pathname.startsWith("/connect")) return "connect";
+  if (pathname.startsWith("/ai")) return "ai";
   return "dashboard";
 }
 
@@ -102,6 +116,7 @@ function AuthenticatedRoutes() {
         <Route path="/parts/:id" element={<PartDetail />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/connect" element={<Connect />} />
+        <Route path="/ai" element={<AI />} />
         <Route path="/projects/upload" element={<BomUpload />} />
         <Route path="/projects/compare" element={<BomCompare />} />
         <Route path="/projects/:id/edit" element={<BomEdit />} />
