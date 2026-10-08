@@ -3262,11 +3262,11 @@ a.news-list__title:hover {
     gap: 3px;
   }
 
-  .my-parts-table .data-table__scroll {
+  :is(.my-parts-table, .project-parts-table) .data-table__scroll {
     overflow-x: hidden;
   }
 
-  .my-parts-table .data-table {
+  :is(.my-parts-table, .project-parts-table) .data-table {
     width: 100%;
     min-width: 0;
     table-layout: fixed;
@@ -3279,8 +3279,24 @@ a.news-list__title:hover {
     display: none;
   }
 
-  .my-parts-table .data-table th,
-  .my-parts-table .data-table td {
+  .project-parts-table
+    [data-column]:not([data-column="designator"]):not([data-column="mpn"]):not(
+      [data-column="lifecycle_stage"]
+    ):not([data-column="score"]) {
+    display: none;
+  }
+
+  .project-parts-table .data-table tfoot {
+    display: none;
+  }
+
+  .project-parts-table [data-column="designator"] {
+    width: 64px;
+    overflow-wrap: anywhere;
+  }
+
+  :is(.my-parts-table, .project-parts-table) .data-table th,
+  :is(.my-parts-table, .project-parts-table) .data-table td {
     padding-inline: 4px;
   }
 
@@ -3288,19 +3304,19 @@ a.news-list__title:hover {
     width: 40px;
   }
 
-  .my-parts-table [data-column="mpn"] {
+  :is(.my-parts-table, .project-parts-table) [data-column="mpn"] {
     overflow-wrap: anywhere;
   }
 
-  .my-parts-table [data-column="lifecycle_stage"] {
+  :is(.my-parts-table, .project-parts-table) [data-column="lifecycle_stage"] {
     width: 104px;
   }
 
-  .my-parts-table [data-column="score"] {
+  :is(.my-parts-table, .project-parts-table) [data-column="score"] {
     width: 72px;
   }
 
-  .my-parts-table .lifecycle-badge {
+  :is(.my-parts-table, .project-parts-table) .lifecycle-badge {
     gap: 4px;
     padding-inline: 5px;
     font-size: 11px;

@@ -460,29 +460,31 @@ export function ProjectDetail() {
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={projectLines}
-        getRowId={(row) => row.id}
-        onRowClick={(row) => navigate(partLookupPath(row))}
-        footer={
-          <tr>
-            <td />
-            <td />
-            <td />
-            <td />
-            <td />
-            <td />
-            <td className="data-table__numeric bom-total-cell">
-              <span>{bomCurrencyFormatter.format(convertedTotalCost)}</span>
-            </td>
-            <td />
-            <td />
-            <td />
-            <td />
-          </tr>
-        }
-      />
+      <div className="project-parts-table">
+        <DataTable
+          columns={columns}
+          rows={projectLines}
+          getRowId={(row) => row.id}
+          onRowClick={(row) => navigate(partLookupPath(row))}
+          footer={
+            <tr>
+              <td />
+              <td />
+              <td />
+              <td />
+              <td />
+              <td />
+              <td className="data-table__numeric bom-total-cell">
+                <span>{bomCurrencyFormatter.format(convertedTotalCost)}</span>
+              </td>
+              <td />
+              <td />
+              <td />
+              <td />
+            </tr>
+          }
+        />
+      </div>
 
       <PartNoteModal part={noteTarget} onClose={() => setNoteTarget(null)} />
 
