@@ -293,6 +293,28 @@
   color: var(--primary);
 }
 
+/* Source evidence and example panels */
+.example-note {
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.evidence-link {
+  font-size: 0.75rem;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.score-signal .assessment-unknown,
+.compare-row .assessment-unknown {
+  background: var(--bg-color-muted);
+  color: var(--text-muted);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+}
+
 /* Community insights */
 .insight-card,
 .score-card,
@@ -547,39 +569,30 @@
   }
 }
 
-/* Products Carousel */
-.products-carousel {
-  overflow: hidden;
-  width: 100%;
-}
-
-.products-track {
-  display: flex;
+/* Static feature cards */
+.products-grid {
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 1rem;
-  transform: translate3d(var(--carousel-offset), 0, 0);
-  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
-  width: 100%;
-  will-change: transform;
 }
 
 .product-card {
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  flex: 0 0 100%;
   min-height: 10.5rem;
   padding: 1.25rem;
 }
 
 @media (min-width: 640px) {
-  .product-card {
-    flex-basis: calc((100% - 1rem) / 2);
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
-  .product-card {
-    flex-basis: calc((100% - 3rem) / 4);
+  .products-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -592,43 +605,6 @@
   color: var(--text-muted);
   font-size: 0.875rem;
   line-height: 1.45;
-}
-
-.products-pagination {
-  align-items: center;
-  display: flex;
-  gap: 0.45rem;
-  justify-content: center;
-  margin-top: 1.5rem;
-}
-
-.products-pagination button {
-  background: #c7c7cc;
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
-  height: 0.4rem;
-  padding: 0;
-  transition:
-    background-color 0.25s ease,
-    transform 0.25s ease;
-  width: 0.4rem;
-}
-
-.products-pagination button.is-visible {
-  background: var(--primary);
-  transform: scale(1.2);
-}
-
-.products-pagination button:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 3px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .products-track {
-    transition: none;
-  }
 }
 
 /* News Section */
@@ -656,4 +632,67 @@
 .news-item:hover {
   background: var(--primary-light);
   color: var(--primary);
+}
+
+/* Compact illustrations from supplied app records */
+.agentic-visual {
+  min-width: 0;
+}
+
+.insight-row blockquote {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.comparison-table-wrap {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.example-comparison {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.75rem;
+}
+
+.example-comparison th,
+.example-comparison td {
+  text-align: left;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--bg-color-muted);
+  overflow-wrap: anywhere;
+}
+
+.example-comparison thead th {
+  background: var(--bg-color-muted);
+  font-size: 0.6875rem;
+}
+
+.example-comparison th:first-child {
+  width: 26%;
+  color: var(--text-muted);
+}
+
+.example-comparison tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.spec-difference {
+  color: var(--primary-hover);
+  font-weight: 700;
+}
+
+.comparison-review {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.example-source {
+  margin-top: 0.375rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
 }

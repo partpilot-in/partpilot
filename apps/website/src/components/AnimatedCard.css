@@ -1,0 +1,63 @@
+.animated-card {
+  position: relative;
+}
+
+/* Reserve the final layout while visual text streams into place. */
+.stream-text {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: bottom;
+}
+
+.stream-reserve {
+  visibility: hidden;
+}
+
+.stream-output {
+  position: absolute;
+  inset: 0;
+}
+
+/* Assistive technology reads the complete example once. */
+.stream-accessible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.stream-cursor {
+  display: inline-block;
+  height: 0.85em;
+  width: 2px;
+  margin-left: 2px;
+  background: var(--primary);
+  vertical-align: -0.05em;
+  animation: cursor-pulse 650ms ease-in-out infinite alternate;
+}
+
+@keyframes cursor-pulse {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stream-reserve {
+    visibility: visible;
+  }
+
+  .stream-output {
+    display: none;
+  }
+
+  .stream-cursor {
+    animation: none;
+  }
+}

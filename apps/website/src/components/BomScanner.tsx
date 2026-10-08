@@ -1,111 +1,52 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { AnimatedCard } from "./AnimatedCard";
 import "./BomScanner.css";
 
+// Static examples supplied from the app, not live prices or assessments.
 const bomData = [
-  {
-    mpn: "RC0805FR-07100KL",
-    qty: 1,
-    price: "$0.02",
-    score: "Low Risk",
-    color: "green",
-  },
-  {
-    mpn: "0805B103K160CT",
-    qty: 3,
-    price: "$0.06",
-    score: "Low Risk",
-    color: "green",
-  },
-  {
-    mpn: "ABS06-32.768KHZ",
-    qty: 1,
-    price: "$0.98",
-    score: "High Risk",
-    color: "red",
-  },
-  { mpn: "BC547C", qty: 2, price: "$0.09", score: "Medium", color: "orange" },
-  {
-    mpn: "LM358ADR",
-    qty: 1,
-    price: "$0.15",
-    score: "Low Risk",
-    color: "green",
-  },
-  {
-    mpn: "TLV1117-33IDCYR",
-    qty: 1,
-    price: "$0.37",
-    score: "High Risk",
-    color: "red",
-  },
+  { mpn: "RC0805FR-07100KL", qty: 1, price: "₹1.40" },
+  { mpn: "RC0805FR-0710RL", qty: 2, price: "₹3.3986" },
+  { mpn: "RC0805FR-0714KL", qty: 1, price: "₹1.1007" },
+  { mpn: "RC0805FR-0715KL", qty: 1, price: "₹1.1876" },
 ];
 
-export const BomScanner: React.FC = () => {
-  const [activeIndex, setActiveIndex] = useState(-1);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIndex((prev) => {
-        // Stop for a moment at the end, then restart
-        if (prev >= bomData.length) return -1;
-        return prev + 1;
-      });
-    }, 1200);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="bom-scanner-wrapper">
-      <div className="bom-scanner-window">
-        <div className="bom-header">
-          <span>Live BOM Analysis</span>
-        </div>
-        <div className="bom-table-container">
-          <table className="bom-table">
-            <thead>
-              <tr>
-                <th>MPN</th>
-                <th>Qty</th>
-                <th>
-                  <span className="bom-label-full">Unit Price</span>
-                  <span className="bom-label-short">Price</span>
-                </th>
-                <th>
-                  <span className="bom-label-full">PartPilot Score</span>
-                  <span className="bom-label-short">Score</span>
-                </th>
+export const BomScanner: React.FC = () => (
+  <AnimatedCard className="bom-scanner-wrapper">
+    <div className="bom-scanner-window">
+      <div className="bom-header">
+        <span>Example BOM review</span>
+        <span className="bom-example-label">App data · For illustration</span>
+      </div>
+      <div className="bom-table-container">
+        <table className="bom-table">
+          <thead>
+            <tr>
+              <th>MPN</th>
+              <th>Qty</th>
+              <th>Unit price</th>
+              <th>Lifecycle</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bomData.map((row, index) => (
+              <tr
+                key={row.mpn}
+                className="bom-row illustration-row"
+                style={{ "--row-index": index } as React.CSSProperties}
+              >
+                <td>{row.mpn}</td>
+                <td>{row.qty}</td>
+                <td data-stream-value>{row.price}</td>
+                <td>
+                  <span className="lifecycle-badge" data-stream-value>
+                    Active
+                  </span>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {bomData.map((row, i) => {
-                const isScanned = i <= activeIndex;
-                const isActive = i === activeIndex;
-                return (
-                  <tr
-                    key={i}
-                    className={`bom-row ${isActive ? "active-row" : ""}`}
-                  >
-                    <td>{row.mpn}</td>
-                    <td>{row.qty}</td>
-                    <td>{row.price}</td>
-                    <td className="score-cell">
-                      {isScanned ? (
-                        <span
-                          className={`score-badge score-${row.color} animate-fade-in`}
-                        >
-                          {row.score}
-                        </span>
-                      ) : (
-                        <span className="score-pending">Pending...</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
-  );
-};
+  </AnimatedCard>
+);

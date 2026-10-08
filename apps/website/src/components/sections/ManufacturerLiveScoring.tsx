@@ -1,70 +1,50 @@
 import React from "react";
+import { AnimatedCard } from "../AnimatedCard";
 import "./sections.css";
 
-const scoreSignals = [
-  {
-    label: "Manufacturer notices",
-    detail: "2 reviewed today",
-    state: "Current",
-  },
-  {
-    label: "Lifecycle status",
-    detail: "Active · updated 6h ago",
-    state: "Stable",
-  },
-  { label: "Lead-time movement", detail: "12 to 14 weeks", state: "-4 pts" },
-  { label: "Compliance files", detail: "No document gaps", state: "Clear" },
-];
+export const ManufacturerLiveScoring: React.FC = () => (
+  <section className="section section-alt">
+    <div className="container agentic-container">
+      <div className="agentic-content">
+        <div className="section-label">Component updates</div>
+        <h2 className="section-title">Understand what changed</h2>
+        <p className="agentic-text compact-section-text">
+          Review available lifecycle, availability, and supplier updates to see
+          which components may need attention.
+        </p>
+      </div>
 
-export const ManufacturerLiveScoring: React.FC = () => {
-  return (
-    <section className="section section-alt">
-      <div className="container agentic-container">
-        <div className="agentic-content">
-          <div className="section-label">Daily manufacturer monitoring</div>
-          <h2 className="section-title">
-            Live part scores that change when the evidence changes
-          </h2>
-          <p className="agentic-text compact-section-text">
-            PartPilot tracks manufacturer notifications every day—including
-            PCNs, lifecycle updates, compliance documents, and availability
-            signals—then refreshes each part score automatically. Teams see what
-            changed, why the score moved, and where action is needed.
-          </p>
-        </div>
-
-        <div className="agentic-visual">
-          <div className="mockup-card score-card hover-lift">
-            <div className="score-summary">
-              <div>
-                <span className="score-eyebrow">Part confidence</span>
-                <strong className="score-value">88</strong>
+      <div className="agentic-visual">
+        <AnimatedCard className="mockup-card insight-card">
+          <div className="mockup-header">Example lifecycle update</div>
+          <p className="example-note">App data · For illustration</p>
+          <div className="insight-part">
+            A3PE3000 family <span>896-pin PBGA · Microchip EOL notice</span>
+          </div>
+          <div className="insight-list">
+            <div className="insight-row illustration-row">
+              <div className="insight-source" data-stream-value>
+                End of life
               </div>
-              <div className="score-freshness">
-                <span className="live-dot" aria-hidden="true" />
-                Updated today
-              </div>
+              <strong>
+                Last bookings: <span data-stream-value>1 December 2026</span>
+              </strong>
+              <span>
+                Last shipments: <span data-stream-value>1 December 2028</span>
+              </span>
             </div>
             <div
-              className="score-meter"
-              aria-label="Part confidence score: 88 out of 100"
+              className="insight-row illustration-row"
+              style={{ "--row-index": 1 } as React.CSSProperties}
             >
-              <span style={{ width: "88%" }} />
-            </div>
-            <div className="score-signal-list">
-              {scoreSignals.map((signal) => (
-                <div className="score-signal" key={signal.label}>
-                  <div>
-                    <strong>{signal.label}</strong>
-                    <span>{signal.detail}</span>
-                  </div>
-                  <b>{signal.state}</b>
-                </div>
-              ))}
+              <strong>Replacement depends on ordering code</strong>
+              <span>
+                Source: Microchip notice excerpt supplied from the app
+              </span>
             </div>
           </div>
-        </div>
+        </AnimatedCard>
       </div>
-    </section>
-  );
-};
+    </div>
+  </section>
+);
