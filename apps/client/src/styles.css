@@ -2259,6 +2259,30 @@ a.news-list__title:hover {
   min-width: 0;
 }
 
+.connector-card {
+  color: var(--text-secondary);
+  filter: grayscale(1);
+  opacity: 0.65;
+}
+
+.connector-card__content {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.connector-card .project-card__top {
+  width: 100%;
+}
+
+.connector-card p {
+  overflow: visible;
+  white-space: normal;
+}
+
 .project-card__top {
   display: grid;
   min-width: 0;
