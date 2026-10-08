@@ -347,8 +347,8 @@ export function BomUpload() {
                       ))}
                     </ul>
                     <p>
-                      Designator and MPN are required to identify every BOM
-                      line.
+                      MPN is required for every BOM line. Designator is
+                      optional.
                     </p>
                   </div>
                 </div>
@@ -495,7 +495,7 @@ export function BomUpload() {
                 <p>Resolve required field errors to continue.</p>
               )}
               {!validation.errors.length && !importLineCount && (
-                <p>No complete Designator and MPN rows were found.</p>
+                <p>No rows with an MPN were found.</p>
               )}
               {!validation.errors.length &&
                 importLineCount > 0 &&

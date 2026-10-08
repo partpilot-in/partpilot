@@ -119,7 +119,7 @@ export const BOM_FIELD_OPTIONS: { value: BomField; label: string }[] = [
   { value: "unit_price", label: "Unit price" },
 ];
 
-export const REQUIRED_BOM_FIELDS: BomField[] = ["designator", "mpn"];
+export const REQUIRED_BOM_FIELDS: BomField[] = ["mpn"];
 export const RECOMMENDED_BOM_FIELDS: BomField[] = [
   "manufacturer",
   "description",
@@ -632,11 +632,13 @@ function rowToBomLine(
   const mpn = cleanText(cellAt(row, fields.mpn));
   const mappedDescription = cleanText(cellAt(row, fields.description));
 
-  if (!mpn || !designator) return undefined;
+  if (!mpn) return undefined;
 
-  const description = mappedDescription
-    ? `${designator} — ${mappedDescription}`
-    : designator;
+  const description = designator
+    ? mappedDescription
+      ? `${designator} — ${mappedDescription}`
+      : designator
+    : mappedDescription;
   const category = cleanText(cellAt(row, fields.category));
   const id = `${prefix}-line-${lineNo}`;
 
