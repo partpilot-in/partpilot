@@ -4,24 +4,24 @@ import "./sections.css";
 const capabilities = [
   {
     title: "BOM review",
-    desc: "Review component information and identify parts that need attention.",
+    desc: "Find components that need attention.",
   },
   {
     title: "Component lookup",
-    desc: "Find available lifecycle and sourcing information for a part.",
+    desc: "Check lifecycle and sourcing information.",
   },
   {
     title: "Part comparison",
-    desc: "Compare candidate specifications and identify differences.",
+    desc: "Compare specifications and differences.",
   },
   {
     title: "Source evidence",
-    desc: "Follow findings to their sources and see what remains unknown.",
+    desc: "See sources and missing information.",
   },
 ];
 
 export const ProductsGrid: React.FC = () => (
-  <section id="capabilities" className="section">
+  <section id="capabilities" className="section capabilities-section">
     <div className="container">
       <div className="section-header-center">
         <h2 className="section-title">Make better component decisions</h2>

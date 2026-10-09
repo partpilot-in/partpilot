@@ -570,6 +570,15 @@
 }
 
 /* Static feature cards */
+.capabilities-section {
+  padding: clamp(2.5rem, 5vw, 4rem) 0;
+  text-align: center;
+}
+
+.capabilities-section .section-header-center {
+  margin-bottom: 1.75rem;
+}
+
 .products-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -580,8 +589,12 @@
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  min-height: 10.5rem;
-  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 1rem;
+  text-align: center;
 }
 
 @media (min-width: 640px) {
@@ -597,8 +610,8 @@
 }
 
 .product-title {
-  font-size: 1.05rem;
-  margin-bottom: 0.625rem;
+  font-size: 1rem;
+  margin-bottom: 0.375rem;
 }
 
 .product-desc {
