@@ -12,12 +12,12 @@
   "dependencies": {
     "lucide-react": "^1.37.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@types/node": "^26.4.0",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.5",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.80.0",
     "typescript": "~7.0.2",
