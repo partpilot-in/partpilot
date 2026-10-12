@@ -204,7 +204,7 @@ crates/
   server/      Axum API
 
 tools/
-  cli/         CLI scaffold / work in progress
+  cli/         Rust CLI: partpilot scan / analyse (see tools/cli/README.md)
 
 docs/          architecture, API, domain, infra, proposals
 supabase/      database migrations
