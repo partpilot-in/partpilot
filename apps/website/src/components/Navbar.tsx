@@ -34,12 +34,17 @@ export const Navbar: React.FC = () => {
             </svg>
           </a>
           <a
-            href="https://app.bestpartpilot.com"
-            className="navbar-launch"
+            href="https://www.producthunt.com/products/partpilot?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-partpilot"
+            className="navbar-product-hunt"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Launch App
+            <img
+              alt="PartPilot — understanding components for hardware engineering | Product Hunt"
+              width={250}
+              height={54}
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1278484&theme=light&t=1791952688216"
+            />
           </a>
         </div>
       </div>

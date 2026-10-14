@@ -18,11 +18,11 @@ export const HeroSection: React.FC = () => {
           </p>
           <a
             href="https://app.bestpartpilot.com"
-            className="btn btn-primary btn-lg"
+            className="btn btn-primary btn-lg hero-launch"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Check your BOM
+            Launch PartPilot
           </a>
         </div>
 

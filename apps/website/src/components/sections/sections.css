@@ -48,6 +48,24 @@
   margin: 0 auto 2.5rem;
 }
 
+.hero-launch {
+  box-shadow:
+    0 4px 12px rgb(245 124 0 / 25%),
+    0 0 28px rgb(245 124 0 / 35%);
+}
+
+.hero-launch:hover {
+  box-shadow:
+    0 6px 16px rgb(245 124 0 / 30%),
+    0 0 36px rgb(245 124 0 / 50%);
+  opacity: 1;
+}
+
+.hero-launch:focus-visible {
+  outline: 2px solid var(--primary-hover);
+  outline-offset: 4px;
+}
+
 .hero-grid {
   display: flex;
   flex-direction: column;
