@@ -113,17 +113,18 @@
   outline-offset: 3px;
 }
 
-@media (max-width: 639px) {
+@media (max-width: 767px) {
   .navbar-container {
-    flex-wrap: wrap;
-    justify-content: center;
     gap: 0.625rem;
   }
 
+  .navbar-logo,
   .navbar-actions {
-    width: 100%;
-    justify-content: center;
-    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .navbar-repo {
+    display: none;
   }
 
   .navbar-product-hunt img {
